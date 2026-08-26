@@ -1,0 +1,16 @@
+{
+  "name": "opennars-304-ts-web-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:worker": "node scripts/build-opennars-worker.mjs",
+    "check": "npm run build && node scripts/check-build.mjs",
+    "test": "node --test",
+    "deploy:pages": "node scripts/deploy-pages.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
