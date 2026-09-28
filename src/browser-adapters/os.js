@@ -1,0 +1,10 @@
+export const EOL = "\n";
+export const arch = () => "wasm32";
+export const platform = () => "browser";
+export const version = () => "Web Runtime";
+export const release = () => "browser";
+export const tmpdir = () => "/tmp";
+export const homedir = () => "/";
+export const endianness = () => "LE";
+export const type = () => "Browser";
+export default { EOL, arch, platform, version, release, tmpdir, homedir, endianness, type };

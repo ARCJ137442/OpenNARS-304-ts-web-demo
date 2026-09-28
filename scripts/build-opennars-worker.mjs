@@ -42,129 +42,21 @@ for (const staleArtifact of ["nars-worker.js.map", "nars-worker.js.LEGAL.txt"]) 
   rmSync(resolve(outputDirectory, staleArtifact), { force: true });
 }
 
-const virtualModules = new Map([
-  ["browser:fs", `
-    const configXml = ${JSON.stringify(defaultConfigXml)};
-    const unavailable = (name) => { throw new Error(name + " is unavailable in the browser build"); };
-    export const existsSync = () => true;
-    export const readFileSync = () => configXml;
-    export const closeSync = () => undefined;
-    export const fsyncSync = () => undefined;
-    export const mkdirSync = () => undefined;
-    export const rmdirSync = () => unavailable("rmdirSync");
-    export const unlinkSync = () => unavailable("unlinkSync");
-    export const openSync = () => unavailable("openSync");
-    export const writeSync = () => unavailable("writeSync");
-    export const readSync = () => unavailable("readSync");
-    export const truncateSync = () => unavailable("truncateSync");
-    export const fstatSync = () => ({ size: 0 });
-    export const statSync = () => ({ isDirectory: () => false, isFile: () => false, size: 0 });
-    const fs = { existsSync, readFileSync, closeSync, fsyncSync, mkdirSync, rmdirSync, unlinkSync, openSync, writeSync, readSync, truncateSync, fstatSync, statSync };
-    export default fs;
-  `],
-  ["browser:path", `
-    const normalize = (value) => String(value ?? "").replace(/\\\\/g, "/").replace(/\\/+/g, "/");
-    export const sep = "/";
-    export const delimiter = ":";
-    export const resolve = (...parts) => "/" + parts.map(normalize).filter(Boolean).join("/").replace(/^\\/+/, "");
-    export const join = (...parts) => normalize(parts.join("/"));
-    export const dirname = (value) => { const path = normalize(value); const index = path.lastIndexOf("/"); return index <= 0 ? "/" : path.slice(0, index); };
-    export const basename = (value) => normalize(value).split("/").filter(Boolean).at(-1) ?? "";
-    export const extname = (value) => { const base = basename(value); const index = base.lastIndexOf("."); return index <= 0 ? "" : base.slice(index); };
-    export const isAbsolute = (value) => normalize(value).startsWith("/");
-    export const relative = (_from, to) => normalize(to).replace(/^\\/+/, "");
-    export const parse = (value) => { const dir = dirname(value); const base = basename(value); const ext = extname(value); return { root: "/", dir, base, ext, name: ext ? base.slice(0, -ext.length) : base }; };
-    const path = { sep, delimiter, resolve, join, dirname, basename, extname, isAbsolute, relative, parse };
-    export default path;
-  `],
-  ["browser:os", `
-    export const EOL = "\\n";
-    export const arch = () => "wasm32";
-    export const platform = () => "browser";
-    export const version = () => "Web Runtime";
-    export const release = () => "browser";
-    export const tmpdir = () => "/tmp";
-    export const homedir = () => "/";
-    export const endianness = () => "LE";
-    export const type = () => "Browser";
-    const os = { EOL, arch, platform, version, release, tmpdir, homedir, endianness, type };
-    export default os;
-  `],
-  ["browser:url", `
-    export const fileURLToPath = (value) => typeof value === "string" ? value : value?.pathname ?? "/";
-    export const pathToFileURL = (value) => new URL(String(value), "file:///");
-  `],
-  ["browser:child_process", `
-    export const execFileSync = () => { throw new Error("child processes are unavailable in the browser build"); };
-    export const spawn = execFileSync;
-    export const exec = execFileSync;
-    export default { execFileSync, spawn, exec };
-  `],
-  ["browser:process", `
-    const process = globalThis.process;
-    export const versions = process.versions;
-    export const release = process.release;
-    export const env = process.env;
-    export const platform = process.platform;
-    export const cwd = process.cwd;
-    export const on = process.on;
-    export const off = process.off;
-    export const once = process.once;
-    export const stdout = process.stdout;
-    export const stderr = process.stderr;
-    export default process;
-  `],
-  ["browser:crypto", `
-    export const randomBytes = (length) => ({
-      toString: () => Array.from(crypto.getRandomValues(new Uint8Array(length)), byte => byte.toString(16).padStart(2, "0")).join("")
-    });
-    export default { randomBytes };
-  `],
-  ["browser:util", `
-    export const inspect = (value) => {
-      try { return typeof value === "string" ? value : JSON.stringify(value); }
-      catch { return String(value); }
-    };
-    export default { inspect };
-  `],
-  ["browser:stream", `
-    export class Stream { write() { return true; } }
-    export default { Stream };
-  `],
-]);
-
-const nodeShimPlugin = {
-  name: "opennars-browser-node-shims",
+const browserAdapterDirectory = resolve(projectRoot, "src", "browser-adapters");
+const browserAdapterPlugin = {
+  name: "opennars-browser-adapters",
   setup(build) {
     build.onResolve({ filter: /^(?:node:)?(?:fs|path|os|url|child_process|process|crypto|util|stream)$/ }, ({ path }) => ({
-      path: `browser:${path.replace(/^node:/, "")}`,
-      namespace: "opennars-browser",
-    }));
-    build.onLoad({ filter: /.*/, namespace: "opennars-browser" }, ({ path }) => ({
-      contents: virtualModules.get(path),
-      loader: "js",
+      path: resolve(browserAdapterDirectory, `${path.replace(/^node:/, "")}.js`),
     }));
   },
 };
 
-const processShim = `
-  globalThis.process ??= {
-    versions: { node: "browser" },
-    release: { name: "browser" },
-    env: {},
-    platform: "browser",
-    cwd: () => "/",
-    on: () => undefined,
-    off: () => undefined,
-    once: () => undefined,
-    stdout: { write: () => true },
-    stderr: { write: () => true }
-  };
-`;
+const browserHostBanner = `globalThis.__OPENNARS_DEFAULT_CONFIG__ = ${JSON.stringify(defaultConfigXml)};`;
 
 const modulePath = (relativePath) => JSON.stringify(resolve(openNarsRoot, relativePath).replaceAll("\\", "/"));
 const workerSource = `
-  import { java } from "jree";
+  import { java } from ${modulePath("src/runtime/jree-compat.ts")};
   import { Nar } from ${modulePath("src/main/Nar.ts")};
   import { Debug } from ${modulePath("src/main/Debug.ts")};
   import { Events } from ${modulePath("src/io/events/Events.ts")};
@@ -319,8 +211,8 @@ await esbuild.build({
   treeShaking: true,
   legalComments: "eof",
   nodePaths: [nodeModules],
-  banner: { js: processShim },
-  plugins: [nodeShimPlugin],
+  banner: { js: browserHostBanner },
+  plugins: [browserAdapterPlugin],
   logLevel: "info",
 });
 
