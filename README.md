@@ -1,5 +1,7 @@
 # OpenNARS 3.0.4 TypeScript Web Terminal
 
+[English](README.en.md)
+
 这是 `https://arcj137442.github.io/opennars-304-ts/` 的独立源码项目。GitHub Pages 仓库中的 `opennars-304-ts/` 只保存本项目生成的部署产物。
 
 ## 交互合同
