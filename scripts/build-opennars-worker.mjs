@@ -118,9 +118,9 @@ const workerSource = `
     }
   }
 
-  function createReasoner() {
+  function createReasoner(configText = null) {
     Debug.TEST = true;
-    nar = new Nar();
+    nar = configText === null ? new Nar() : new Nar({ configText });
     attachOutput(nar);
   }
 
@@ -179,6 +179,19 @@ const workerSource = `
   }
 
   self.addEventListener("message", ({ data }) => {
+    if (data?.type === "config" && typeof data.text === "string") {
+      send("busy", { busy: true });
+      try {
+        createReasoner(data.text);
+        send("configured", { source: data.name ?? "custom configuration", time: String(nar.time()), volume: nar.narParameters.VOLUME });
+      } catch (error) {
+        output("[config-error] " + errorText(error), "error");
+        send("complete", { time: String(nar?.time?.() ?? 0), volume: nar?.narParameters?.VOLUME ?? 100, failed: true });
+      } finally {
+        send("busy", { busy: false });
+      }
+      return;
+    }
     if (data?.type !== "command" || nar === null) return;
     send("busy", { busy: true });
     try {

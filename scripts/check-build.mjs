@@ -11,7 +11,7 @@ for (const file of requiredFiles) {
 }
 
 const html = readFileSync(resolve(distRoot, "index.html"), "utf8");
-for (const requiredText of ["OPENNARS 304 TS", "INTERACTIVE BROWSER TERMINAL", "<textarea", "Shift+Enter", "NAL-8", "RUN NAL-8 BATCH", "volume-input", "data-package-version", "data-build-time"]) {
+for (const requiredText of ["OPENNARS 304 TS", "INTERACTIVE BROWSER TERMINAL", "<textarea", "Shift+Enter", "NAL-8", "RUN NAL-8 BATCH", "volume-input", "data-package-version", "data-build-time", "config-file", "config-status"]) {
   if (!html.includes(requiredText)) throw new Error(`index.html is missing ${requiredText}`);
 }
 
@@ -24,6 +24,7 @@ const worker = readFileSync(resolve(distRoot, "nars-worker.js"), "utf8");
 for (const requiredText of ["OpenNARS", "opennars-304-ts", "sourceCommit"]) {
   if (!worker.includes(requiredText)) throw new Error(`nars-worker.js is missing ${requiredText}`);
 }
+if (!worker.includes("configured")) throw new Error("nars-worker.js is missing the configuration message contract");
 
 const metadata = JSON.parse(readFileSync(resolve(distRoot, "build-meta.json"), "utf8"));
 if (metadata.coreVersion !== "v3.0.4" || !/^\d+\.\d+\.\d+$/.test(metadata.packageVersion)) {

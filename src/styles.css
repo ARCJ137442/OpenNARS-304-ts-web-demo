@@ -560,6 +560,48 @@ body.busy #terminal-activity {
   color: var(--amber);
 }
 
+.config-block label {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  color: #b9cecb;
+  font-size: 0.62rem;
+  cursor: pointer;
+}
+
+.config-block label:hover,
+.config-block label:focus-within {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.config-file {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.config-file::file-selector-button {
+  margin-right: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--panel-raised);
+  font: inherit;
+  cursor: pointer;
+}
+
+.config-block output {
+  display: block;
+  margin-top: 12px;
+  color: var(--amber);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
 .quick-buttons {
   display: grid;
   gap: 7px;

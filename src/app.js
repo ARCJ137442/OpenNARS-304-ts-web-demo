@@ -24,6 +24,8 @@ const elements = {
   buildTime: document.querySelector("#build-time"),
   volume: document.querySelector("#volume-input"),
   volumeValue: document.querySelector("#volume-value"),
+  configFile: document.querySelector("#config-file"),
+  configStatus: document.querySelector("#config-status"),
 };
 
 const MAX_TERMINAL_LINES = 600;
@@ -184,6 +186,17 @@ function startWorker(reason = "initial boot") {
       if (data.volume !== undefined) setVolumeDisplay(data.volume);
       return;
     }
+    if (data.type === "configured") {
+      ready = true;
+      busy = false;
+      elements.configStatus.textContent = data.source ?? "CUSTOM CONFIG";
+      setClock(data.time);
+      setVolumeDisplay(data.volume);
+      appendLine(`[runtime] ${data.source ?? "custom configuration"} loaded.`, "system");
+      updateControls();
+      focusInput();
+      return;
+    }
     if (data.type === "fatal") {
       ready = false;
       busy = false;
@@ -259,6 +272,23 @@ elements.volume.addEventListener("input", () => setVolumeDisplay(elements.volume
 elements.volume.addEventListener("change", () => {
   const volume = normalizeVolume(elements.volume.value);
   if (volume !== null) submitCommand(`:volume ${volume}`);
+});
+
+elements.configFile.addEventListener("change", async () => {
+  const file = elements.configFile.files?.[0];
+  if (!file || !ready || busy || worker === null) return;
+  try {
+    const text = await file.text();
+    if (!text.trimStart().startsWith("<")) throw new Error("configuration must be XML text");
+    busy = true;
+    updateControls();
+    worker.postMessage({ type: "config", text, name: file.name });
+  } catch (error) {
+    elements.configStatus.textContent = "CONFIG ERROR";
+    appendLine(`[config-error] ${error instanceof Error ? error.message : String(error)}`, "error");
+  } finally {
+    elements.configFile.value = "";
+  }
 });
 
 document.addEventListener("keydown", (event) => {

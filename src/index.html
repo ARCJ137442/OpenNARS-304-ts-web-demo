@@ -133,6 +133,14 @@
             <p id="volume-help">调低可提高派生任务的输出门槛，减少 <code>OUT</code>；Answer 等主要事件不受影响。</p>
           </section>
 
+          <section class="telemetry-block config-block" aria-labelledby="config-title">
+            <span id="config-title" class="block-label">HOST CONFIGURATION</span>
+            <label for="config-file">LOAD XML CONFIG</label>
+            <input id="config-file" class="config-file" type="file" accept=".xml,text/xml,application/xml">
+            <output id="config-status" aria-live="polite">DEFAULT CONFIG</output>
+            <p>配置文本只在浏览器 Worker 内生效；重新加载后恢复默认配置。</p>
+          </section>
+
         </aside>
       </div>
     </main>
