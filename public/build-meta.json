@@ -2,8 +2,8 @@
   "application": "OpenNARS 3.0.4 TypeScript Web Terminal",
   "packageVersion": "0.1.0",
   "coreVersion": "v3.0.4",
-  "sourceCommit": "0baa284500d0d3964b686ac782866ee7d72ce026",
-  "sourceCommitShort": "0baa2845",
-  "builtAt": "2026-09-28T22:11:16.750Z",
+  "sourceCommit": "5d8cae944de41fd2a0431cdc7bea64fc0ee2e7a8",
+  "sourceCommitShort": "5d8cae94",
+  "builtAt": "2026-09-29T02:18:38.042Z",
   "buildTimeZone": "Asia/Shanghai"
 }
