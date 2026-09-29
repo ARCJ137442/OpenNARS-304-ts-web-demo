@@ -35,8 +35,6 @@ const defaultConfigXml = readFileSync(configPath, "utf8");
 const buildTime = new Date();
 const buildTimeIso = buildTime.toISOString();
 const nodeModules = resolve(process.env.OPENNARS_NODE_MODULES ?? openNarsRoot, process.env.OPENNARS_NODE_MODULES ? "." : "node_modules");
-assertFile(resolve(nodeModules, "jree", "package.json"), "jree dependency");
-
 mkdirSync(outputDirectory, { recursive: true });
 for (const staleArtifact of ["nars-worker.js.map", "nars-worker.js.LEGAL.txt"]) {
   rmSync(resolve(outputDirectory, staleArtifact), { force: true });
@@ -46,6 +44,12 @@ const browserAdapterDirectory = resolve(projectRoot, "src", "browser-adapters");
 const browserAdapterPlugin = {
   name: "opennars-browser-adapters",
   setup(build) {
+    build.onResolve({ filter: /jree-host-adapter\.ts$/ }, () => ({
+      path: resolve(openNarsRoot, "src", "platform", "browser", "jree-host-adapter.ts"),
+    }));
+    build.onResolve({ filter: /jree-compat\.ts$/ }, () => ({
+      path: resolve(openNarsRoot, "src", "platform", "browser", "jree-compat.ts"),
+    }));
     build.onResolve({ filter: /^(?:node:)?(?:fs|path|os|url|child_process|process|crypto|util|stream)$/ }, ({ path }) => ({
       path: resolve(browserAdapterDirectory, `${path.replace(/^node:/, "")}.js`),
     }));
@@ -56,7 +60,7 @@ const browserHostBanner = `globalThis.__OPENNARS_DEFAULT_CONFIG__ = ${JSON.strin
 
 const modulePath = (relativePath) => JSON.stringify(resolve(openNarsRoot, relativePath).replaceAll("\\", "/"));
 const workerSource = `
-  import { java } from ${modulePath("src/runtime/jree-compat.ts")};
+  import { java } from ${modulePath("src/platform/browser/jree-host-adapter.ts")};
   import { Nar } from ${modulePath("src/main/Nar.ts")};
   import { Debug } from ${modulePath("src/main/Debug.ts")};
   import { Events } from ${modulePath("src/io/events/Events.ts")};
