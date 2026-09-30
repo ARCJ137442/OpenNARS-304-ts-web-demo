@@ -31,3 +31,21 @@ What should the browser Microworld target for a world tick, and how should its r
 - A 10-second development-browser spot sample briefly held around `19.4-20.7 TPS` at a 20 TPS target. This is exploratory, not sustained proof.
 - The subsequent 12-second sample exposed workload sensitivity: TPS fell from `15.1` to `0.2`, reported latency rose to `5062 ms`, and concepts grew from `333` to `1243`; the last displayed ratio was `1%`. No RSS API value was captured in that sample.
 - Conclusion: fixed-clock scheduling removed the extra post-inference period, but the TS reasoner does not yet sustain the 20 TPS smoothness floor under Microworld's changing workload. Do not claim performance success or Java parity for achieved TPS. The Java source establishes a requested 50 Hz schedule, not a measured sustained runtime TPS benchmark.
+
+## Interpretation and next experiments
+
+The short-lived rate improvement came from two different changes and must not be conflated:
+
+- Sensor de-duplication reduced repeated input work in `74a955b`.
+- Fixed-deadline scheduling in `aa64df5` removed the artificial full-period wait after each synchronous Worker response.
+
+Neither change removes the reasoner's state-growth cost. The browser probe reached `333` concepts with a `21 ms` step, then later reached `1243` concepts with a `5062 ms` step. The corresponding Node CartPole workload reached `4900` concepts after 200 ticks, with `1041.603 ms` median and `7129.231 ms` p95 step latency. The dominant current hypothesis is allocation/GC and equality or lookup work that grows with the concept and task bags, rather than Canvas rendering or the timer itself.
+
+TypeScript still has optimization headroom. Java's HotSpot JIT and the translated runtime's Java-shaped compatibility calls are different execution environments; the current slowdown is evidence about this implementation, not a language limit. The next measurements should be isolated and semantics-preserving:
+
+1. Profile one clean Worker run with CPU and heap timelines, recording concept count, input count, step p50/p95, RPS, and RSS at fixed ticks.
+2. A/B the hot paths already identified by core evidence: `CompoundTerm.equals`, `javaValueEquals`, Bag equality lookup/removal, UTF-16/string conversion, and short-lived event/log formatting.
+3. Test a demo-only low-risk variant with diagnostic snapshots and UI log formatting decimated while preserving every NARS input, operation, and feedback event.
+4. For each candidate, rerun the same M2, markerless parity sample, core M3 sample, and Microworld workload. Keep a change only when functional parity holds and the measured target metric improves; three consecutive sub-5% rounds close the optimization streak.
+
+The Java `frameRate(50)` call remains a requested scheduling rate. A valid Java-vs-TS TPS comparison still requires a headless Java run and the same fixed sensor/goal/reward sequence; the current Java source alone does not provide a sustained measured TPS.
