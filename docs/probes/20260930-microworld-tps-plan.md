@@ -23,3 +23,11 @@ What should the browser Microworld target for a world tick, and how should its r
 - Unit test the constants and their ordering.
 - Run typecheck, Astro checks, the full Node test suite, build, build-tree checks, and browser smoke.
 - Report actual TPS, selected target, actual/target ratio, RPS, latency, concepts, and RSS separately. A clean browser run is required before claiming a performance result.
+
+## Observed result on `aa64df5`
+
+- `npm run check`: passed; typecheck, Astro diagnostics, 28 Node tests, static build, and build-tree checks all passed.
+- `npm run test:browser`: passed; all 10 game pages and Microworld loaded, page errors 0, index workers 0.
+- A 10-second development-browser spot sample briefly held around `19.4-20.7 TPS` at a 20 TPS target. This is exploratory, not sustained proof.
+- The subsequent 12-second sample exposed workload sensitivity: TPS fell from `15.1` to `0.2`, reported latency rose to `5062 ms`, and concepts grew from `333` to `1243`; the last displayed ratio was `1%`. No RSS API value was captured in that sample.
+- Conclusion: fixed-clock scheduling removed the extra post-inference period, but the TS reasoner does not yet sustain the 20 TPS smoothness floor under Microworld's changing workload. Do not claim performance success or Java parity for achieved TPS. The Java source establishes a requested 50 Hz schedule, not a measured sustained runtime TPS benchmark.
