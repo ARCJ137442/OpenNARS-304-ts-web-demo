@@ -26,3 +26,9 @@ The default mode is synchronous: an environment tick is committed only after its
 ## Performance Gate
 
 RPS is cycles per second, not completed requests per second. The first optimization target is a measured steady-state RPS of at least `1.0` on the supported PC fixture at the default cycles setting. Async mode may keep TPS responsive below that threshold, but it cannot count as an RPS improvement.
+
+## Optimization Convergence Rule
+
+For each Demo performance round, compare the same browser, seed, mode, target TPS, cycles, duration, and workload. Record actual TPS, `actual TPS / target TPS`, RPS, p95 step latency, concept count, and RSS. A round with a measured improvement above 5% requires another optimization attempt. Stop only after three consecutive accepted rounds each improve every required primary metric by less than 5%; a regression or a failed M1/M2 gate resets the streak.
+
+Round 1 (`74a955b`): Microworld sensor facts changed from a single overwritten last value to a six-channel set. A 20-second PC browser run reached `4.5 TPS / 5.0 target = 91%`, `847.5 RPS`, and `601` concepts; previous observation was approximately `0.3 TPS` with a growing concept bag. This round is a material improvement and does not close the convergence rule.
