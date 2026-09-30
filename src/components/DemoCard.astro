@@ -1,0 +1,26 @@
+---
+import type { DemoCatalogEntry } from "../data/demo-catalog.ts";
+
+interface Props {
+  entry: DemoCatalogEntry;
+}
+
+const { entry } = Astro.props;
+---
+
+<a
+  class={`experiment-card${entry.featured ? " featured" : ""}`}
+  href={entry.href}
+  data-experiment={entry.id}
+>
+  <div class={`card-art ${entry.artwork}`}>
+    <span class="art-label">{entry.family}</span>
+    <canvas data-preview={entry.preview} width="420" height="240" aria-hidden="true"></canvas>
+    {entry.featured && <span class="art-word">MICRO<br />WORLD</span>}
+  </div>
+  <div class="card-copy">
+    <div class="card-title"><h3>{entry.title}</h3><span class="card-state">DEMO</span></div>
+    <p>{entry.summary}</p>
+    <div class="card-meta"><span>{entry.sourceLabel}</span><span>进入 <b aria-hidden="true">→</b></span></div>
+  </div>
+</a>

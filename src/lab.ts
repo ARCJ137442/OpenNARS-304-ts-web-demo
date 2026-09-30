@@ -1,0 +1,151 @@
+type PreviewName = "microworld" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt";
+type PreviewRenderer = (context: CanvasRenderingContext2D, width: number, height: number, time: number) => void;
+
+const canvases = [...document.querySelectorAll<HTMLCanvasElement>("canvas[data-preview]")];
+const assets = {
+  agent: sprite("./assets/agent.png"),
+  food: sprite("./assets/food.png"),
+  fire: sprite("./assets/fire.png"),
+  ball: sprite("./assets/ball.png"),
+  bar: sprite("./assets/bar.png"),
+};
+
+function sprite(source: string): HTMLImageElement {
+  const image = new Image();
+  image.src = source;
+  image.addEventListener("load", () => drawAll(performance.now()));
+  return image;
+}
+
+function image(context: CanvasRenderingContext2D, spriteValue: HTMLImageElement, x: number, y: number, width: number, height: number, rotation = 0): void {
+  if (!spriteValue.complete || !spriteValue.naturalWidth) return;
+  context.save();
+  context.translate(x, y);
+  context.rotate(rotation);
+  context.imageSmoothingEnabled = false;
+  context.drawImage(spriteValue, -width / 2, -height / 2, width, height);
+  context.restore();
+}
+
+function drawMicroworld(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#898b82";
+  context.fillRect(0, 0, width, height);
+  const cx = width * 0.48;
+  const cy = height * 0.55;
+  context.strokeStyle = "rgba(42,55,43,.16)";
+  context.lineWidth = 1;
+  for (let x = 25; x < width; x += 25) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, height); context.stroke(); }
+  for (let y = 25; y < height; y += 25) { context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+  context.strokeStyle = "rgba(236,239,221,.42)";
+  context.setLineDash([4, 5]);
+  context.beginPath(); context.arc(cx, cy, height * .34, -Math.PI / 3, Math.PI / 3); context.stroke();
+  context.setLineDash([]);
+  image(context, assets.agent, cx + Math.sin(time / 1200) * 8, cy, 28, 28, Math.PI + Math.sin(time / 900) * .2);
+  image(context, assets.food, width * .7, height * .34, 24, 24, 0);
+  image(context, assets.fire, width * .72, height * .75, 26, 26, time / 1000);
+}
+
+function drawPong(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#131a18";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "#435248";
+  context.setLineDash([5, 7]);
+  context.beginPath(); context.moveTo(width * .5, 0); context.lineTo(width * .5, height); context.stroke(); context.setLineDash([]);
+  const y = height * .5 + Math.sin(time / 700) * height * .2;
+  context.fillStyle = "#b7e66e";
+  context.fillRect(width * .09, y - 28, 7, 56);
+  context.fillStyle = "#ffc56c";
+  context.fillRect(width * .9, height * .5 - 24, 7, 48);
+  image(context, assets.ball, width * (.5 + Math.sin(time / 500) * .25), height * (.5 + Math.cos(time / 800) * .24), 16, 16, 0);
+}
+
+function drawAlien(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#252d29";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "rgba(190,207,174,.16)";
+  for (let y = 25; y < height; y += 25) { context.beginPath(); context.moveTo(0,y); context.lineTo(width,y); context.stroke(); }
+  const target = width * (.5 + Math.sin(time / 900) * .31);
+  context.fillStyle = "#ff7661";
+  context.fillRect(target - 13, height * .25, 26, 14);
+  context.fillStyle = "#ffc56c";
+  context.fillRect(width * .5 - 20, height * .77, 40, 8);
+  context.fillStyle = "#f0eee3";
+  context.fillRect(width * .5 - 2, height * .32, 4, height * .42);
+}
+
+function drawBandRobot(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#2e322a";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "#858b78";
+  context.lineWidth = 2;
+  context.beginPath(); context.moveTo(20,height*.75); context.lineTo(width-20,height*.75); context.stroke();
+  for (let i = 0; i < 21; i += 1) {
+    const x = 20 + i * (width - 40) / 20;
+    context.strokeStyle = i === 12 ? "#ffc56c" : "#5d665b";
+    context.beginPath(); context.moveTo(x,height*.73); context.lineTo(x,height*.79); context.stroke();
+  }
+  const robotX = width * (.18 + ((time / 5000) % .58));
+  image(context, assets.bar, robotX, height * .63, 22, 38, 0);
+  image(context, assets.ball, width * .7, height * .72, 17, 17, 0);
+  context.fillStyle = "#b7e66e";
+  context.beginPath(); context.moveTo(width*.84,height*.82); context.lineTo(width*.9,height*.68); context.lineTo(width*.96,height*.82); context.closePath(); context.fill();
+}
+
+function drawCartpole(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#26302a";
+  context.fillRect(0, 0, width, height);
+  const angle = Math.sin(time / 420) * .26;
+  const cartX = width * .5 + Math.sin(time / 900) * width * .2;
+  const pivotY = height * .65;
+  context.strokeStyle = "#d6d9ce";
+  context.lineWidth = 5;
+  context.beginPath(); context.moveTo(cartX,pivotY); context.lineTo(cartX + Math.sin(angle)*height*.43,pivotY - Math.cos(angle)*height*.43); context.stroke();
+  context.fillStyle = "#b7e66e";
+  context.fillRect(cartX-24,pivotY,48,21);
+  context.fillStyle = "#f7bd64";
+  context.beginPath(); context.arc(cartX + Math.sin(angle)*height*.43,pivotY - Math.cos(angle)*height*.43,7,0,Math.PI*2); context.fill();
+  context.strokeStyle = "#697469";
+  context.beginPath(); context.moveTo(15,pivotY+22); context.lineTo(width-15,pivotY+22); context.stroke();
+}
+
+function drawHunt(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#222921";
+  context.fillRect(0, 0, width, height);
+  const cellWidth = width / 10;
+  const cellHeight = height / 6;
+  context.strokeStyle = "rgba(185,200,174,.14)";
+  for (let x = 0; x <= 10; x += 1) { context.beginPath(); context.moveTo(x * cellWidth, 0); context.lineTo(x * cellWidth, height); context.stroke(); }
+  for (let y = 0; y <= 6; y += 1) { context.beginPath(); context.moveTo(0, y * cellHeight); context.lineTo(width, y * cellHeight); context.stroke(); }
+  const targetX = 5 + Math.round(Math.sin(time / 800) * 3);
+  const targetY = 3 + Math.round(Math.cos(time / 1100) * 2);
+  context.fillStyle = "#ffc56c";
+  context.beginPath(); context.arc((targetX + .5) * cellWidth, (targetY + .5) * cellHeight, 7, 0, Math.PI * 2); context.fill();
+  context.fillStyle = "#b7e66e";
+  context.fillRect(cellWidth * 2.2, cellHeight * 2.2, cellWidth * .6, cellHeight * .6);
+}
+
+function drawAll(now: number): void {
+  for (const canvas of canvases) {
+    const bounds = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const width = Math.max(1, Math.round(bounds.width * ratio));
+    const height = Math.max(1, Math.round(bounds.height * ratio));
+    if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+    const context = canvas.getContext("2d");
+    if (!context) continue;
+    context.setTransform(width / 420, 0, 0, height / 240, 0, 0);
+    const draw: Record<PreviewName, PreviewRenderer> = {
+      microworld: drawMicroworld,
+      pong: drawPong,
+      alien: drawAlien,
+      bandrobot: drawBandRobot,
+      cartpole: drawCartpole,
+      hunt: drawHunt,
+    };
+    const preview = canvas.dataset.preview as PreviewName;
+    draw[preview]?.(context, 420, 240, now);
+  }
+  requestAnimationFrame(drawAll);
+}
+
+drawAll(performance.now());

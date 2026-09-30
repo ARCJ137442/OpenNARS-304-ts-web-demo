@@ -1,8 +1,40 @@
-# OpenNARS 3.0.4 TypeScript Web Terminal
+# OpenNARS 3.0.4 TypeScript Demo Lab
 
 [English](README.en.md)
 
-这是 `https://arcj137442.github.io/opennars-304-ts/` 的独立源码项目。GitHub Pages 仓库中的 `opennars-304-ts/` 只保存本项目生成的部署产物。
+这是 https://arcj137442.github.io/opennars-304-ts-lab/ 的独立源码项目。GitHub Pages 仓库中的 opennars-304-ts-lab/ 只保存本项目生成的部署产物。
+
+## Demo Lab
+
+入口页面索引 Microworld、Pong、Alien、BandRobot、CartPole、Hunt、TicTacToe、Shot、Grid2D TestChamber 与 FighterPlane。每个演示使用同一套 NARS Worker 控制与日志界面，但保留独立、可测试的环境模型。项目使用 Astro 生成静态 HTML/CSS/JS，浏览器不加载 Astro runtime，也不需要后端。
+
+克隆后先运行：
+
+    npm ci
+    npm run dev
+
+打开终端输出的本地 URL。运行完整类型、Astro、模型测试和静态构建检查：
+
+    npm run check
+
+可直接把 dist/ 上传到任何静态主机。GitHub Pages 同步命令只复制生成目录内容：
+
+    npm run deploy:pages -- "C:\\path\\to\\ARCJ137442.github.io"
+
+架构边界、添加新 demo 的步骤、模型测试合同和浏览器验收项见 docs/maintainer-guide.md。
+OpenNARS 3.0.4 的机制边界与 ONA demo 适配理由见 [机制分析](docs/opennars-304-mechanism-analysis.md) 和 [Demo 适配说明](docs/demo-adaptation-guide.md)。
+指定 demo 的扩展计划和原创候选见 [扩展计划](docs/demo-expansion-plan.md)、[候选审阅](docs/demo-candidate-survey.md) 与 [原创提案](docs/original-demo-proposals.md)。
+
+### 源码入口
+
+- src/pages/：Astro 静态路由。
+- src/components/DemoCard.astro：目录卡片。
+- src/data/demo-catalog.ts：统一演示注册表与页面 ID 守卫。
+- src/games/models.ts：纯 TypeScript 环境模型、感知/反馈合同。
+- src/demo.ts 与 src/demo-worker.ts：共享游戏工作台与 NARS Worker 控制。
+- src/microworld/simulation.ts：Microworld 独立模拟合同。
+- scripts/prepare-site.mjs：准备静态资源和独立终端/Microworld 页面。
+- scripts/check-build.mjs：发布目录完整性检查。
 
 ## 交互合同
 
@@ -17,11 +49,11 @@
 
 ## 构建与测试
 
-    npm install
+    npm ci
     npm test
     npm run check
 
-`npm run build` 将 `src/` 与已生成的 `public/nars-worker.js` 组装到 `dist/`。因此只修改网页壳时，不需要重新构建 OpenNARS Worker。
+`npm run build` 使用 Astro 输出静态目录/演示页，并复制终端、Microworld、Workers、精灵与许可文本到 `dist/`。只修改网页壳时不需要重新构建 OpenNARS Worker。需要 Node.js 22.19 或更新版本。
 
 ## 重新构建 Worker
 
@@ -37,4 +69,4 @@
 
     npm run deploy:pages -- "H:\A137442\Develop\WEB\ARCJ137442.github.io"
 
-发布命令会先构建并检查，然后只同步 `ARCJ137442.github.io/opennars-304-ts/` 中的七个已知文件。检查站点仓库差异后，在站点仓库提交并推送即可部署。
+发布命令会先构建并检查，然后把 dist/ 完整同步到 ARCJ137442.github.io/opennars-304-ts-lab/，包括 Astro 的 _astro/ 静态资源目录。检查站点仓库差异后，在站点仓库提交并推送即可部署。

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101513">
+    <meta name="description" content="OpenNARS 3.0.4 经典 Microworld 虫脑实验：观察感知、操作与奖惩如何逐步塑造行为。">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Microworld · OpenNARS 3.0.4 Lab">
+    <meta property="og:description" content="经典 2D 感知、推理与行动演示。">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <title>Microworld · OpenNARS 3.0.4</title>
+    <link rel="stylesheet" href="./microworld.css">
+    <link rel="stylesheet" href="./nars-controls.css">
+  </head>
+  <body>
+    <header class="lab-header">
+      <a class="lab-brand" href="./" aria-label="返回演示目录">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span><small>OPENNARS 3.0.4 / FIELD STUDY</small><strong>MICROWORLD</strong></span>
+      </a>
+      <div class="runtime-pill"><span id="runtime-light"></span><span id="runtime-state">启动推理器</span></div>
+      <a class="terminal-link" href="./">NARS 终端 <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main class="lab-main">
+      <section class="lab-intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">经典演示 · 感知 / 行动 / 反馈</p>
+          <h1 id="page-title">一只虫，十份食物，一个会学习的脑</h1>
+        </div>
+        <button id="about-toggle" class="about-toggle" type="button" aria-expanded="false" aria-controls="about-copy"><i data-lucide="info"></i><span>说明</span></button>
+        <div id="about-copy" class="about-copy" hidden><p>虫子只有前方六个离散感受点。OpenNARS 接收视野和满足/健康目标，在推理周期中学习行动关系；没有推理操作时会以低概率随机探索。绿色食物带来正反馈，红色食物带来负反馈。Microworld 仅实现经典 2D 模式。</p><p>依据 OpenNARS Lab 3.0.4 <a href="https://github.com/opennars/opennars-lab/blob/master/src/main/java/org/opennars/lab/microworld/SimNAR.java" target="_blank" rel="noreferrer">SimNAR.java</a> 与 Tessergon 注释版重写；原版 GPL-3.0-or-later，资源与改写源见 <a href="./COPYING-GPL-3.0.txt">许可文本</a>。</p></div>
+      </section>
+
+      <div class="lab-layout">
+        <section class="simulation-panel" aria-labelledby="simulation-title">
+          <header class="panel-heading">
+            <div><span class="eyebrow">SIMULATION / 2D TORUS</span><h2 id="simulation-title">微世界</h2></div>
+            <div class="step-readout"><span>ENV STEP</span><output id="step-count">000000</output></div>
+          </header>
+          <div class="world-frame">
+            <canvas id="world-canvas" width="800" height="600" aria-label="微世界模拟场景"></canvas>
+            <div class="canvas-hud"><span id="world-status">运行中</span><span id="step-latency">NARS 0 ms / 10 cycles</span><output id="fps-hud">-- FPS</output></div>
+          </div>
+          <div class="world-legend" aria-label="场景图例">
+            <span><i class="legend-agent"></i>虫脑智能体</span>
+            <span><i class="legend-good"></i>好食物 / 满足</span>
+            <span><i class="legend-bad"></i>坏食物 / 健康受损</span>
+            <span><i class="legend-ray"></i>视觉范围</span>
+            <span class="gesture-help" title="拖动选择 · 右键平移 · 滚轮缩放">操作提示</span>
+          </div>
+          <div class="transport" role="group" aria-label="微世界控制">
+            <button id="run-toggle" class="primary-control" type="button" aria-label="暂停模拟" title="暂停"><span id="run-icon" aria-hidden="true"><i data-lucide="pause"></i></span><span id="run-label" class="sr-only">暂停</span></button>
+            <button id="step-once" type="button" aria-label="单步" title="单步"><i data-lucide="step-forward"></i><span>单步</span></button>
+            <button id="reset-run" type="button" aria-label="重置" title="重置"><i data-lucide="rotate-ccw"></i><span>重置</span></button>
+            <label class="speed-control" for="speed-input"><span>速度</span><input id="speed-input" type="range" min="1" max="12" value="5"><output id="speed-value" for="speed-input">5 步/秒</output></label>
+            <button id="new-seed" class="quiet-control" type="button" aria-label="新布局" title="新布局"><i data-lucide="dices"></i><span>新布局</span></button>
+          </div>
+          <div class="manual-controls" role="group" aria-label="手动操作">
+            <span class="manual-label">手动输入</span>
+            <button type="button" data-manual-control="turn-right" title="右转"><i data-lucide="arrow-right"></i><span>右转</span></button>
+            <button type="button" data-manual-control="turn-left" title="左转"><i data-lucide="arrow-left"></i><span>左转</span></button>
+            <button type="button" data-manual-control="forward" title="前进"><i data-lucide="arrow-up"></i><span>前进</span></button>
+          </div>
+          <div class="nars-controls" aria-label="NARS 参数">
+            <label for="nars-cycles"><span class="nars-control-name"><i data-lucide="activity"></i><span>Cycles / 步</span></span><input id="nars-cycles" type="range" min="1" max="40" value="10"><output id="nars-cycles-value" for="nars-cycles">10</output></label>
+            <label for="nars-babble"><span class="nars-control-name"><i data-lucide="dices"></i><span>Babble</span></span><input id="nars-babble" type="range" min="0" max="30" value="10"><output id="nars-babble-value" for="nars-babble">10%</output></label>
+          </div>
+        </section>
+
+        <aside class="instrument-rail" aria-label="NARS 状态监视">
+          <section class="instrument decision-panel">
+            <header><span class="eyebrow">NARS EXECUTION</span><span id="decision-source" class="source-tag">WAITING</span></header>
+            <output id="current-operation" class="current-operation">等待第一步</output>
+            <p id="operation-detail" class="operation-detail">每个环境步运行 10 个推理周期</p>
+          </section>
+
+          <section class="instrument perception-panel">
+            <header><span class="eyebrow">SENSORY FIELD</span><output id="sensor-focus">暂无目标</output></header>
+            <div id="sensor-grid" class="sensor-grid" aria-label="六路感受输入"></div>
+            <div class="sensor-key"><span><i></i>好食物</span><span><i></i>坏食物</span></div>
+          </section>
+
+          <section class="instrument reward-panel">
+            <header><span class="eyebrow">OUTCOME / REWARD</span><output id="reward-state">尚无反馈</output></header>
+            <div class="reward-counts">
+              <div><span>好食物</span><strong id="good-count">0</strong></div>
+              <div><span>坏食物</span><strong id="bad-count">0</strong></div>
+              <div><span>好 / 坏比</span><strong id="food-ratio">1.00</strong></div>
+            </div>
+            <div class="ratio-track"><span id="ratio-fill"></span></div>
+          </section>
+
+          <section class="instrument log-panel">
+            <header class="log-heading"><div><span class="eyebrow">NARS ACTIVITY</span><h2>推理记录</h2></div><button id="clear-log" type="button" aria-label="清除日志" title="清除日志"><i data-lucide="trash-2"></i></button></header>
+            <div class="log-filters" role="tablist" aria-label="日志筛选">
+              <button type="button" role="tab" aria-selected="true" data-log-filter="all">全部</button>
+              <button type="button" role="tab" aria-selected="false" data-log-filter="operation">操作</button>
+              <button type="button" role="tab" aria-selected="false" data-log-filter="learning">输入 / 奖励</button>
+            </div>
+            <ol id="nars-log" class="nars-log" aria-live="polite" aria-label="NARS 事件记录"></ol>
+          </section>
+          <details class="instrument diagnostics-panel"><summary><i data-lucide="activity"></i><span>运行诊断</span></summary><div class="diagnostic-grid"><label>页面内存 <output id="page-memory">读取中</output></label><label>概念袋 <output id="concept-count">等待 NARS</output></label><label>任务袋 <output id="task-bags">等待 NARS</output></label></div></details>
+        </aside>
+      </div>
+
+    </main>
+
+    <footer class="lab-footer">
+      <span>SIMNAR / OPENNARS LAB 3.0.4</span>
+      <span>AI-ASSISTED PORT · GPT-6 SOL HIGH</span>
+      <a href="./COPYING-GPL-3.0.txt" target="_blank" rel="noreferrer">GPL-3.0-OR-LATER</a>
+    </footer>
+
+    <script type="module" src="./microworld.js"></script>
+  </body>
+</html>

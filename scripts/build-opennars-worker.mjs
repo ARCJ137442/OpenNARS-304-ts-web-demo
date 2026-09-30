@@ -44,6 +44,9 @@ const browserAdapterDirectory = resolve(projectRoot, "src", "browser-adapters");
 const browserAdapterPlugin = {
   name: "opennars-browser-adapters",
   setup(build) {
+    build.onResolve({ filter: /^@opennars\// }, ({ path }) => ({
+      path: resolve(openNarsRoot, "src", path.slice("@opennars/".length)),
+    }));
     build.onResolve({ filter: /jree-host-adapter\.ts$/ }, () => ({
       path: resolve(openNarsRoot, "src", "platform", "browser", "jree-host-adapter.ts"),
     }));
@@ -233,8 +236,42 @@ await esbuild.build({
   logLevel: "info",
 });
 
+await esbuild.build({
+  entryPoints: [resolve(projectRoot, "src", "demo-worker.ts")],
+  outfile: resolve(outputDirectory, "demo-worker.js"),
+  bundle: true,
+  minify: true,
+  sourcemap: false,
+  platform: "browser",
+  format: "iife",
+  target: ["es2022"],
+  treeShaking: true,
+  legalComments: "eof",
+  nodePaths: [nodeModules],
+  banner: { js: browserHostBanner },
+  plugins: [browserAdapterPlugin],
+  logLevel: "info",
+});
+
+await esbuild.build({
+  entryPoints: [resolve(projectRoot, "src", "microworld-worker.ts")],
+  outfile: resolve(outputDirectory, "microworld-worker.js"),
+  bundle: true,
+  minify: true,
+  sourcemap: false,
+  platform: "browser",
+  format: "iife",
+  target: ["es2022"],
+  treeShaking: true,
+  legalComments: "eof",
+  nodePaths: [nodeModules],
+  banner: { js: browserHostBanner },
+  plugins: [browserAdapterPlugin],
+  logLevel: "info",
+});
+
 const metadata = {
-  application: "OpenNARS 3.0.4 TypeScript Web Terminal",
+  application: "OpenNARS 3.0.4 TypeScript Demo Lab",
   packageVersion: openNarsPackage.version,
   coreVersion: "v3.0.4",
   sourceCommit,

@@ -1,0 +1,44 @@
+---
+import DemoCard from "../components/DemoCard.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { DEMO_CATALOG } from "../data/demo-catalog.ts";
+import "../lab.css";
+---
+
+<SiteLayout title="OpenNARS 3.0.4 Lab · 感知与行动">
+  <header class="lab-topbar">
+    <a class="lab-wordmark" href="./" aria-label="OpenNARS Lab 首页"><span class="wordmark-icon">N</span><span><small>OPENNARS / 3.0.4</small><strong>DEMO LAB</strong></span></a>
+    <nav aria-label="Lab 导航"><a class="active" href="#experiments">演示目录</a><a href="./terminal.html">NARS 终端</a></nav>
+    <a class="source-link" href="https://github.com/ARCJ137442/OpenNARS-304-ts-web-demo" target="_blank" rel="noreferrer">源码 <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main>
+    <section class="lab-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">OPENNARS 3.0.4 / SENSORIMOTOR DEMOS</p>
+        <h1>让推理<br /><em>进入世界</em></h1>
+        <p class="hero-description">选择一个场景，观察 OpenNARS 如何感知、推理并行动</p>
+        <div class="hero-actions"><a class="launch-link" href="./microworld.html">进入 Microworld <span aria-hidden="true">→</span></a><span class="hero-runtime"><i></i> 静态预览 · 选择后启动 NARS</span></div>
+      </div>
+      <div class="hero-scene" aria-label="虫脑微世界场景预览">
+        <canvas id="lab-preview" data-preview="microworld" width="700" height="500"></canvas>
+        <div class="scene-caption"><span>FIELD 01 / MICROWORLD</span><span>PERCEIVE → REASON → ACT</span></div>
+        <span class="scene-note">2D / TOROIDAL WORLD</span>
+      </div>
+    </section>
+
+    <section id="experiments" class="experiments" aria-labelledby="experiments-title">
+      <header class="section-heading"><div><p class="eyebrow">BROWSER EXPERIMENTS</p><h2 id="experiments-title">选择演示</h2></div><span id="ready-count" class="section-count">{String(DEMO_CATALOG.length).padStart(2, "0")} DEMOS</span></header>
+      <div class="experiment-grid">
+        {DEMO_CATALOG.map((entry) => <DemoCard entry={entry} />)}
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="lab-footer"><span>OPENNARS 3.0.4 TS / DEMO LAB</span><span>HUMAN-READABLE · SOURCE-TRACEABLE</span><a href="./COPYING-GPL-3.0.txt">LICENSES & ATTRIBUTION ↗</a></footer>
+</SiteLayout>
+
+<script>
+  import "../lab.ts";
+</script>

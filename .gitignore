@@ -1,4 +1,16 @@
 node_modules/
 dist/
+.astro/
+.codegraph/
+public/terminal.html
+public/styles.css
+public/app.js
+public/input-behavior.js
+public/microworld.html
+public/microworld.css
+public/microworld.js
+public/assets/
+public/COPYING-GPL-3.0.txt
+public/COPYING-ONA-MIT.txt
 playwright-report/
 test-results/

@@ -1,0 +1,58 @@
+.nars-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  padding: 9px 11px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.nars-controls label {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: max-content minmax(48px, 1fr) 42px;
+  align-items: center;
+  gap: 8px;
+  color: var(--quiet);
+  font-size: 9px;
+}
+
+.nars-control-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font: 9px var(--mono);
+  white-space: nowrap;
+}
+
+.nars-control-name svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--teal, var(--cyan));
+}
+
+.nars-controls input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--teal, var(--cyan));
+}
+
+.nars-controls output {
+  min-width: 4ch;
+  color: var(--ink);
+  font: 10px var(--mono);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+  .nars-controls {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .nars-controls label {
+    grid-template-columns: 86px minmax(70px, 1fr) 42px;
+  }
+}

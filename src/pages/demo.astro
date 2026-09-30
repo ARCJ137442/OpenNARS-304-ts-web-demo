@@ -1,0 +1,32 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import "../demo.css";
+import "../nars-controls.css";
+---
+
+<SiteLayout title="NARS 感知运动 · OpenNARS 3.0.4 Lab" themeColor="#111713">
+  <header class="demo-header"><a class="back-link" href="./" aria-label="演示目录"><span aria-hidden="true">←</span><span>DEMO LAB</span></a><div class="demo-brand"><small>OPENNARS 3.0.4 / SENSORIMOTOR</small><strong id="game-title">加载演示</strong></div><span id="game-runtime" class="runtime-state"><i></i><span id="runtime-label">启动中</span></span></header>
+  <main class="demo-main">
+    <section class="demo-stage">
+      <div class="stage-heading"><div><p id="game-family" class="eyebrow">ENVIRONMENT MODEL</p><h1 id="game-subtitle">NARS 感知与行动</h1><button id="source-toggle" class="source-toggle" type="button" aria-expanded="false"><i data-lucide="info"></i><span>来源</span></button></div><div class="step-clock"><small>ENV STEP</small><output id="game-step">000000</output></div></div>
+      <p id="source-copy" class="source-copy" hidden></p>
+      <div class="game-canvas-frame"><canvas id="game-canvas" width="800" height="600" aria-label="NARS 感知运动演示"></canvas><span id="game-status" class="game-status">启动中</span><span class="fps-hud" id="fps-hud">-- FPS</span></div>
+      <div class="game-controls"><button id="run-toggle" class="main-control" type="button"><span id="run-icon"><i data-lucide="pause"></i></span><span id="run-label" class="sr-only">暂停</span></button><button id="step-once" type="button" aria-label="单步" title="单步"><i data-lucide="step-forward"></i><span>单步</span></button><button id="reset-demo" type="button" aria-label="重置" title="重置"><i data-lucide="rotate-ccw"></i><span>重置</span></button><label for="speed">速度 <input id="speed" type="range" min="1" max="12" value="5" /><output id="speed-label">5 步/秒</output></label><button id="new-seed" class="quiet" type="button" aria-label="新布局" title="新布局"><i data-lucide="dices"></i><span>新布局</span></button></div>
+      <div class="nars-controls" aria-label="NARS 参数"><label for="cycles-control"><span class="nars-control-name"><i data-lucide="activity"></i><span>Cycles / 步</span></span><input id="cycles-control" type="range" min="1" max="40" value="10" /><output id="cycles-label">10</output></label><label for="babble-control"><span class="nars-control-name"><i data-lucide="dices"></i><span>Babble</span></span><input id="babble-control" type="range" min="0" max="30" value="8" /><output id="babble-label">8%</output></label></div>
+      <div id="manual-controls" class="manual-controls" role="group" aria-label="直接操控"></div>
+      <details class="diagnostics-panel"><summary><i data-lucide="activity"></i><span>运行诊断</span></summary><div class="diagnostic-grid"><label>页面内存 <output id="page-memory">读取中</output></label><label>概念袋 <output id="concept-count">等待 NARS</output></label><label>任务袋 <output id="task-bags">等待 NARS</output></label></div></details>
+    </section>
+
+    <aside class="monitor-rail" aria-label="NARS 监视器">
+      <section class="monitor operation-monitor"><header><span>EXECUTIVE / OPERATION</span><output id="operation-source">WAITING</output></header><strong id="operation-value">等待行动</strong><p id="operation-state">操作由 NARS Worker 内的算子插件执行</p></section>
+      <section class="monitor metrics-monitor"><header><span>ENVIRONMENT / SCORE</span><output id="game-score-label">SCORE</output></header><div id="game-metrics" class="game-metrics"></div></section>
+      <section class="monitor sensor-monitor"><header><span>SENSORY INPUT</span><output id="sensor-summary">—</output></header><div id="sensor-values" class="sensor-values"></div></section>
+      <section class="monitor activity-monitor"><header><div><span>REASONER / ACTIVITY</span><strong>NARS 日志</strong></div><button id="clear-log" type="button" aria-label="清除日志" title="清除日志"><i data-lucide="trash-2"></i></button></header><div class="log-tabs" role="tablist"><button role="tab" aria-selected="true" data-filter="all">全部</button><button role="tab" aria-selected="false" data-filter="operation">操作</button><button role="tab" aria-selected="false" data-filter="input">输入</button></div><ol id="game-log" aria-live="polite"></ol></section>
+    </aside>
+  </main>
+  <footer class="demo-footer"><span>AI-ASSISTED PORT / GPT-6 SOL HIGH</span><a href="./COPYING-GPL-3.0.txt">LICENSE & ATTRIBUTION</a><a href="./">演示目录</a></footer>
+</SiteLayout>
+
+<script>
+  import "../demo.ts";
+</script>

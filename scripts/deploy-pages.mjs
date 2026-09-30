@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,18 +12,24 @@ if (!pagesRootArgument) {
 const pagesRoot = resolve(pagesRootArgument);
 if (!existsSync(resolve(pagesRoot, ".git"))) throw new Error(`Not a Git repository: ${pagesRoot}`);
 
-const destination = resolve(pagesRoot, "opennars-304-ts");
+const destination = resolve(pagesRoot, "opennars-304-ts-lab");
 const relativeDestination = relative(pagesRoot, destination);
 if (relativeDestination.startsWith("..") || relativeDestination === "") {
   throw new Error(`Unsafe deployment destination: ${destination}`);
 }
 
-execFileSync(process.execPath, [resolve(projectRoot, "scripts", "build.mjs")], { stdio: "inherit" });
+execFileSync("npm", ["run", "build"], { cwd: projectRoot, stdio: "inherit", shell: process.platform === "win32" });
 execFileSync(process.execPath, [resolve(projectRoot, "scripts", "check-build.mjs")], { stdio: "inherit" });
 
-mkdirSync(destination, { recursive: true });
-for (const file of ["index.html", "styles.css", "app.js", "input-behavior.js", "nars-worker.js", "build-meta.json", "README.md"]) {
-  copyFileSync(resolve(projectRoot, "dist", file), resolve(destination, file));
+function copyTree(source, target) {
+  mkdirSync(target, { recursive: true });
+  for (const entry of readdirSync(source)) {
+    const sourcePath = resolve(source, entry);
+    const targetPath = resolve(target, entry);
+    if (statSync(sourcePath).isDirectory()) copyTree(sourcePath, targetPath);
+    else copyFileSync(sourcePath, targetPath);
+  }
 }
+copyTree(resolve(projectRoot, "dist"), destination);
 
 console.log(JSON.stringify({ ok: true, pagesRoot, destination }, null, 2));

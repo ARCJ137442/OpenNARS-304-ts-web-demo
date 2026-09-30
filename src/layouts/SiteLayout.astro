@@ -1,0 +1,31 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  themeColor?: string;
+}
+
+const {
+  title,
+  description = "OpenNARS 3.0.4 TS：在浏览器中探索非公理推理与感知行动。",
+  themeColor = "#111813",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content={themeColor} />
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
