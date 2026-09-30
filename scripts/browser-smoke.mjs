@@ -68,9 +68,18 @@ try {
     await page.locator("#reset-demo").click();
     await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
     await page.waitForFunction(() => Number(document.querySelector("#game-step")?.textContent) > 0, undefined, { timeout: 30000 });
-    await page.getByText("运行诊断", { exact: true }).click();
+    await page.getByText("性能诊断", { exact: true }).click();
     await page.locator("#concept-count").waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
+    await page.waitForFunction(() => !document.querySelector("#tps-hud")?.textContent?.includes("读取中") && !document.querySelector("#rps-hud")?.textContent?.includes("读取中"), undefined, { timeout: 5000 });
+    for (const id of ["fps-hud", "tps-hud", "rps-hud", "fps-bar", "tps-bar", "rps-bar"]) await page.locator("#" + id).waitFor({ state: "visible" });
+    const asyncStart = Number(await page.locator("#game-step").textContent());
+    await page.locator("#mode-async").check();
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator("#runtime-mode").textContent(), "异步");
+    assert.ok(Number(await page.locator("#game-step").textContent()) > asyncStart, game + " async mode should advance world ticks while NARS runs");
+    await page.locator("#mode-sync").check();
+    assert.equal(await page.locator("#runtime-mode").textContent(), "同步");
     const canvasHasPixels = await page.locator("#game-canvas").evaluate((canvas) => {
       const context = canvas.getContext("2d");
       if (!context) return false;
@@ -92,7 +101,7 @@ try {
   await page.goto(new URL("microworld.html", baseUrl).href);
   await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
-  await page.getByText("运行诊断", { exact: true }).click();
+  await page.getByText("性能诊断", { exact: true }).click();
   assert.ok(await page.locator("#concept-count").textContent());
   await page.screenshot({ path: "test-results/microworld-desktop.png", fullPage: true });
   await page.goto(new URL("demo.html?game=echo-relay", baseUrl).href);

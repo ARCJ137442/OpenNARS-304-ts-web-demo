@@ -81,6 +81,10 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 .canvas-hud { position: absolute; right: 10px; bottom: 10px; left: 10px; display: flex; justify-content: space-between; pointer-events: none; }
 .canvas-hud span { padding: 5px 7px; color: #f5f5e9; background: rgba(24, 30, 24, 0.78); font: 10px var(--mono); }
 .canvas-hud output { padding: 5px 7px; border: 1px solid #465247; color: var(--cyan); background: rgba(24, 30, 24, 0.86); font: 10px var(--mono); font-variant-numeric: tabular-nums; }
+.canvas-hud output[data-rate="good"] { border-color: var(--green); color: var(--green); }
+.canvas-hud output[data-rate="lag"] { border-color: var(--amber); color: var(--amber); }
+.canvas-hud > i { display: block; width: 34px; height: 2px; align-self: center; background: linear-gradient(90deg, var(--cyan) var(--rate, 0%), #465247 var(--rate, 0%)); }
+.canvas-hud > i[data-rate="lag"] { background: linear-gradient(90deg, var(--amber) var(--rate, 0%), #465247 var(--rate, 0%)); }
 .canvas-hud #world-status { color: var(--green); }
 
 .world-legend { display: flex; min-height: 42px; padding: 7px 13px; align-items: center; flex-wrap: wrap; gap: 9px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
@@ -109,6 +113,8 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 .speed-control { display: flex; min-width: 220px; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
 .speed-control input { min-width: 65px; width: 78px; accent-color: var(--green); }
 .speed-control output { min-width: 50px; color: var(--ink); font: 10px var(--mono); }
+.mode-control { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+.mode-control select { border: 1px solid var(--line); padding: 5px 8px; color: var(--ink); background: var(--surface); font: 10px var(--mono); }
 .manual-controls { display: flex; min-height: 45px; padding: 6px 11px; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
 .manual-label { margin-right: 3px; color: var(--quiet); font-size: 10px; }
 .manual-controls button { min-height: 28px; padding: 4px 8px; font-size: 10px; }

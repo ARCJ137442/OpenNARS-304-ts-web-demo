@@ -32,11 +32,13 @@ type MicroworldWorkerEvent = {
   source?: string;
   actionSource?: string;
   elapsedMs?: number;
+  cycles?: number;
   narTime?: string;
   message?: string;
   reasoner?: ReasonerSnapshot;
 };
 type Scale = { x: number; y: number; bounds: DOMRect };
+type ActionCode = 0 | 1 | 2 | 3;
 
 function element<T extends Element>(selector: string): T {
   const found = document.querySelector(selector);
@@ -81,12 +83,26 @@ const elements = {
   narsBabble: element<HTMLInputElement>("#nars-babble"),
   narsBabbleValue: element<HTMLOutputElement>("#nars-babble-value"),
   fps: element<HTMLOutputElement>("#fps-hud"),
+  tps: element<HTMLOutputElement>("#tps-hud"),
+  rps: element<HTMLOutputElement>("#rps-hud"),
+  fpsBar: element<HTMLElement>("#fps-bar"),
+  tpsBar: element<HTMLElement>("#tps-bar"),
+  rpsBar: element<HTMLElement>("#rps-bar"),
+  runtimeMode: element<HTMLSelectElement>("#runtime-mode"),
+  runtimeModeValue: element<HTMLOutputElement>("#runtime-mode-value"),
+  runtimeLatency: element<HTMLOutputElement>("#runtime-latency"),
+  runtimePending: element<HTMLOutputElement>("#runtime-pending"),
   pageMemory: element<HTMLOutputElement>("#page-memory"),
   concepts: element<HTMLOutputElement>("#concept-count"),
   taskBags: element<HTMLOutputElement>("#task-bags"),
 };
 const telemetry = new RuntimeTelemetryView({
   fps: elements.fps,
+  tps: elements.tps,
+  rps: elements.rps,
+  fpsBar: elements.fpsBar,
+  tpsBar: elements.tpsBar,
+  rpsBar: elements.rpsBar,
   pageMemory: elements.pageMemory,
   concepts: elements.concepts,
   taskBags: elements.taskBags,
@@ -134,6 +150,11 @@ const state: {
   totalStepMs: number;
   measuredSteps: number;
   renderRequested: boolean;
+  runtimeMode: "sync" | "async";
+  queuedAction: ActionCode;
+  telemetryWindowStartedAt: number;
+  environmentEvents: number;
+  reasonerEvents: number;
 } = {
   seed: INITIAL_SEED,
   world: createWorld(INITIAL_SEED),
@@ -160,6 +181,11 @@ const state: {
   measuredSteps: 0,
   lastNarTime: "0",
   renderRequested: true,
+  runtimeMode: "sync",
+  queuedAction: 0,
+  telemetryWindowStartedAt: performance.now(),
+  environmentEvents: 0,
+  reasonerEvents: 0,
 };
 
 function randomSeed(): number {
@@ -254,7 +280,21 @@ function updateTelemetry(): void {
   elements.operation.value = state.currentOperation;
   elements.sourceTag.textContent = state.operationSource;
   elements.sourceTag.dataset.source = state.operationSource;
-  elements.operationDetail.textContent = `步骤 ${world.tick} · NAR 时钟 ${state.lastNarTime ?? "0"}`;
+  elements.operationDetail.textContent = `步骤 ${world.tick} · NAR 时钟 ${state.lastNarTime ?? "0"}`
+    + (state.runtimeMode === "async" && state.pending ? " · NARS 滞后 / 推理待完成" : "");
+  elements.runtimeModeValue.value = state.runtimeMode === "async" ? "异步" : "同步";
+  elements.runtimeModeValue.textContent = elements.runtimeModeValue.value;
+  elements.runtimeLatency.value = `${state.lastLatency.toFixed(0)} ms`;
+  elements.runtimeLatency.textContent = elements.runtimeLatency.value;
+  elements.runtimePending.value = state.pending ? "推理中" : "空闲";
+  elements.runtimePending.textContent = elements.runtimePending.value;
+  const elapsed = Math.max(0.25, (performance.now() - state.telemetryWindowStartedAt) / 1000);
+  const tps = state.environmentEvents / elapsed;
+  const rps = state.reasonerEvents / elapsed;
+  elements.tps.value = `TPS ${tps.toFixed(1)}`;
+  elements.rps.value = `RPS ${rps.toFixed(1)}`;
+  elements.tps.dataset.rate = tps >= state.speed * 0.75 ? "good" : "lag";
+  elements.rps.dataset.rate = rps >= state.speed * 0.75 ? "good" : "lag";
 }
 
 function newWorker(seed: number): void {
@@ -294,6 +334,8 @@ function newWorker(seed: number): void {
     }
     if (data.type === "step-complete") {
       state.pending = false;
+      state.reasonerEvents += 1;
+      telemetry.inference(Number(data.cycles ?? state.narsCycles), Number(data.elapsedMs ?? 0));
       state.lastLatency = Number(data.elapsedMs) || 0;
       state.lastNarTime = data.narTime ?? "0";
       telemetry.updateReasoner(data.reasoner);
@@ -301,7 +343,13 @@ function newWorker(seed: number): void {
       state.measuredSteps += 1;
       state.currentOperation = data.operator ? `${data.operator}({SELF})` : "本步未发出操作";
       state.operationSource = (data.actionSource ?? "idle") === "idle" ? "IDLE" : (data.actionSource ?? "NARS").toUpperCase();
-      applyActionAndAdvance(state.world, data.action ?? 0);
+      if (state.runtimeMode === "sync") {
+        applyActionAndAdvance(state.world, data.action ?? 0);
+        state.environmentEvents += 1;
+        telemetry.environmentTick(performance.now());
+      }
+      else state.queuedAction = (data.action ?? 0) as ActionCode;
+      if (state.runtimeMode === "async" && state.running) elements.worldStatus.textContent = "异步运行 · NARS 已完成";
       updateTelemetry();
       if (state.running) state.nextStepAt = performance.now() + 1000 / state.speed;
       else elements.worldStatus.textContent = "已暂停";
@@ -352,6 +400,17 @@ function requestStep(): void {
   });
 }
 
+function advanceAsyncWorld(): void {
+  const perception = collectPerceptionAndReward(state.world, state.random);
+  state.world.sensors = perception.sensors;
+  applyActionAndAdvance(state.world, state.queuedAction);
+  state.queuedAction = 0;
+  state.environmentEvents += 1;
+  telemetry.environmentTick(performance.now());
+  updateTelemetry();
+  requestRender();
+}
+
 function resetRun(seed = state.seed): void {
   state.seed = Number(seed) >>> 0 || 1;
   state.world = createWorld(state.seed);
@@ -363,6 +422,11 @@ function resetRun(seed = state.seed): void {
   state.lastNarTime = "0";
   state.totalStepMs = 0;
   state.measuredSteps = 0;
+  state.environmentEvents = 0;
+  state.reasonerEvents = 0;
+  telemetry.resetRates();
+  state.telemetryWindowStartedAt = performance.now();
+  state.queuedAction = 0;
   state.lastStepAt = 0;
   state.nextStepAt = performance.now();
   state.pointer = null;
@@ -482,7 +546,11 @@ function animationFrame(now: number): void {
     state.renderRequested = false;
   }
 
-  if (state.running && !state.pending && now >= state.nextStepAt) {
+  if (state.runtimeMode === "async" && state.running && now >= state.nextStepAt) {
+    advanceAsyncWorld();
+    state.nextStepAt = now + 1000 / state.speed;
+    if (!state.pending) requestStep();
+  } else if (state.runtimeMode === "sync" && state.running && !state.pending && now >= state.nextStepAt) {
     requestStep();
   }
 
@@ -543,6 +611,8 @@ function handleCanvasZoom(event: WheelEvent): void {
 
 function directControl(key: string): boolean {
   if (!applyManualControl(state.world, key)) return false;
+  state.environmentEvents += 1;
+  telemetry.environmentTick(performance.now());
   state.currentOperation = "手动运动控制";
   state.operationSource = "MANUAL";
   elements.operationDetail.textContent = "直接调整虫体；NARS 决策保持独立";
@@ -566,6 +636,15 @@ elements.newSeed.addEventListener("click", () => resetRun(randomSeed()));
 elements.speed.addEventListener("input", () => {
   state.speed = Number(elements.speed.value);
   elements.speedValue.textContent = `${state.speed} 步/秒`;
+});
+elements.runtimeMode.addEventListener("change", () => {
+  state.runtimeMode = elements.runtimeMode.value === "async" ? "async" : "sync";
+  state.queuedAction = 0;
+  elements.worldStatus.textContent = state.runtimeMode === "async" ? "异步运行 · 等待 NARS" : "同步运行";
+  elements.runtimeModeValue.value = state.runtimeMode === "async" ? "异步" : "同步";
+  elements.runtimeModeValue.textContent = elements.runtimeModeValue.value;
+  appendLog("system", state.runtimeMode === "async" ? "已切换异步节奏：世界按速度推进，NARS 操作稍后应用。" : "已切换同步节奏：环境步等待 NARS 完成。", state.world.tick);
+  updateTelemetry();
 });
 elements.narsCyclesValue.value = `${state.narsCycles} cycles`;
 elements.narsBabbleValue.value = `${Math.round(state.babbleProbability * 100)}%`;

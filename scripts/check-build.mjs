@@ -28,7 +28,7 @@ for (const asset of astroAssets) {
 }
 
 const gamePage = readFileSync(resolve(distRoot, "demo.html"), "utf8");
-for (const text of ["cycles-control", "babble-control", "source-toggle", "NARS 监视器", "/opennars-304-ts-lab/_astro/", "fps-hud", "concept-count", "echo-map-details"] ) {
+for (const text of ["cycles-control", "babble-control", "source-toggle", "NARS 监视器", "/opennars-304-ts-lab/_astro/", "fps-hud", "tps-hud", "rps-hud", "mode-sync", "mode-async", "runtime-queue", "late-actions", "echo-map-details"] ) {
   if (!gamePage.includes(text)) throw new Error("demo.html is missing " + text);
 }
 

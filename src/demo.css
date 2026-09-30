@@ -140,6 +140,18 @@ a {
   position: relative;
   overflow: hidden;
 }
+.rate-hud { position: absolute; right: 12px; top: 12px; display: grid; gap: 5px; padding: 7px; border: 1px solid rgba(181,229,103,.25); background: rgba(18,23,19,.82); font: 10px var(--mono); color: var(--muted); }
+.rate-hud > span { display: grid; grid-template-columns: 30px 52px; gap: 5px; align-items: center; }
+.rate-hud b { color: var(--lime); font-weight: 600; }
+.rate-hud output { text-align: right; color: #edf3e6; }
+.rate-hud i, .rate-bar { display: block; height: 3px; grid-column: 1 / -1; background: linear-gradient(90deg, var(--lime) var(--rate, 0%), rgba(255,255,255,.15) var(--rate, 0%)); }
+.rate-hud output[data-rate="lag"] { color: var(--amber); }
+.rate-hud i[data-rate="lag"], .rate-bar[data-rate="lag"] { background: linear-gradient(90deg, var(--amber) var(--rate, 0%), rgba(255,255,255,.15) var(--rate, 0%)); }
+.mode-switch { border: 0; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted); font: 10px var(--mono); }
+.mode-switch legend { padding: 0; }
+.mode-switch label { display: inline-flex; gap: 3px; align-items: center; }
+.mode-switch input { accent-color: var(--lime); }
+.prior-rule-note { color: var(--amber); }
 #game-canvas {
   touch-action: none;
   width: 100%;

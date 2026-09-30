@@ -25,6 +25,7 @@ See docs/maintainer-guide.md for module boundaries, the new-demo workflow, model
 See docs/opennars-304-mechanism-analysis.md and docs/demo-adaptation-guide.md for the OpenNARS 3.0.4 mechanism boundary and ONA demo adaptation rationale.
 See docs/demo-expansion-plan.md, docs/demo-candidate-survey.md, and docs/original-demo-proposals.md for the next demo batch and original experiment proposals.
 See docs/terminology.md for the project's Chinese NARS/Narsese terminology map.
+The demo HUD separates `FPS` (rendering), `TPS` (world ticks), and `RPS` (NARS inference cycles); the collapsed Performance Diagnostics panel exposes sync/async pacing and runtime backlog. See [the runtime pacing plan](docs/demo-runtime-modes-plan.md).
 
 ### Source map
 

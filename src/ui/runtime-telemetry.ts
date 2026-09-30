@@ -15,6 +15,11 @@ type ExtendedPerformance = Performance & {
 
 type RuntimeTelemetryElements = {
   fps: HTMLOutputElement;
+  tps: HTMLOutputElement;
+  rps: HTMLOutputElement;
+  fpsBar: HTMLElement;
+  tpsBar: HTMLElement;
+  rpsBar: HTMLElement;
   pageMemory: HTMLOutputElement;
   concepts: HTMLOutputElement;
   taskBags: HTMLOutputElement;
@@ -46,10 +51,19 @@ export class RuntimeTelemetryView {
   private frameCount = 0;
   private sampleTimer = 0;
   private requestPending = false;
+  private tickStart = 0;
+  private tickCount = 0;
+  private tpsValue = 0;
+  private rpsValue = 0;
 
   constructor(private readonly elements: RuntimeTelemetryElements) {
     elements.fps.value = "-- FPS";
     elements.fps.textContent = "-- FPS";
+    for (const [output, bar] of [[elements.fps, elements.fpsBar], [elements.tps, elements.tpsBar], [elements.rps, elements.rpsBar]] as const) {
+      output.textContent = "--";
+      output.value = "--";
+      bar.style.setProperty("--rate", "0%");
+    }
     elements.pageMemory.value = "读取中";
     elements.pageMemory.textContent = "读取中";
     elements.concepts.value = "等待 NARS";
@@ -71,8 +85,52 @@ export class RuntimeTelemetryView {
     const fps = Math.round((this.frameCount * 1000) / elapsed);
     this.elements.fps.value = String(fps) + " FPS";
     this.elements.fps.textContent = this.elements.fps.value;
+    this.elements.fpsBar.style.setProperty("--rate", `${Math.min(100, fps / 60 * 100)}%`);
+    this.elements.fps.dataset.rate = fps >= 45 ? "good" : "lag";
+    this.elements.fpsBar.dataset.rate = this.elements.fps.dataset.rate;
     this.frameStart = now;
     this.frameCount = 0;
+  }
+
+  environmentTick(now: number): void {
+    this.tickCount += 1;
+    if (this.tickStart === 0) this.tickStart = now;
+    const elapsed = now - this.tickStart;
+    if (elapsed < 500) return;
+    this.tpsValue = this.tickCount * 1000 / elapsed;
+    this.elements.tps.value = `${this.tpsValue.toFixed(1)} TPS`;
+    this.elements.tps.textContent = this.elements.tps.value;
+    this.elements.tpsBar.style.setProperty("--rate", `${Math.min(100, this.tpsValue / 12 * 100)}%`);
+    this.elements.tps.dataset.rate = this.tpsValue >= 9 ? "good" : "lag";
+    this.elements.tpsBar.dataset.rate = this.elements.tps.dataset.rate;
+    this.tickStart = now;
+    this.tickCount = 0;
+  }
+
+  inference(cycles: number, elapsedMs: number): void {
+    if (!(elapsedMs > 0) || !(cycles > 0)) return;
+    this.rpsValue = cycles * 1000 / elapsedMs;
+    this.elements.rps.value = `${this.rpsValue.toFixed(1)} RPS`;
+    this.elements.rps.textContent = this.elements.rps.value;
+    this.elements.rpsBar.style.setProperty("--rate", `${Math.min(100, this.rpsValue / 120 * 100)}%`);
+    this.elements.rps.dataset.rate = this.rpsValue >= 90 ? "good" : "lag";
+    this.elements.rpsBar.dataset.rate = this.elements.rps.dataset.rate;
+  }
+
+  resetRates(): void {
+    this.frameStart = 0;
+    this.frameCount = 0;
+    this.tickStart = 0;
+    this.tickCount = 0;
+    this.tpsValue = 0;
+    this.rpsValue = 0;
+    for (const [output, bar, placeholder] of [[this.elements.fps, this.elements.fpsBar, "-- FPS"], [this.elements.tps, this.elements.tpsBar, "-- TPS"], [this.elements.rps, this.elements.rpsBar, "-- RPS"]] as const) {
+      output.value = placeholder;
+      output.textContent = placeholder;
+      output.dataset.rate = "lag";
+      bar.dataset.rate = "lag";
+      bar.style.setProperty("--rate", "0%");
+    }
   }
 
   updateReasoner(snapshot: ReasonerSnapshot | undefined): void {

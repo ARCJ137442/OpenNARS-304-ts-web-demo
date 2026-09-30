@@ -25,6 +25,7 @@
 OpenNARS 3.0.4 的机制边界与 ONA demo 适配理由见 [机制分析](docs/opennars-304-mechanism-analysis.md) 和 [Demo 适配说明](docs/demo-adaptation-guide.md)。
 指定 demo 的扩展计划和原创候选见 [扩展计划](docs/demo-expansion-plan.md)、[候选审阅](docs/demo-candidate-survey.md) 与 [原创提案](docs/original-demo-proposals.md)。
 项目统一术语见 [NARS 与 Narsese 术语表](docs/terminology.md)。
+演示页的性能 HUD 严格区分 `FPS`（画面刷新）、`TPS`（世界刻）和 `RPS`（NARS 推理周期）；“性能诊断”面板默认折叠，可切换同步/异步节奏。实现边界见 [运行节奏计划](docs/demo-runtime-modes-plan.md)。
 
 ### 源码入口
 

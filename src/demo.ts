@@ -100,15 +100,30 @@ const ui = {
   filters: [...document.querySelectorAll<HTMLButtonElement>("[data-filter]")],
   clearLog: element<HTMLButtonElement>("#clear-log"),
   fps: element<HTMLOutputElement>("#fps-hud"),
+  tpsHud: element<HTMLOutputElement>("#tps-hud"),
+  rpsHud: element<HTMLOutputElement>("#rps-hud"),
+  fpsBar: element<HTMLElement>("#fps-bar"),
+  tpsBar: element<HTMLElement>("#tps-bar"),
+  rpsBar: element<HTMLElement>("#rps-bar"),
   pageMemory: element<HTMLOutputElement>("#page-memory"),
   concepts: element<HTMLOutputElement>("#concept-count"),
   taskBags: element<HTMLOutputElement>("#task-bags"),
+  modeSync: element<HTMLInputElement>("#mode-sync"),
+  modeAsync: element<HTMLInputElement>("#mode-async"),
+  runtimeMode: element<HTMLOutputElement>("#runtime-mode"),
+  runtimeQueue: element<HTMLOutputElement>("#runtime-queue"),
+  lateActions: element<HTMLOutputElement>("#late-actions"),
   echoMapDetails: element<HTMLDetailsElement>("#echo-map-details"),
   echoTruthMap: element<HTMLCanvasElement>("#echo-truth-map"),
   echoKnownMap: element<HTMLCanvasElement>("#echo-known-map"),
 };
 const telemetry = new RuntimeTelemetryView({
   fps: ui.fps,
+  tps: ui.tpsHud,
+  rps: ui.rpsHud,
+  fpsBar: ui.fpsBar,
+  tpsBar: ui.tpsBar,
+  rpsBar: ui.rpsBar,
   pageMemory: ui.pageMemory,
   concepts: ui.concepts,
   taskBags: ui.taskBags,
@@ -135,10 +150,15 @@ const state: {
   cycles: number;
   babble: number;
   filter: string;
+  mode: "sync" | "async";
+  requestTick: number;
+  pendingSteps: number;
+  lateActions: number;
+  queuedAction: string | null;
 } = {
   seed: randomSeed(), model: createDemoState(gameId), worker: null, generation: 0,
   ready: false, running: true, pending: false, waitingForWorker: true,
-  nextStep: 0, speed: 5, cycles: definition.cycles, babble: definition.babble, filter: "all",
+  nextStep: 0, speed: 5, cycles: definition.cycles, babble: definition.babble, filter: "all", mode: "sync", requestTick: 0, pendingSteps: 0, lateActions: 0, queuedAction: null,
 };
 
 function randomSeed(): number {
@@ -199,16 +219,29 @@ function initializeWorker(): void {
     }
     if (data.type === "step-complete") {
       state.pending = false;
+      state.pendingSteps = Math.max(0, state.pendingSteps - 1);
+      telemetry.inference(Number(data.cycles ?? state.cycles), Number(data.elapsedMs ?? 0));
       ui.operation.value = data.action ? `${data.action}({SELF})` : "本步未发出操作";
       ui.source.value = data.action ? data.source ?? "NARS" : "IDLE";
       ui.opState.textContent = `NAR ${data.narTime ?? "0"} · ${data.cycles ?? state.cycles} cycles · ${Number(data.elapsedMs ?? 0).toFixed(1)} ms`;
-      const result = advanceDemo(state.model, data.action ?? null);
-      for (const note of result.notes) addLog(["PADDLE_HIT", "DELIVERED", "HIT"].includes(note) ? "feedback" : "input", `[${note}]`);
-      renderMetrics();
-      ui.step.value = String(state.model.tick).padStart(6, "0");
-      ui.step.textContent = ui.step.value;
+      if (state.mode === "sync") {
+        const result = advanceDemo(state.model, data.action ?? null);
+        telemetry.environmentTick(performance.now());
+        for (const note of result.notes) addLog(["PADDLE_HIT", "DELIVERED", "HIT"].includes(note) ? "feedback" : "input", `[${note}]`);
+        renderMetrics();
+        ui.step.value = String(state.model.tick).padStart(6, "0");
+        ui.step.textContent = ui.step.value;
+        state.nextStep = performance.now() + 1000 / state.speed;
+      } else if (data.action) {
+        if (state.queuedAction !== null) {
+          state.lateActions += 1;
+          ui.lateActions.value = String(state.lateActions);
+          ui.lateActions.textContent = ui.lateActions.value;
+        }
+        state.queuedAction = data.action;
+      }
       ui.status.textContent = state.running ? "RUNNING" : "PAUSED";
-      state.nextStep = performance.now() + 1000 / state.speed;
+      ui.runtimeQueue.value = `待处理 ${state.pendingSteps}`; ui.runtimeQueue.textContent = ui.runtimeQueue.value;
       telemetry.updateReasoner(data.reasoner);
       render();
       return;
@@ -239,6 +272,9 @@ function requestStep(): void {
   state.waitingForWorker = false;
   const input = buildNarsStep(state.model);
   state.pending = true;
+  state.pendingSteps += 1;
+  state.requestTick = state.model.tick + 1;
+  ui.runtimeQueue.value = `待处理 ${state.pendingSteps}`; ui.runtimeQueue.textContent = ui.runtimeQueue.value;
   ui.status.textContent = "INFERENCE";
   state.worker.postMessage({ type: "step", game: gameId, step: state.model.tick + 1, ...input, cycles: state.cycles, babble: state.babble });
 }
@@ -419,7 +455,7 @@ function setRunning(running: boolean): void {
   ui.status.textContent = state.pending ? "INFERENCE" : running ? "RUNNING" : "PAUSED";
   state.nextStep = performance.now();
 }
-function reset(seed = state.seed): void { state.seed = Number(seed) >>> 0 || 1; state.model = createDemoState(gameId, state.seed); state.running = true; state.pending = false; state.ready = false; state.waitingForWorker = true; ui.log.replaceChildren(); ui.step.value = "000000"; ui.step.textContent = "000000"; ui.operation.value = "等待第一步"; ui.source.value = "WAITING"; renderMetrics(); initializeWorker(); setRunning(true); render(); }
+function reset(seed = state.seed): void { state.seed = Number(seed) >>> 0 || 1; state.model = createDemoState(gameId, state.seed); state.running = true; state.pending = false; state.pendingSteps = 0; state.queuedAction = null; state.ready = false; state.waitingForWorker = true; telemetry.resetRates(); ui.log.replaceChildren(); ui.step.value = "000000"; ui.step.textContent = "000000"; ui.operation.value = "等待第一步"; ui.source.value = "WAITING"; ui.runtimeQueue.value = "待处理 0"; ui.runtimeQueue.textContent = ui.runtimeQueue.value; renderMetrics(); initializeWorker(); setRunning(true); render(); }
 
 function setSourceDisclosure(): void {
   const reference = document.createElement("span"); reference.textContent = `环境机制参考 ${definition.source}；许可：${definition.license}。`;
@@ -442,7 +478,9 @@ function addTabsAndControls(): void {
   ui.babble.value = String(Math.round(state.babble * 100)); ui.babbleLabel.value = `${Math.round(state.babble * 100)}%`;
   ui.babble.addEventListener("input", () => { state.babble = Number(ui.babble.value) / 100; ui.babbleLabel.value = `${ui.babble.value}%`; });
   ui.speed.value = String(state.speed); ui.speedLabel.value = `${state.speed} 步/秒`;
-  ui.speed.addEventListener("input", () => { state.speed = Number(ui.speed.value); ui.speedLabel.value = `${state.speed} 步/秒`; });
+  ui.speed.addEventListener("input", () => { state.speed = Number(ui.speed.value); ui.speedLabel.value = `${state.speed} TPS`; });
+  ui.modeSync.addEventListener("change", () => setRuntimeMode("sync"));
+  ui.modeAsync.addEventListener("change", () => setRuntimeMode("async"));
   ui.echoMapDetails.addEventListener("toggle", () => { if (ui.echoMapDetails.open && state.model.game === "echo-relay") render(); });
   ui.run.addEventListener("click", () => setRunning(!state.running));
   ui.singleStep.addEventListener("click", () => { setRunning(false); requestStep(); });
@@ -450,9 +488,27 @@ function addTabsAndControls(): void {
   ui.newSeed.addEventListener("click", () => reset(randomSeed()));
 }
 
+function setRuntimeMode(mode: "sync" | "async"): void {
+  state.mode = mode;
+  ui.runtimeMode.value = mode === "sync" ? "同步" : "异步";
+  ui.runtimeMode.textContent = ui.runtimeMode.value;
+  ui.modeSync.checked = mode === "sync"; ui.modeAsync.checked = mode === "async";
+  addLog("system", `运行节奏：${ui.runtimeMode.value}`);
+}
+
 function animationFrame(now: number): void {
   telemetry.frame(now);
   render();
+  if (state.running && state.mode === "async" && now >= state.nextStep) {
+    const result = advanceDemo(state.model, state.queuedAction);
+    state.queuedAction = null;
+    for (const note of result.notes) addLog(["PADDLE_HIT", "DELIVERED", "HIT"].includes(note) ? "feedback" : "input", `[${note}]`);
+    telemetry.environmentTick(now);
+    renderMetrics();
+    ui.step.value = String(state.model.tick).padStart(6, "0");
+    ui.step.textContent = ui.step.value;
+    state.nextStep = now + 1000 / state.speed;
+  }
   if (state.running && state.ready && !state.pending && now >= state.nextStep) requestStep();
   requestAnimationFrame(animationFrame);
 }
@@ -461,7 +517,7 @@ function boot(): void {
   mountIcons();
   document.title = definition.title + " · OpenNARS 3.0.4 Lab";
   ui.title.textContent = definition.title; ui.subtitle.textContent = definition.subtitle; ui.family.textContent = `NARS 3.0.4 / ${gameId.toUpperCase()} MODEL`;
-  setSourceDisclosure(); addManualControls(); addTabsAndControls(); renderMetrics(); addLog("system", `模型已选中：${definition.title}`, 0); reset(state.seed); requestAnimationFrame(animationFrame);
+  setSourceDisclosure(); addManualControls(); addTabsAndControls(); setRuntimeMode("sync"); renderMetrics(); addLog("system", `模型已选中：${definition.title}`, 0); reset(state.seed); requestAnimationFrame(animationFrame);
   document.addEventListener("keydown", (event) => {
     if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLInputElement) return;
     if (state.model.game === "echo-relay") {

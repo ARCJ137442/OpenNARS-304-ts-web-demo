@@ -41,7 +41,7 @@
           </header>
           <div class="world-frame">
             <canvas id="world-canvas" width="800" height="600" aria-label="微世界模拟场景"></canvas>
-            <div class="canvas-hud"><span id="world-status">运行中</span><span id="step-latency">NARS 0 ms / 10 cycles</span><output id="fps-hud">-- FPS</output></div>
+            <div class="canvas-hud"><span id="world-status">运行中</span><span id="step-latency">NARS 0 ms / 10 cycles</span><output id="fps-hud">FPS --</output><output id="tps-hud">TPS --</output><output id="rps-hud">RPS --</output><i id="fps-bar" aria-hidden="true"></i><i id="tps-bar" aria-hidden="true"></i><i id="rps-bar" aria-hidden="true"></i></div>
           </div>
           <div class="world-legend" aria-label="场景图例">
             <span><i class="legend-agent"></i>虫脑智能体</span>
@@ -56,6 +56,7 @@
             <button id="reset-run" type="button" aria-label="重置" title="重置"><i data-lucide="rotate-ccw"></i><span>重置</span></button>
             <label class="speed-control" for="speed-input"><span>速度</span><input id="speed-input" type="range" min="1" max="12" value="5"><output id="speed-value" for="speed-input">5 步/秒</output></label>
             <button id="new-seed" class="quiet-control" type="button" aria-label="新布局" title="新布局"><i data-lucide="dices"></i><span>新布局</span></button>
+            <label class="mode-control" for="runtime-mode"><span>节奏</span><select id="runtime-mode"><option value="sync">同步</option><option value="async">异步</option></select></label>
           </div>
           <div class="manual-controls" role="group" aria-label="手动操作">
             <span class="manual-label">手动输入</span>
@@ -101,7 +102,7 @@
             </div>
             <ol id="nars-log" class="nars-log" aria-live="polite" aria-label="NARS 事件记录"></ol>
           </section>
-          <details class="instrument diagnostics-panel"><summary><i data-lucide="activity"></i><span>运行诊断</span></summary><div class="diagnostic-grid"><label>页面内存 <output id="page-memory">读取中</output></label><label>概念袋 <output id="concept-count">等待 NARS</output></label><label>任务袋 <output id="task-bags">等待 NARS</output></label></div></details>
+          <details class="instrument diagnostics-panel"><summary><i data-lucide="activity"></i><span>性能诊断</span></summary><div class="diagnostic-grid"><label>节奏 <output id="runtime-mode-value">同步</output></label><label>NARS 延迟 <output id="runtime-latency">0 ms</output></label><label>推理状态 <output id="runtime-pending">空闲</output></label><label>页面内存 <output id="page-memory">读取中</output></label><label>概念袋 <output id="concept-count">等待 NARS</output></label><label>任务袋 <output id="task-bags">等待 NARS</output></label></div></details>
         </aside>
       </div>
 
