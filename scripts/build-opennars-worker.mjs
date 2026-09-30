@@ -48,10 +48,10 @@ const browserAdapterPlugin = {
       path: resolve(openNarsRoot, "src", path.slice("@opennars/".length)),
     }));
     build.onResolve({ filter: /jree-host-adapter\.ts$/ }, () => ({
-      path: resolve(openNarsRoot, "src", "platform", "browser", "jree-host-adapter.ts"),
+      path: resolve(openNarsRoot, "src", "platform", "browser", "native-host-adapter.ts"),
     }));
     build.onResolve({ filter: /jree-compat\.ts$/ }, () => ({
-      path: resolve(openNarsRoot, "src", "platform", "browser", "jree-compat.ts"),
+      path: resolve(openNarsRoot, "src", "platform", "browser", "native-compat.ts"),
     }));
     build.onResolve({ filter: /^(?:node:)?(?:fs|path|os|url|child_process|process|crypto|util|stream)$/ }, ({ path }) => ({
       path: resolve(browserAdapterDirectory, `${path.replace(/^node:/, "")}.js`),
@@ -63,7 +63,7 @@ const browserHostBanner = `globalThis.__OPENNARS_DEFAULT_CONFIG__ = ${JSON.strin
 
 const modulePath = (relativePath) => JSON.stringify(resolve(openNarsRoot, relativePath).replaceAll("\\", "/"));
 const workerSource = `
-  import { java } from ${modulePath("src/platform/browser/jree-host-adapter.ts")};
+  import { java } from ${modulePath("src/platform/browser/native-host-adapter.ts")};
   import { Nar } from ${modulePath("src/main/Nar.ts")};
   import { Debug } from ${modulePath("src/main/Debug.ts")};
   import { Events } from ${modulePath("src/io/events/Events.ts")};

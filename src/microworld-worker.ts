@@ -3,7 +3,7 @@
  * See COPYING-GPL-3.0.txt and docs/microworld-demo-implementation-plan.md.
  */
 
-import { java } from "@opennars/platform/browser/jree-host-adapter.ts";
+import { java } from "@opennars/platform/browser/native-host-adapter.ts";
 import { Events } from "@opennars/io/events/Events.ts";
 import { OutputHandler } from "@opennars/io/events/OutputHandler.ts";
 import { Nar } from "@opennars/main/Nar.ts";
