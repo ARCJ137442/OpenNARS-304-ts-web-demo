@@ -85,6 +85,10 @@ const elements = {
   fps: element<HTMLOutputElement>("#fps-hud"),
   tps: element<HTMLOutputElement>("#tps-hud"),
   rps: element<HTMLOutputElement>("#rps-hud"),
+  rateHud: element<HTMLElement>("#rate-hud"),
+  tpsTarget: element<HTMLOutputElement>("#tps-target"),
+  tpsRatio: element<HTMLOutputElement>("#tps-ratio"),
+  toggleRateHud: element<HTMLButtonElement>("#toggle-rate-hud"),
   fpsBar: element<HTMLElement>("#fps-bar"),
   tpsBar: element<HTMLElement>("#tps-bar"),
   rpsBar: element<HTMLElement>("#rps-bar"),
@@ -100,6 +104,8 @@ const telemetry = new RuntimeTelemetryView({
   fps: elements.fps,
   tps: elements.tps,
   rps: elements.rps,
+  tpsTarget: elements.tpsTarget,
+  tpsRatio: elements.tpsRatio,
   fpsBar: elements.fpsBar,
   tpsBar: elements.tpsBar,
   rpsBar: elements.rpsBar,
@@ -290,6 +296,7 @@ function updateTelemetry(): void {
   const tps = state.environmentEvents / elapsed;
   elements.tps.value = `TPS ${tps.toFixed(1)}`;
   elements.tps.textContent = elements.tps.value;
+  telemetry.setTargetTps(state.speed);
   elements.tps.dataset.rate = tps >= state.speed * 0.75 ? "good" : "lag";
 }
 
@@ -316,7 +323,7 @@ function newWorker(seed: number): void {
     if (data.type === "log") {
       const logKind = data.kind?.startsWith("REWARD") || data.kind === "HEALTH" ? "reward"
         : data.kind === "SENSOR" || data.kind === "GOAL" ? "learning"
-          : data.kind === "EXE" || data.kind === "UNEXECUTABLE" || data.kind === "ANSWER" ? "operation" : "system";
+          : data.kind === "EXE" || data.kind === "UNEXECUTABLE" || data.kind === "ANSWER" || data.kind === "BABBLE" ? "operation" : "system";
       appendLog(logKind, `[${data.kind}] ${data.text}`, data.step);
       return;
     }
@@ -630,7 +637,9 @@ elements.newSeed.addEventListener("click", () => resetRun(randomSeed()));
 elements.speed.addEventListener("input", () => {
   state.speed = Number(elements.speed.value);
   elements.speedValue.textContent = `${state.speed} 步/秒`;
+  telemetry.setTargetTps(state.speed);
 });
+elements.toggleRateHud.addEventListener("click", () => { const hidden = elements.rateHud.classList.toggle("is-hidden"); elements.toggleRateHud.setAttribute("aria-label", hidden ? "显示速率 HUD" : "隐藏速率 HUD"); elements.toggleRateHud.title = hidden ? "显示速率 HUD" : "隐藏速率 HUD"; });
 elements.runtimeMode.addEventListener("change", () => {
   state.runtimeMode = elements.runtimeMode.value === "async" ? "async" : "sync";
   state.queuedAction = 0;

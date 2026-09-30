@@ -16,6 +16,8 @@ type ExtendedPerformance = Performance & {
 type RuntimeTelemetryElements = {
   fps: HTMLOutputElement;
   tps: HTMLOutputElement;
+  tpsTarget: HTMLOutputElement;
+  tpsRatio: HTMLOutputElement;
   rps: HTMLOutputElement;
   fpsBar: HTMLElement;
   tpsBar: HTMLElement;
@@ -55,6 +57,7 @@ export class RuntimeTelemetryView {
   private tickCount = 0;
   private tpsValue = 0;
   private rpsValue = 0;
+  private targetTps = 1;
 
   constructor(private readonly elements: RuntimeTelemetryElements) {
     elements.fps.value = "-- FPS";
@@ -98,13 +101,28 @@ export class RuntimeTelemetryView {
     const elapsed = now - this.tickStart;
     if (elapsed < 500) return;
     this.tpsValue = this.tickCount * 1000 / elapsed;
-    this.elements.tps.value = `${this.tpsValue.toFixed(1)} TPS`;
-    this.elements.tps.textContent = this.elements.tps.value;
+    this.renderTps();
     this.elements.tpsBar.style.setProperty("--rate", `${Math.min(100, this.tpsValue / 12 * 100)}%`);
     this.elements.tps.dataset.rate = this.tpsValue >= 9 ? "good" : "lag";
     this.elements.tpsBar.dataset.rate = this.elements.tps.dataset.rate;
     this.tickStart = now;
     this.tickCount = 0;
+  }
+
+  setTargetTps(target: number): void {
+    this.targetTps = Math.max(0.1, Number(target) || 1);
+    this.elements.tpsTarget.value = `${this.targetTps.toFixed(1)} TPS`;
+    this.elements.tpsTarget.textContent = this.elements.tpsTarget.value;
+    this.renderTps();
+  }
+
+  private renderTps(): void {
+    this.elements.tps.value = `${this.tpsValue.toFixed(1)} TPS`;
+    this.elements.tps.textContent = this.elements.tps.value;
+    const ratio = this.tpsValue / this.targetTps;
+    this.elements.tpsRatio.value = `${Math.round(ratio * 100)}%`;
+    this.elements.tpsRatio.textContent = this.elements.tpsRatio.value;
+    this.elements.tpsRatio.dataset.rate = ratio >= 0.5 ? "good" : "lag";
   }
 
   inference(cycles: number, elapsedMs: number): void {
@@ -131,6 +149,7 @@ export class RuntimeTelemetryView {
       bar.dataset.rate = "lag";
       bar.style.setProperty("--rate", "0%");
     }
+    this.renderTps();
   }
 
   updateReasoner(snapshot: ReasonerSnapshot | undefined): void {

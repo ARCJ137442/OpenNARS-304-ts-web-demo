@@ -79,6 +79,11 @@ test("CartPole emits a good outcome while upright and keeps bounded angular velo
   const game = createDemoState("cartpole", 4);
   const input = buildNarsStep(game);
   assert.ok(input.feedback.includes("<{SELF} --> [good]>. :|:"));
+  assert.ok(Math.abs(game.angle) < 0.1, "the initial pole must be near upright, not horizontal");
+  const noAction = createDemoState("cartpole", 4);
+  advanceDemo(noAction, null);
+  advanceDemo(noAction, null);
+  assert.ok(noAction.angle > 0.08 && noAction.angleVelocity > 0, "gravity must pull a positive perturbation toward down");
   for (let index = 0; index < 20; index += 1) advanceDemo(game, index % 2 ? "^Left" : "^Right");
   assert.ok(Math.abs(game.angleVelocity) <= game.maxAngleVelocity);
   assert.ok(game.position >= 0 && game.position <= 1);

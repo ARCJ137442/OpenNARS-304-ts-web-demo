@@ -105,6 +105,10 @@ const ui = {
   fpsBar: element<HTMLElement>("#fps-bar"),
   tpsBar: element<HTMLElement>("#tps-bar"),
   rpsBar: element<HTMLElement>("#rps-bar"),
+  rateHud: element<HTMLElement>("#rate-hud"),
+  tpsTarget: element<HTMLOutputElement>("#tps-target"),
+  tpsRatio: element<HTMLOutputElement>("#tps-ratio"),
+  toggleRateHud: element<HTMLButtonElement>("#toggle-rate-hud"),
   pageMemory: element<HTMLOutputElement>("#page-memory"),
   concepts: element<HTMLOutputElement>("#concept-count"),
   taskBags: element<HTMLOutputElement>("#task-bags"),
@@ -120,6 +124,8 @@ const ui = {
 const telemetry = new RuntimeTelemetryView({
   fps: ui.fps,
   tps: ui.tpsHud,
+  tpsTarget: ui.tpsTarget,
+  tpsRatio: ui.tpsRatio,
   rps: ui.rpsHud,
   fpsBar: ui.fpsBar,
   tpsBar: ui.tpsBar,
@@ -367,7 +373,22 @@ function drawHunt(context: CanvasRenderingContext2D, model: HuntState): void {
 
 function drawExpansion(context: CanvasRenderingContext2D, model: ExpansionState): void {
   context.fillStyle = "#202720"; context.fillRect(0, 0, 800, 600);
-  if (model.game === "tictactoe") { context.strokeStyle = "#84927f"; context.lineWidth = 4; for (let i = 1; i < 3; i++) { context.beginPath(); context.moveTo(i * 800 / 3, 70); context.lineTo(i * 800 / 3, 530); context.stroke(); context.beginPath(); context.moveTo(80, 70 + i * 460 / 3); context.lineTo(720, 70 + i * 460 / 3); context.stroke(); } context.font = "bold 110px system-ui"; context.textAlign = "center"; context.textBaseline = "middle"; model.board.forEach((cell, i) => { if (cell) { context.fillStyle = cell === "x" ? "#b5e567" : "#ffc56c"; context.fillText(cell.toUpperCase(), 80 + (i % 3) * 320 + 160, 70 + Math.floor(i / 3) * 460 / 3 + 460 / 6); } }); return; }
+  if (model.game === "tictactoe") {
+    const left = 80, top = 70, boardWidth = 640, boardHeight = 460, cellWidth = boardWidth / 3, cellHeight = boardHeight / 3;
+    context.strokeStyle = "#84927f"; context.lineWidth = 4;
+    for (let i = 1; i < 3; i += 1) {
+      context.beginPath(); context.moveTo(left + i * cellWidth, top); context.lineTo(left + i * cellWidth, top + boardHeight); context.stroke();
+      context.beginPath(); context.moveTo(left, top + i * cellHeight); context.lineTo(left + boardWidth, top + i * cellHeight); context.stroke();
+    }
+    context.font = "bold 110px system-ui"; context.textAlign = "center"; context.textBaseline = "middle";
+    model.board.forEach((cell, index) => {
+      if (!cell) return;
+      const column = index % 3, row = Math.floor(index / 3);
+      context.fillStyle = cell === "x" ? "#b5e567" : "#ffc56c";
+      context.fillText(cell.toUpperCase(), left + (column + 0.5) * cellWidth, top + (row + 0.5) * cellHeight);
+    });
+    return;
+  }
   if (model.game === "shot") { context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(model.targetX * 800, (1 - model.targetY) * 600, 22, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b5e567"; context.fillRect(model.playerX * 800 - 30, 540, 60, 18); return; }
   if (model.game === "testchamber") { const cw = 800 / model.width, ch = 600 / model.height; context.strokeStyle = "rgba(185,200,174,.18)"; for (let x = 0; x <= model.width; x++) { context.beginPath(); context.moveTo(x * cw, 0); context.lineTo(x * cw, 600); context.stroke(); } for (let y = 0; y <= model.height; y++) { context.beginPath(); context.moveTo(0, y * ch); context.lineTo(800, y * ch); context.stroke(); } context.fillStyle = "#ffc56c"; context.fillRect(model.item.x * cw + 10, model.item.y * ch + 10, cw - 20, ch - 20); context.fillStyle = model.switch.active ? "#71d9c8" : "#ff7661"; context.fillRect(model.switch.x * cw + 10, model.switch.y * ch + 10, cw - 20, ch - 20); context.fillStyle = "#b5e567"; context.fillRect(model.player.x * cw + 12, model.player.y * ch + 12, cw - 24, ch - 24); return; }
   if (model.game !== "fighterplane") return;
@@ -478,7 +499,9 @@ function addTabsAndControls(): void {
   ui.babble.value = String(Math.round(state.babble * 100)); ui.babbleLabel.value = `${Math.round(state.babble * 100)}%`;
   ui.babble.addEventListener("input", () => { state.babble = Number(ui.babble.value) / 100; ui.babbleLabel.value = `${ui.babble.value}%`; });
   ui.speed.value = String(state.speed); ui.speedLabel.value = `${state.speed} 步/秒`;
-  ui.speed.addEventListener("input", () => { state.speed = Number(ui.speed.value); ui.speedLabel.value = `${state.speed} TPS`; });
+  telemetry.setTargetTps(state.speed);
+  ui.speed.addEventListener("input", () => { state.speed = Number(ui.speed.value); ui.speedLabel.value = `${state.speed} TPS`; telemetry.setTargetTps(state.speed); });
+  ui.toggleRateHud.addEventListener("click", () => { const hidden = ui.rateHud.classList.toggle("is-hidden"); ui.toggleRateHud.setAttribute("aria-label", hidden ? "显示速率 HUD" : "隐藏速率 HUD"); ui.toggleRateHud.title = hidden ? "显示速率 HUD" : "隐藏速率 HUD"; });
   ui.modeSync.addEventListener("change", () => setRuntimeMode("sync"));
   ui.modeAsync.addEventListener("change", () => setRuntimeMode("async"));
   ui.echoMapDetails.addEventListener("toggle", () => { if (ui.echoMapDetails.open && state.model.game === "echo-relay") render(); });

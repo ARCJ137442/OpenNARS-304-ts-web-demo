@@ -73,6 +73,10 @@ try {
     await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
     await page.waitForFunction(() => !document.querySelector("#tps-hud")?.textContent?.includes("读取中") && !document.querySelector("#rps-hud")?.textContent?.includes("读取中"), undefined, { timeout: 5000 });
     for (const id of ["fps-hud", "tps-hud", "rps-hud", "fps-bar", "tps-bar", "rps-bar"]) await page.locator("#" + id).waitFor({ state: "visible" });
+    await page.locator("#toggle-rate-hud").click();
+    await page.locator("#rate-hud").waitFor({ state: "hidden" });
+    await page.locator("#toggle-rate-hud").click();
+    await page.locator("#rate-hud").waitFor({ state: "visible" });
     const asyncStart = Number(await page.locator("#game-step").textContent());
     await page.locator("#mode-async").check();
     await page.waitForTimeout(300);
@@ -101,6 +105,12 @@ try {
   await page.goto(new URL("microworld.html", baseUrl).href);
   await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
+  await page.locator("#toggle-rate-hud").click();
+  await page.locator("#rate-hud").waitFor({ state: "hidden" });
+  await page.locator("#toggle-rate-hud").click();
+  await page.locator("#rate-hud").waitFor({ state: "visible" });
+  assert.ok(await page.locator("#tps-target").textContent());
+  assert.ok(await page.locator("#tps-ratio").textContent());
   await page.getByText("性能诊断", { exact: true }).click();
   assert.ok(await page.locator("#concept-count").textContent());
   await page.screenshot({ path: "test-results/microworld-desktop.png", fullPage: true });

@@ -79,6 +79,7 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 #world-canvas.dragging-object { cursor: grabbing; }
 #world-canvas.panning { cursor: move; }
 .canvas-hud { position: absolute; right: 10px; bottom: 10px; left: 10px; display: flex; justify-content: space-between; pointer-events: none; }
+.canvas-hud.is-hidden { display: none; }
 .canvas-hud span { padding: 5px 7px; color: #f5f5e9; background: rgba(24, 30, 24, 0.78); font: 10px var(--mono); }
 .canvas-hud output { padding: 5px 7px; border: 1px solid #465247; color: var(--cyan); background: rgba(24, 30, 24, 0.86); font: 10px var(--mono); font-variant-numeric: tabular-nums; }
 .canvas-hud output[data-rate="good"] { border-color: var(--green); color: var(--green); }

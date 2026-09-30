@@ -141,6 +141,7 @@ a {
   overflow: hidden;
 }
 .rate-hud { position: absolute; right: 12px; top: 12px; display: grid; gap: 5px; padding: 7px; border: 1px solid rgba(181,229,103,.25); background: rgba(18,23,19,.82); font: 10px var(--mono); color: var(--muted); }
+.rate-hud.is-hidden { display: none; }
 .rate-hud > span { display: grid; grid-template-columns: 30px 52px; gap: 5px; align-items: center; }
 .rate-hud b { color: var(--lime); font-weight: 600; }
 .rate-hud output { text-align: right; color: #edf3e6; }

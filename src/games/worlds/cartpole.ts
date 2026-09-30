@@ -13,14 +13,16 @@ export const definition: DemoDefinition = {
 };
 
 export function create(seed: number): CartPoleState {
-  return { game: "cartpole", seed, tick: 0, position: 0, velocity: 0, angle: -Math.PI / 2, angleVelocity: 0, maxAngleVelocity: 0.3, successes: 0, failures: 0, reward: 0, pendingFeedback: [] };
+  // Angle zero is the upright balance point. A small positive perturbation
+  // makes the no-action trajectory visibly fall under gravity toward down.
+  return { game: "cartpole", seed, tick: 0, position: 0, velocity: 0, angle: 0.08, angleVelocity: 0, maxAngleVelocity: 0.3, successes: 0, failures: 0, reward: 0, pendingFeedback: [] };
 }
 
 export function buildNarsStep(state: CartPoleState): NarsStep {
   const encoding = Math.round(((state.angle + Math.PI) / (Math.PI * 2)) * 8);
   const feedback = [...state.pendingFeedback];
   state.pendingFeedback = [];
-  if (Math.abs(state.angle + Math.PI / 2) <= 0.5) feedback.push(selfBelief("good"));
+  if (Math.abs(state.angle) <= 0.5) feedback.push(selfBelief("good"));
   return { beliefs: [selfBelief("angle" + encoding)], goals: [selfGoal("good")], feedback: dedupe(feedback), cycles: definition.cycles };
 }
 
@@ -31,12 +33,13 @@ export function advance(state: CartPoleState, rawAction: string | null): DemoSte
   if (action === "right") { const reverse = Math.sign(state.angle); state.angleVelocity += reverse * 0.2; state.velocity += 0.1; }
   state.position = clamp(state.position + state.velocity, 0, 1);
   state.angle += state.angleVelocity;
-  state.angleVelocity = clamp(state.angleVelocity + 0.2 * Math.cos(state.angle), -state.maxAngleVelocity, state.maxAngleVelocity);
+  // Gravity destabilizes the upright point and pulls the pole toward +/-PI.
+  state.angleVelocity = clamp(state.angleVelocity + 0.2 * Math.sin(state.angle), -state.maxAngleVelocity, state.maxAngleVelocity);
   if (state.angle > Math.PI) state.angle = -Math.PI;
   if (state.angle < -Math.PI) state.angle = Math.PI;
   state.velocity = 0;
-  if (Math.abs(state.angle + Math.PI / 2) <= 0.5) { state.successes += 1; state.reward = 1; }
-  else if (state.angle >= 0 && state.angle <= Math.PI) state.failures += 1;
+  if (Math.abs(state.angle) <= 0.5) { state.successes += 1; state.reward = 1; }
+  else if (Math.abs(state.angle) >= Math.PI / 2) state.failures += 1;
   state.tick += 1;
   return { notes: [], feedback: [], reward: state.reward };
 }
