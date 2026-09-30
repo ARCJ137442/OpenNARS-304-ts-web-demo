@@ -20,6 +20,7 @@ import {
 import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
+import { MICROWORLD_DEFAULT_TPS, MICROWORLD_MAX_TPS, MICROWORLD_MIN_SMOOTH_TPS } from "./microworld/runtime-config.ts";
 
 type MicroworldWorkerEvent = {
   type: string;
@@ -158,8 +159,6 @@ const state: {
   renderRequested: boolean;
   runtimeMode: "sync" | "async";
   queuedAction: ActionCode;
-  telemetryWindowStartedAt: number;
-  environmentEvents: number;
 } = {
   seed: INITIAL_SEED,
   world: createWorld(INITIAL_SEED),
@@ -172,7 +171,7 @@ const state: {
   lastStepAt: 0,
   nextStepAt: 0,
   lastDrawAt: 0,
-  speed: Number(elements.speed.value),
+  speed: MICROWORLD_DEFAULT_TPS,
   narsCycles: Number(elements.narsCycles.value),
   babbleProbability: Number(elements.narsBabble.value) / 100,
   camera: { zoom: 1, x: 0, y: 0 },
@@ -188,8 +187,6 @@ const state: {
   renderRequested: true,
   runtimeMode: "sync",
   queuedAction: 0,
-  telemetryWindowStartedAt: performance.now(),
-  environmentEvents: 0,
 };
 
 function randomSeed(): number {
@@ -292,12 +289,6 @@ function updateTelemetry(): void {
   elements.runtimeLatency.textContent = elements.runtimeLatency.value;
   elements.runtimePending.value = state.pending ? "推理中" : "空闲";
   elements.runtimePending.textContent = elements.runtimePending.value;
-  const elapsed = Math.max(0.25, (performance.now() - state.telemetryWindowStartedAt) / 1000);
-  const tps = state.environmentEvents / elapsed;
-  elements.tps.value = `TPS ${tps.toFixed(1)}`;
-  elements.tps.textContent = elements.tps.value;
-  telemetry.setTargetTps(state.speed);
-  elements.tps.dataset.rate = tps >= state.speed * 0.75 ? "good" : "lag";
 }
 
 function newWorker(seed: number): void {
@@ -347,13 +338,18 @@ function newWorker(seed: number): void {
       state.operationSource = (data.actionSource ?? "idle") === "idle" ? "IDLE" : (data.actionSource ?? "NARS").toUpperCase();
       if (state.runtimeMode === "sync") {
         applyActionAndAdvance(state.world, data.action ?? 0);
-        state.environmentEvents += 1;
         telemetry.environmentTick(performance.now());
       }
       else state.queuedAction = (data.action ?? 0) as ActionCode;
       if (state.runtimeMode === "async" && state.running) elements.worldStatus.textContent = "异步运行 · NARS 已完成";
       updateTelemetry();
-      if (state.running) state.nextStepAt = performance.now() + 1000 / state.speed;
+      if (state.running) {
+        // Keep the world clock fixed like Processing's frameRate(50): inference
+        // consumes the current period instead of being added to the next one.
+        const period = 1000 / Math.max(1, state.speed);
+        const nextDeadline = state.nextStepAt + period;
+        state.nextStepAt = Math.max(nextDeadline, performance.now());
+      }
       else elements.worldStatus.textContent = "已暂停";
       requestRender();
       return;
@@ -407,7 +403,6 @@ function advanceAsyncWorld(): void {
   state.world.sensors = perception.sensors;
   applyActionAndAdvance(state.world, state.queuedAction);
   state.queuedAction = 0;
-  state.environmentEvents += 1;
   telemetry.environmentTick(performance.now());
   updateTelemetry();
   requestRender();
@@ -424,9 +419,7 @@ function resetRun(seed = state.seed): void {
   state.lastNarTime = "0";
   state.totalStepMs = 0;
   state.measuredSteps = 0;
-  state.environmentEvents = 0;
   telemetry.resetRates();
-  state.telemetryWindowStartedAt = performance.now();
   state.queuedAction = 0;
   state.lastStepAt = 0;
   state.nextStepAt = performance.now();
@@ -612,7 +605,6 @@ function handleCanvasZoom(event: WheelEvent): void {
 
 function directControl(key: string): boolean {
   if (!applyManualControl(state.world, key)) return false;
-  state.environmentEvents += 1;
   telemetry.environmentTick(performance.now());
   state.currentOperation = "手动运动控制";
   state.operationSource = "MANUAL";
@@ -635,7 +627,8 @@ elements.stepOnce.addEventListener("click", () => {
 elements.reset.addEventListener("click", () => resetRun(state.seed));
 elements.newSeed.addEventListener("click", () => resetRun(randomSeed()));
 elements.speed.addEventListener("input", () => {
-  state.speed = Number(elements.speed.value);
+  state.speed = Math.min(MICROWORLD_MAX_TPS, Math.max(MICROWORLD_MIN_SMOOTH_TPS, Number(elements.speed.value) || MICROWORLD_DEFAULT_TPS));
+  elements.speed.value = String(state.speed);
   elements.speedValue.textContent = `${state.speed} 步/秒`;
   telemetry.setTargetTps(state.speed);
 });
@@ -694,6 +687,11 @@ document.addEventListener("keydown", (event) => {
 
 function boot() {
   mountIcons();
+  elements.speed.min = String(MICROWORLD_MIN_SMOOTH_TPS);
+  elements.speed.max = String(MICROWORLD_MAX_TPS);
+  elements.speed.value = String(MICROWORLD_DEFAULT_TPS);
+  elements.speedValue.textContent = `${MICROWORLD_DEFAULT_TPS} 步/秒`;
+  telemetry.setTargetTps(MICROWORLD_DEFAULT_TPS);
   state.world = createWorld(state.seed);
   state.random = createRandom(state.seed ^ 0x2d2d304);
   for (let index = 0; index < 6; index += 1) {

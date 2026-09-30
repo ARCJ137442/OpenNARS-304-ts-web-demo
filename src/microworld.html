@@ -54,7 +54,7 @@
             <button id="run-toggle" class="primary-control" type="button" aria-label="暂停模拟" title="暂停"><span id="run-icon" aria-hidden="true"><i data-lucide="pause"></i></span><span id="run-label" class="sr-only">暂停</span></button>
             <button id="step-once" type="button" aria-label="单步" title="单步"><i data-lucide="step-forward"></i><span>单步</span></button>
             <button id="reset-run" type="button" aria-label="重置" title="重置"><i data-lucide="rotate-ccw"></i><span>重置</span></button>
-            <label class="speed-control" for="speed-input"><span>速度</span><input id="speed-input" type="range" min="1" max="12" value="5"><output id="speed-value" for="speed-input">5 步/秒</output></label>
+            <label class="speed-control" for="speed-input"><span>速度</span><input id="speed-input" type="range" min="20" max="50" value="20"><output id="speed-value" for="speed-input">20 步/秒</output></label>
             <button id="new-seed" class="quiet-control" type="button" aria-label="新布局" title="新布局"><i data-lucide="dices"></i><span>新布局</span></button>
             <label class="mode-control" for="runtime-mode"><span>节奏</span><select id="runtime-mode"><option value="sync">同步</option><option value="async">异步</option></select></label>
             <button id="toggle-rate-hud" class="quiet-control" type="button" aria-label="隐藏速率 HUD" title="隐藏速率 HUD"><i data-lucide="eye"></i><span>HUD</span></button>
@@ -103,7 +103,7 @@
             </div>
             <ol id="nars-log" class="nars-log" aria-live="polite" aria-label="NARS 事件记录"></ol>
           </section>
-          <details class="instrument diagnostics-panel"><summary><i data-lucide="activity"></i><span>性能诊断</span></summary><div class="diagnostic-grid"><label>节奏 <output id="runtime-mode-value">同步</output></label><label>目标 TPS <output id="tps-target">5.0 TPS</output></label><label>TPS 比例 <output id="tps-ratio">--%</output></label><label>NARS 延迟 <output id="runtime-latency">0 ms</output></label><label>推理状态 <output id="runtime-pending">空闲</output></label><label>页面内存 <output id="page-memory">读取中</output></label><label>概念袋 <output id="concept-count">等待 NARS</output></label><label>任务袋 <output id="task-bags">等待 NARS</output></label></div></details>
+          <details class="instrument diagnostics-panel"><summary><i data-lucide="activity"></i><span>性能诊断</span></summary><div class="diagnostic-grid"><label>节奏 <output id="runtime-mode-value">同步</output></label><label>目标 TPS <output id="tps-target">20.0 TPS</output></label><label>TPS 比例 <output id="tps-ratio">--%</output></label><label>NARS 延迟 <output id="runtime-latency">0 ms</output></label><label>推理状态 <output id="runtime-pending">空闲</output></label><label>页面内存 <output id="page-memory">读取中</output></label><label>概念袋 <output id="concept-count">等待 NARS</output></label><label>任务袋 <output id="task-bags">等待 NARS</output></label></div></details>
         </aside>
       </div>
 

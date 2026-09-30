@@ -102,9 +102,6 @@ export class RuntimeTelemetryView {
     if (elapsed < 500) return;
     this.tpsValue = this.tickCount * 1000 / elapsed;
     this.renderTps();
-    this.elements.tpsBar.style.setProperty("--rate", `${Math.min(100, this.tpsValue / 12 * 100)}%`);
-    this.elements.tps.dataset.rate = this.tpsValue >= 9 ? "good" : "lag";
-    this.elements.tpsBar.dataset.rate = this.elements.tps.dataset.rate;
     this.tickStart = now;
     this.tickCount = 0;
   }
@@ -122,7 +119,11 @@ export class RuntimeTelemetryView {
     const ratio = this.tpsValue / this.targetTps;
     this.elements.tpsRatio.value = `${Math.round(ratio * 100)}%`;
     this.elements.tpsRatio.textContent = this.elements.tpsRatio.value;
-    this.elements.tpsRatio.dataset.rate = ratio >= 0.5 ? "good" : "lag";
+    const rate = ratio >= 0.5 ? "good" : "lag";
+    this.elements.tpsRatio.dataset.rate = rate;
+    this.elements.tps.dataset.rate = rate;
+    this.elements.tpsBar.dataset.rate = rate;
+    this.elements.tpsBar.style.setProperty("--rate", `${Math.min(100, Math.max(0, ratio * 100))}%`);
   }
 
   inference(cycles: number, elapsedMs: number): void {
