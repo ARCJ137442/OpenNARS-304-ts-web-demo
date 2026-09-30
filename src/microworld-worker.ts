@@ -37,7 +37,7 @@ const ACTIONS: Array<{ name: OperationName; code: ActionCode }> = [
 
 let nar: Nar | null = null;
 let stepNumber = 0;
-let lastSensorInput = "";
+let lastSensorInputs = new Set<string>();
 let pendingAction: { name: OperationName; code: ActionCode } | null = null;
 let randomState = 0x6d2b79f5;
 
@@ -83,7 +83,7 @@ class MicroworldOperator extends Operator {
 function createNar(seed: number): void {
   setSeed(seed ^ 0x4e415253);
   stepNumber = 0;
-  lastSensorInput = "";
+  lastSensorInputs = new Set<string>();
   pendingAction = null;
   Debug.TEST = true;
   nar = new Nar();
@@ -123,12 +123,14 @@ function runStep(message: StepMessage): void {
     return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
   });
 
+  const currentSensorInputs = new Set<string>();
   for (let index = 0; index < sensorValues.length; index += 1) {
     if (sensorValues[index] <= 0.1) continue;
     const input = `<{${index}} --> [on]>. :|:`;
-    if (input !== lastSensorInput || stepNumber % 5 === 0) submit(input, "SENSOR");
-    lastSensorInput = input;
+    currentSensorInputs.add(input);
+    if (!lastSensorInputs.has(input) || stepNumber % 5 === 0) submit(input, "SENSOR");
   }
+  lastSensorInputs = currentSensorInputs;
 
   stepNumber += 1;
   if (stepNumber % 2 === 0) {
