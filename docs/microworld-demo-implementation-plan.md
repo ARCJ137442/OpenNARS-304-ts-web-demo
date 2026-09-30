@@ -24,7 +24,7 @@ Create a static H5 Lab that indexes the existing terminal and a coherent NARS 3.
 
 - `src/microworld/simulation.js`: pure world state, sensing, collision, rewards, physics, and wraparound.
 - `src/demo-worker.ts`: reusable NAR instance lifecycle, action operator plugins, bounded inference batches, and structured operation/log events for registered demos.
-- `src/games/*.js`: independent deterministic environment models, sensors, rewards, and render snapshots.
+- `src/games/*.ts`: independent deterministic environment models, sensors, rewards, and render snapshots.
 - `src/game-shell.js`: shared Canvas lifecycle, pause/resume, single-step, reset, speed, keyboard input, logs, and NARS monitoring.
 - `src/lab.html` / `src/lab.css` / `src/lab.js`: unified Lab index and route catalog.
 - `src/microworld.html` / `src/microworld.css`: Microworld teaching view and original GPL sprites.

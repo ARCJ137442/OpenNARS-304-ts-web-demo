@@ -1,4 +1,4 @@
-type PreviewName = "microworld" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt";
+type PreviewName = "microworld" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
 type PreviewRenderer = (context: CanvasRenderingContext2D, width: number, height: number, time: number) => void;
 
 const canvases = [...document.querySelectorAll<HTMLCanvasElement>("canvas[data-preview]")];
@@ -124,6 +124,23 @@ function drawHunt(context: CanvasRenderingContext2D, width: number, height: numb
   context.fillRect(cellWidth * 2.2, cellHeight * 2.2, cellWidth * .6, cellHeight * .6);
 }
 
+function drawExpansionPreview(context: CanvasRenderingContext2D, width: number, height: number, time: number, game: PreviewName): void {
+  context.fillStyle = "#202720"; context.fillRect(0, 0, width, height);
+  if (game === "echo-relay") {
+    const cell = Math.min(width / 9, height / 7), ox = (width - cell * 9) / 2, oy = (height - cell * 7) / 2;
+    const walls = ["#########", "#.......#", "#.#.###.#", "#.#.....#", "#.#####.#", "#.......#", "#########"];
+    context.fillStyle = "#65736b"; walls.forEach((row, y) => [...row].forEach((value, x) => { if (value === "#") context.fillRect(ox + x * cell + 1, oy + y * cell + 1, cell - 2, cell - 2); }));
+    context.strokeStyle = "#71d9c8"; context.lineWidth = 2; context.beginPath(); context.moveTo(ox + cell * 1.5, oy + cell * 1.5); context.lineTo(ox + cell * 2.5, oy + cell * 1.5); context.lineTo(ox + cell * 2.5, oy + cell * 2.5); context.lineTo(ox + cell * 3.5, oy + cell * 2.5); context.stroke();
+    context.fillStyle = "#b7e66e"; context.beginPath(); context.arc(ox + cell * 1.5, oy + cell * 1.5, 4, 0, Math.PI * 2); context.fill();
+    context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(ox + cell * 7.5, oy + cell * 5.5, 4, 0, Math.PI * 2); context.fill();
+    const pulseX = ox + cell * 3.5, pulseY = oy + cell * 2.5 + Math.sin(time / 180) * 2; context.fillStyle = "#e7f4c5"; context.beginPath(); context.arc(pulseX, pulseY, 2.5, 0, Math.PI * 2); context.fill(); return;
+  }
+  if (game === "tictactoe") { context.strokeStyle = "#84927f"; context.lineWidth = 2; for (let i = 1; i < 3; i++) { context.beginPath(); context.moveTo(width * i / 3, 18); context.lineTo(width * i / 3, height - 18); context.stroke(); context.beginPath(); context.moveTo(18, height * i / 3); context.lineTo(width - 18, height * i / 3); context.stroke(); } context.fillStyle = "#b7e66e"; context.font = "bold 36px system-ui"; context.fillText("X", width * .5 - 12, height * .5 + 12); context.fillStyle = "#ffc56c"; context.fillText("O", width * .75 - 12, height * .25 + 12); return; }
+  if (game === "testchamber") { context.strokeStyle = "rgba(185,200,174,.2)"; for (let x = 0; x <= 8; x++) { context.beginPath(); context.moveTo(x * width / 8, 0); context.lineTo(x * width / 8, height); context.stroke(); } for (let y = 0; y <= 6; y++) { context.beginPath(); context.moveTo(0, y * height / 6); context.lineTo(width, y * height / 6); context.stroke(); } context.fillStyle = "#b7e66e"; context.fillRect(width * .2, height * .2, 9, 9); context.fillStyle = "#ffc56c"; context.fillRect(width * .38, height * .48, 9, 9); return; }
+  if (game === "shot") { context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(width * (.5 + Math.sin(time / 600) * .28), height * .3, 7, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b7e66e"; context.fillRect(width * .5 - 14, height * .78, 28, 7); return; }
+  context.fillStyle = "#ff7661"; context.beginPath(); context.arc(width * (.58 + Math.sin(time / 700) * .2), height * .3, 9, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b7e66e"; context.beginPath(); context.moveTo(width * .48, height * .78); context.lineTo(width * .45, height * .89); context.lineTo(width * .51, height * .89); context.closePath(); context.fill();
+}
+
 function drawAll(now: number): void {
   for (const canvas of canvases) {
     const bounds = canvas.getBoundingClientRect();
@@ -141,6 +158,11 @@ function drawAll(now: number): void {
       bandrobot: drawBandRobot,
       cartpole: drawCartpole,
       hunt: drawHunt,
+      "echo-relay": (context, width, height, time) => drawExpansionPreview(context, width, height, time, "echo-relay"),
+      tictactoe: (context, width, height, time) => drawExpansionPreview(context, width, height, time, "tictactoe"),
+      shot: (context, width, height, time) => drawExpansionPreview(context, width, height, time, "shot"),
+      testchamber: (context, width, height, time) => drawExpansionPreview(context, width, height, time, "testchamber"),
+      fighterplane: (context, width, height, time) => drawExpansionPreview(context, width, height, time, "fighterplane"),
     };
     const preview = canvas.dataset.preview as PreviewName;
     draw[preview]?.(context, 420, 240, now);

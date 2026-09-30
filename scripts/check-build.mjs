@@ -16,7 +16,7 @@ for (const file of requiredFiles) {
 }
 
 const index = readFileSync(resolve(distRoot, "index.html"), "utf8");
-for (const text of ["DEMO LAB", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "10 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "data-preview=\"microworld\""]) {
+for (const text of ["DEMO LAB", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "11 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"echo-relay\"", "data-preview=\"microworld\""]) {
   if (!index.includes(text)) throw new Error("index.html is missing " + text);
 }
 if (!index.includes("/opennars-304-ts-lab/_astro/")) throw new Error("index.html is missing the Pages base path for Astro assets");
@@ -28,7 +28,7 @@ for (const asset of astroAssets) {
 }
 
 const gamePage = readFileSync(resolve(distRoot, "demo.html"), "utf8");
-for (const text of ["cycles-control", "babble-control", "source-toggle", "NARS 监视器", "/opennars-304-ts-lab/_astro/", "fps-hud", "concept-count"]) {
+for (const text of ["cycles-control", "babble-control", "source-toggle", "NARS 监视器", "/opennars-304-ts-lab/_astro/", "fps-hud", "concept-count", "echo-map-details"] ) {
   if (!gamePage.includes(text)) throw new Error("demo.html is missing " + text);
 }
 

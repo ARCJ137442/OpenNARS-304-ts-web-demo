@@ -1,7 +1,7 @@
 # Demo Lab 扩展批次计划
 
-状态：验收完成，待提交
-基线：现有五个感知运动 demo、Microworld、首页导航、NARS Worker、19 项模型测试和浏览器 smoke 已通过。
+状态：验收完成；本批次由 Git 提交追踪，Pages 发布尚未执行
+基线：现有五个感知运动 demo、Microworld、首页导航、NARS Worker、27 项模型测试和浏览器 smoke 已通过。
 当前 web-demo 历史基线提交：160513e5d110135e524de56e7f6492c88a84973d；本批次改动尚未提交
 当前 OpenNARS-304-ts 源码基线：835202318fee68d34fb8c91ed27396cfd461c5b5
 
@@ -78,19 +78,27 @@ Agent 只拥有自己的环境模型与测试文件，不修改共享类型、mo
 ### P3 验收
 
 - [x] npm run typecheck
-- [x] npm test，24/24
+- [x] npm test，27/27
 - [x] npm run build
 - [x] npm run check
-- [x] npm run test:browser，9 个游戏 + Microworld
+- [x] npm run test:browser，10 个游戏 + Microworld，在重启后的干净服务器上通过，页面错误 0、首页 Worker 0
 - [x] 现有五个 demo 无回归
 - [x] 新四个指定 demo 和 Echo Relay 均能在线、推进、暂停、单步、重置并显示 EXE/反馈
 - [x] 首页不启动 Worker，移动端无横向溢出
 
+新增的有效性门槛：Babble=0 时必须观测到注册 Operator 的 operation/status=executed、同一步 step-complete.source=NARS、EXE 日志与对应环境状态变化。只加载 Worker、环境步在运行、或 Babble 发出动作都不计为 NARS 有效操作。
+
+真实 Worker 探针区分三类结果：
+
+- 直接复合操作目标 ACTION_GOAL：五个 expansion demo 均触发实际 EXE；这只证明 Worker/操作链可用。
+- 环境状态 belief + 产品定义中的预置时序因果规则 + 复合目标：TicTacToe、Shot、TestChamber、FighterPlane、Echo Relay 均在 Babble=0 时产生真实 EXE/操作符事件，`step-complete.source=NARS`，且动作改变了环境状态。
+- Microworld 式稀疏感知、操作事件、结果反馈，未提供动作规则：旧探针 280 cycles 内五个 demo 均未自行触发 NARS 操作。因此当前不能宣称它们能从稀疏体验自主学会策略。生产规则合同的通过只证明预置因果规则已接入并能驱动操作，不证明空白自主学习。
+
 浏览器 smoke 输出：
 
-    {"ok":true,"games":9,"microworld":true,"indexCanvas":true,"homeWorkers":0,"pageErrors":0}
+    {"ok":true,"games":10,"microworld":true,"indexCanvas":true,"homeWorkers":0,"pageErrors":0}
 
-Tidal Commons、Split-Signal Workshop 与 Wayfinding Window 尚未实现，Git 提交和 Pages 发布也尚未执行。
+Tidal Commons、Split-Signal Workshop 与 Wayfinding Window 尚未实现；Pages 发布尚未执行。
 
 ## 资源边界
 

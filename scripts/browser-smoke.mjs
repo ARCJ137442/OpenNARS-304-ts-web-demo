@@ -60,11 +60,15 @@ try {
   assert.equal(workerRequests.length, 0, "the index must remain free of NARS Workers");
   await page.screenshot({ path: "test-results/demo-lab-home.png", fullPage: true });
 
-  for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane"]) {
+  const operationFindings = [];
+  for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"]) {
     await page.goto(new URL("demo.html?game=" + game, baseUrl).href);
     await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
+    await page.locator("#babble-control").evaluate((input) => { input.value = "0"; input.dispatchEvent(new Event("input", { bubbles: true })); });
+    await page.locator("#reset-demo").click();
+    await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
     await page.waitForFunction(() => Number(document.querySelector("#game-step")?.textContent) > 0, undefined, { timeout: 30000 });
-    await page.locator(".diagnostics-panel summary").click();
+    await page.getByText("运行诊断", { exact: true }).click();
     await page.locator("#concept-count").waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
     const canvasHasPixels = await page.locator("#game-canvas").evaluate((canvas) => {
@@ -74,6 +78,9 @@ try {
       return pixels.some((value, index) => index % 4 !== 3 && value > 32);
     });
     assert.ok(canvasHasPixels, game + " canvas should contain the running scene");
+    await page.waitForTimeout(1500);
+    const nonBabbleExecution = await page.evaluate(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) => direction === "in" && message?.type === "step-complete" && message?.source === "NARS" && typeof message?.action === "string"));
+    operationFindings.push({ game, babble: 0, nonBabbleExe: nonBabbleExecution, interpretation: nonBabbleExecution ? "NARS emitted an operator action" : "No NARS operator action observed in this smoke window" });
     await page.getByRole("button", { name: "暂停" }).click();
     await page.getByText("PAUSED", { exact: true }).waitFor();
     const frozenStep = await page.locator("#game-step").textContent();
@@ -85,16 +92,20 @@ try {
   await page.goto(new URL("microworld.html", baseUrl).href);
   await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
-  await page.locator(".diagnostics-panel summary").click();
+  await page.getByText("运行诊断", { exact: true }).click();
   assert.ok(await page.locator("#concept-count").textContent());
   await page.screenshot({ path: "test-results/microworld-desktop.png", fullPage: true });
+  await page.goto(new URL("demo.html?game=echo-relay", baseUrl).href);
+  await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
+  await page.locator("#echo-map-details summary").click();
+  await page.locator("#echo-truth-map").waitFor({ state: "visible" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(new URL("demo.html?game=hunt", baseUrl).href);
   await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
   assert.equal(errors.length, 0, "browser errors: " + errors.join("; "));
-  console.log(JSON.stringify({ ok: true, games: 9, microworld: true, indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
+  console.log(JSON.stringify({ ok: true, games: 10, operationFindings, microworld: true, indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({
     error: error instanceof Error ? error.message : String(error),

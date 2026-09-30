@@ -24,6 +24,7 @@ Upload dist/ to any static host. The Pages command synchronizes the generated tr
 See docs/maintainer-guide.md for module boundaries, the new-demo workflow, model contracts, and browser acceptance checks.
 See docs/opennars-304-mechanism-analysis.md and docs/demo-adaptation-guide.md for the OpenNARS 3.0.4 mechanism boundary and ONA demo adaptation rationale.
 See docs/demo-expansion-plan.md, docs/demo-candidate-survey.md, and docs/original-demo-proposals.md for the next demo batch and original experiment proposals.
+See docs/terminology.md for the project's Chinese NARS/Narsese terminology map.
 
 ### Source map
 

@@ -1,4 +1,4 @@
-export type ExpansionId = "tictactoe" | "shot" | "testchamber" | "fighterplane";
+export type ExpansionId = "tictactoe" | "shot" | "testchamber" | "fighterplane" | "echo-relay";
 export type ExpansionDefinition = {
   id: ExpansionId;
   title: string;
@@ -8,6 +8,8 @@ export type ExpansionDefinition = {
   source: string;
   url: string;
   license: string;
+  narsPriorRules: readonly string[];
+  narsPriorNote: string;
 };
 export type ExpansionNarsStep = { beliefs: string[]; goals: string[]; feedback: string[]; cycles: number };
 export type ExpansionResult = { notes: string[]; feedback: string[]; reward: number };
@@ -28,4 +30,21 @@ export type FighterPlaneState = BaseExpansionState<"fighterplane"> & {
   width: number; height: number; player: { x: number; y: number; hp: number };
   enemy: { x: number; y: number; vx: number; hp: number }; cooldown: number; hits: number; crashes: number;
 };
-export type ExpansionState = TicTacToeState | ShotState | TestChamberState | FighterPlaneState;
+export type EchoDirection = "north" | "east" | "south" | "west";
+export type EchoRelayPulse = {
+  path: Array<{ x: number; y: number }>;
+  direction: EchoDirection;
+  phase: "outbound" | "return";
+  energy: number;
+  strength: "faint" | "medium" | "strong";
+  target: "wall" | "beacon" | "range" | null;
+  returnIndex: number;
+};
+export type EchoRelayState = BaseExpansionState<"echo-relay"> & {
+  width: number; height: number; walls: boolean[]; beacon: { x: number; y: number };
+  player: { x: number; y: number }; facing: EchoDirection; playerEnergy: number;
+  pulseEnergy: number; pulse: EchoRelayPulse | null; knownWalls: string[];
+  echoes: Array<{ direction: EchoDirection; strength: "faint" | "medium" | "strong"; target: "wall" | "beacon" | "range" }>;
+  arrived: boolean; collisions: number; discoveries: number;
+};
+export type ExpansionState = TicTacToeState | ShotState | TestChamberState | FighterPlaneState | EchoRelayState;

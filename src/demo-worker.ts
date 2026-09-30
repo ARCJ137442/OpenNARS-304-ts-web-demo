@@ -13,10 +13,10 @@ import { type Task } from "@opennars/entity/Task.ts";
 import { readReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
 
 type WorkerMessage =
-  | { type: "init"; game: string; seed: number; actions: string[] }
+  | { type: "init"; game: string; seed: number; actions: string[]; priorRules?: string[] }
   | { type: "step"; game: string; step: number; beliefs?: string[]; goals?: string[]; feedback?: string[]; cycles?: number; babble?: number };
 
-const ACTIONS = ["^Left", "^Right", "^Forward", "^Shoot", "^Pick", "^Drop", "^Up", "^Down", "^left", "^right", "^up", "^down", "^shoot", "^pick", "^drop", "^fire", "^activate", "^cell0", "^cell1", "^cell2", "^cell3", "^cell4", "^cell5", "^cell6", "^cell7", "^cell8"] as const;
+const ACTIONS = ["^Left", "^Right", "^Forward", "^Shoot", "^Pick", "^Drop", "^Up", "^Down", "^left", "^right", "^up", "^down", "^shoot", "^pick", "^drop", "^fire", "^activate", "^cell0", "^cell1", "^cell2", "^cell3", "^cell4", "^cell5", "^cell6", "^cell7", "^cell8", "^move", "^turn_left", "^turn_right", "^ping"] as const;
 let nar: Nar | null = null;
 let enabledActions = new Set<string>();
 let operationThisStep: string | null = null;
@@ -42,7 +42,7 @@ class DemoOperator extends Operator {
   }
 }
 
-function initialize(game: string, seed: number, actions: string[]): void {
+function initialize(game: string, seed: number, actions: string[], priorRules: string[]): void {
   nar?.stop();
   randomState = Number(seed) >>> 0 || 1;
   enabledActions = new Set(actions.filter((action) => (ACTIONS as readonly string[]).includes(action)));
@@ -68,6 +68,10 @@ function initialize(game: string, seed: number, actions: string[]): void {
       post("log", { kind: "ANSWER", game, text: args.map(String).join(" ") });
     },
   });
+  for (const rule of priorRules) {
+    nar.addInput(new java.lang.String(rule));
+    post("log", { kind: "PRIOR", game, text: rule });
+  }
   post("ready", { game, actions: [...enabledActions] });
 }
 
@@ -110,7 +114,7 @@ function runStep(message: Extract<WorkerMessage, { type: "step" }>): void {
 
 self.addEventListener("message", ({ data }: MessageEvent<WorkerMessage>) => {
   try {
-    if (data?.type === "init") initialize(data.game, data.seed, data.actions);
+    if (data?.type === "init") initialize(data.game, data.seed, data.actions, data.priorRules ?? []);
     else if (data?.type === "step") runStep(data);
   } catch (error) {
     post("fault", { game: "game" in (data ?? {}) ? data.game : "unknown", message: error instanceof Error ? error.message : String(error) });

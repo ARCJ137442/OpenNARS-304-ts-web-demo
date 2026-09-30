@@ -1,8 +1,8 @@
 import type { ExpansionState } from "./expansion-types.ts";
 
-export const DEMO_IDS = ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane"] as const;
+export const DEMO_IDS = ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"] as const;
 export type DemoId = (typeof DEMO_IDS)[number];
-export type ActionName = "^Left" | "^Right" | "^Forward" | "^Shoot" | "^Pick" | "^Drop" | "^Up" | "^Down" | "^left" | "^right" | "^shoot" | "^pick" | "^drop" | "^up" | "^down" | "^fire" | "^activate" | "^cell0" | "^cell1" | "^cell2" | "^cell3" | "^cell4" | "^cell5" | "^cell6" | "^cell7" | "^cell8";
+export type ActionName = "^Left" | "^Right" | "^Forward" | "^Shoot" | "^Pick" | "^Drop" | "^Up" | "^Down" | "^left" | "^right" | "^shoot" | "^pick" | "^drop" | "^up" | "^down" | "^fire" | "^activate" | "^cell0" | "^cell1" | "^cell2" | "^cell3" | "^cell4" | "^cell5" | "^cell6" | "^cell7" | "^cell8" | "^move" | "^turn_left" | "^turn_right" | "^ping";
 export type DemoDefinition = {
   title: string;
   subtitle: string;
@@ -12,6 +12,8 @@ export type DemoDefinition = {
   source: string;
   url: string;
   license: string;
+  narsPriorRules?: readonly string[];
+  narsPriorNote?: string;
 };
 
 type BaseState<G extends DemoId> = { game: G; seed: number; tick: number; reward: number; pendingFeedback: string[] };

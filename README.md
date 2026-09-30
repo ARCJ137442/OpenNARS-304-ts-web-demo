@@ -24,6 +24,7 @@
 架构边界、添加新 demo 的步骤、模型测试合同和浏览器验收项见 docs/maintainer-guide.md。
 OpenNARS 3.0.4 的机制边界与 ONA demo 适配理由见 [机制分析](docs/opennars-304-mechanism-analysis.md) 和 [Demo 适配说明](docs/demo-adaptation-guide.md)。
 指定 demo 的扩展计划和原创候选见 [扩展计划](docs/demo-expansion-plan.md)、[候选审阅](docs/demo-candidate-survey.md) 与 [原创提案](docs/original-demo-proposals.md)。
+项目统一术语见 [NARS 与 Narsese 术语表](docs/terminology.md)。
 
 ### 源码入口
 

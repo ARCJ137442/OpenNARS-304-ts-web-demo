@@ -22,14 +22,14 @@ Astro owns page composition and static output. Environment models are plain Type
 ## Source map
 
 - src/pages/index.astro: Lab index.
-- src/pages/demo.astro: shared query-selected workspace for the nine game environments.
+- src/pages/demo.astro: shared query-selected workspace for the ten game environments.
 - src/layouts/SiteLayout.astro: shared page title, favicon, and social metadata.
 - src/components/DemoCard.astro: shared directory card.
 - src/data/demo-catalog.ts: demo titles, summaries, links, source labels, preview keys, and ID validation.
 - src/games/models.ts and src/games/expansion-models.ts: game identifiers, discriminated state types, Narsese input generation, transitions, and reset.
 - src/demo.ts: browser-side workspace lifecycle, worker messages, metrics, controls, activity log, and Canvas drawing.
 - src/demo-worker.ts: NARS instance lifecycle, operator registration, Narsese submission, bounded cycles, and structured events.
-- src/games/worlds/tictactoe.ts, shot.ts, testchamber.ts, fighterplane.ts: current expansion batch model contracts.
+- src/games/worlds/tictactoe.ts, shot.ts, testchamber.ts, fighterplane.ts and src/games/expansion/worlds/echo-relay.ts: current expansion batch model contracts.
 - src/diagnostics/reasoner-snapshot.ts: constant-time concept and task-bag counts returned by the Worker.
 - src/ui/runtime-telemetry.ts: FPS, browser-supported page-memory estimates, and the diagnostics panel view.
 - src/lab.ts: animated directory previews.
@@ -50,9 +50,9 @@ Astro owns page composition and static output. Environment models are plain Type
 6. Add model tests for initial values, sensor/goal terms, each meaningful action, collision or terminal outcome, feedback sent to NARS, deterministic reset, and bounds.
 7. Run npm run check. Then run npm run dev and verify the route in a browser: Worker online, inference progress, pause/resume, single-step, reset, manual control, operation result, logs, and a visible canvas. Check desktop and narrow mobile layout.
 
-Run npm run test:browser when a local Chromium/Chrome installation is available. The smoke suite verifies the index preview pixels, confirms the index starts no Worker, and exercises all six demo pages.
+Run npm run test:browser when a local Chromium/Chrome installation is available. The smoke suite verifies the index preview pixels, confirms the index starts no Worker, and exercises all ten game pages plus Microworld.
 
-If the environment needs an operator not already registered, add the operator to src/demo-worker.ts and verify its actual EXECUTION event; a button or predicted action alone does not prove the NARS operation ran.
+If the environment needs an operator not already registered, add the corresponding operator (操作符) to src/demo-worker.ts and verify its actual EXECUTION event; a button or predicted action alone does not prove the NARS operation ran.
 
 ## Change and release flow
 

@@ -25,6 +25,7 @@ const artworkClasses: Record<"microworld" | DemoId, string> = {
   shot: "art-shot",
   testchamber: "art-testchamber",
   fighterplane: "art-fighterplane",
+  "echo-relay": "art-echo-relay",
 };
 
 const games: readonly DemoCatalogEntry[] = [
@@ -88,13 +89,23 @@ const games: readonly DemoCatalogEntry[] = [
     artwork: artworkClasses[id],
     sourceLabel: "OPENNARS ADAPTATION / COMPOSITE NARSESE",
   })),
+  {
+    id: "echo-relay",
+    title: "Echo Relay",
+    summary: "回声探测 · 部分可观测迷宫 · 信标导航",
+    family: "11 / PARTIAL OBSERVABILITY",
+    href: "./demo.html?game=echo-relay",
+    preview: "echo-relay",
+    artwork: artworkClasses["echo-relay"],
+    sourceLabel: "ORIGINAL / ECHO-BASED EXPLORATION",
+  },
 ];
 
 export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
   {
     id: "microworld",
     title: "虫脑 Microworld",
-    summary: "六路离散视觉 · 好坏食物 · NARS 原子操作",
+    summary: "六路离散视觉 · 好坏食物 · 感知—操作闭环",
     family: "01 / PERCEPTION & FEEDBACK",
     href: "./microworld.html",
     preview: "microworld",

@@ -14,6 +14,7 @@ import {
   type PongState,
 } from "./games/models.ts";
 import type { ExpansionState } from "./games/expansion-types.ts";
+import type { EchoRelayState } from "./games/expansion-types.ts";
 import { isDemoId } from "./data/demo-catalog.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
@@ -44,6 +45,10 @@ const ACTION_ICONS: Record<string, string> = {
   shoot: "arrow-up",
   pick: "hand",
   drop: "arrow-down",
+  move: "arrow-up",
+  turn_left: "rotate-ccw",
+  turn_right: "rotate-cw",
+  ping: "radio",
 };
 
 function element<T extends Element>(selector: string): T {
@@ -98,6 +103,9 @@ const ui = {
   pageMemory: element<HTMLOutputElement>("#page-memory"),
   concepts: element<HTMLOutputElement>("#concept-count"),
   taskBags: element<HTMLOutputElement>("#task-bags"),
+  echoMapDetails: element<HTMLDetailsElement>("#echo-map-details"),
+  echoTruthMap: element<HTMLCanvasElement>("#echo-truth-map"),
+  echoKnownMap: element<HTMLCanvasElement>("#echo-known-map"),
 };
 const telemetry = new RuntimeTelemetryView({
   fps: ui.fps,
@@ -185,7 +193,7 @@ function initializeWorker(): void {
       const action = data.action ?? "unknown operation";
       ui.operation.value = `${action}({SELF})`;
       ui.source.value = "NARS / EXE";
-      ui.opState.textContent = "NARS Operator.execute 已触发";
+      ui.opState.textContent = "NARS 操作符已执行";
       addLog("operation", `[EXECUTED] ${action}({SELF})`);
       return;
     }
@@ -223,7 +231,7 @@ function initializeWorker(): void {
     ui.runtimeLabel.textContent = "Worker 异常";
     addLog("fault", event.message || "NARS Worker stopped");
   });
-  state.worker.postMessage({ type: "init", game: gameId, seed: state.seed, actions: definition.actions });
+  state.worker.postMessage({ type: "init", game: gameId, seed: state.seed, actions: definition.actions, priorRules: definition.narsPriorRules ?? [] });
 }
 
 function requestStep(): void {
@@ -272,6 +280,11 @@ function renderMetrics(): void {
       ui.scoreLabel.value = "GRID / DELIVERY"; metric("位置", `${state.model.player.x},${state.model.player.y}`); metric("携带", state.model.carrying ? "是" : "否"); metric("送达", state.model.delivered); sensor(state.model.switch.active ? "switch_on" : "switch_off", true); sensor(state.model.item.active ? "item" : "empty"); break;
     case "fighterplane":
       ui.scoreLabel.value = "AIR / HIT"; metric("命中", state.model.hits); metric("生命", state.model.player.hp); metric("冷却", state.model.cooldown); sensor(state.model.enemy.x < state.model.player.x ? "enemy_left" : "enemy_right", true); sensor(`hp_${state.model.enemy.hp}`); break;
+    case "echo-relay":
+      ui.scoreLabel.value = "ECHO / NAVIGATION"; metric("能量", `${state.model.playerEnergy} / 36`); metric("脉冲", `${state.model.pulseEnergy} / 6`); metric("发现", state.model.discoveries); metric("碰撞", state.model.collisions);
+      sensor(`face_${state.model.facing}`, true); sensor(`known_walls_${state.model.knownWalls.length}`); sensor(state.model.arrived ? "beacon_reached" : "signal_at_beacon");
+      ui.echoMapDetails.hidden = false;
+      break;
   }
   ui.sensorSummary.value = `${ui.sensors.childElementCount} inputs`;
 }
@@ -321,7 +334,35 @@ function drawExpansion(context: CanvasRenderingContext2D, model: ExpansionState)
   if (model.game === "tictactoe") { context.strokeStyle = "#84927f"; context.lineWidth = 4; for (let i = 1; i < 3; i++) { context.beginPath(); context.moveTo(i * 800 / 3, 70); context.lineTo(i * 800 / 3, 530); context.stroke(); context.beginPath(); context.moveTo(80, 70 + i * 460 / 3); context.lineTo(720, 70 + i * 460 / 3); context.stroke(); } context.font = "bold 110px system-ui"; context.textAlign = "center"; context.textBaseline = "middle"; model.board.forEach((cell, i) => { if (cell) { context.fillStyle = cell === "x" ? "#b5e567" : "#ffc56c"; context.fillText(cell.toUpperCase(), 80 + (i % 3) * 320 + 160, 70 + Math.floor(i / 3) * 460 / 3 + 460 / 6); } }); return; }
   if (model.game === "shot") { context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(model.targetX * 800, (1 - model.targetY) * 600, 22, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b5e567"; context.fillRect(model.playerX * 800 - 30, 540, 60, 18); return; }
   if (model.game === "testchamber") { const cw = 800 / model.width, ch = 600 / model.height; context.strokeStyle = "rgba(185,200,174,.18)"; for (let x = 0; x <= model.width; x++) { context.beginPath(); context.moveTo(x * cw, 0); context.lineTo(x * cw, 600); context.stroke(); } for (let y = 0; y <= model.height; y++) { context.beginPath(); context.moveTo(0, y * ch); context.lineTo(800, y * ch); context.stroke(); } context.fillStyle = "#ffc56c"; context.fillRect(model.item.x * cw + 10, model.item.y * ch + 10, cw - 20, ch - 20); context.fillStyle = model.switch.active ? "#71d9c8" : "#ff7661"; context.fillRect(model.switch.x * cw + 10, model.switch.y * ch + 10, cw - 20, ch - 20); context.fillStyle = "#b5e567"; context.fillRect(model.player.x * cw + 12, model.player.y * ch + 12, cw - 24, ch - 24); return; }
+  if (model.game !== "fighterplane") return;
   context.fillStyle = "#ff7661"; context.beginPath(); context.arc(model.enemy.x / model.width * 800, model.enemy.y / model.height * 600, 24, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b5e567"; context.beginPath(); context.moveTo(model.player.x / model.width * 800, model.player.y / model.height * 600 - 28); context.lineTo(model.player.x / model.width * 800 - 22, model.player.y / model.height * 600 + 22); context.lineTo(model.player.x / model.width * 800 + 22, model.player.y / model.height * 600 + 22); context.closePath(); context.fill();
+}
+
+function drawEchoMap(context: CanvasRenderingContext2D, model: EchoRelayState, revealTruth: boolean): void {
+  const cell = Math.min(800 / model.width, 600 / model.height);
+  const offsetX = (800 - cell * model.width) / 2, offsetY = (600 - cell * model.height) / 2;
+  context.fillStyle = "#18211d"; context.fillRect(0, 0, 800, 600);
+  const known = new Set(model.knownWalls);
+  for (let y = 0; y < model.height; y += 1) for (let x = 0; x < model.width; x += 1) {
+    const wall = revealTruth ? model.walls[y * model.width + x] : known.has(`${x}_${y}`);
+    context.fillStyle = wall ? "#65736b" : "#27332d";
+    context.fillRect(offsetX + x * cell + 2, offsetY + y * cell + 2, cell - 4, cell - 4);
+    if (!revealTruth && !wall) { context.fillStyle = "rgba(198,214,183,.16)"; context.beginPath(); context.arc(offsetX + (x + .5) * cell, offsetY + (y + .5) * cell, 2, 0, Math.PI * 2); context.fill(); }
+  }
+  context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(offsetX + (model.beacon.x + .5) * cell, offsetY + (model.beacon.y + .5) * cell, cell * .22, 0, Math.PI * 2); context.fill();
+  context.fillStyle = "#b5e567"; context.beginPath(); context.arc(offsetX + (model.player.x + .5) * cell, offsetY + (model.player.y + .5) * cell, cell * .26, 0, Math.PI * 2); context.fill();
+  if (!revealTruth && model.pulse) { context.strokeStyle = "#71d9c8"; context.lineWidth = 4; context.beginPath(); for (const [index, point] of model.pulse.path.entries()) { const x = offsetX + (point.x + .5) * cell, y = offsetY + (point.y + .5) * cell; index === 0 ? context.moveTo(x, y) : context.lineTo(x, y); } context.stroke(); }
+}
+
+function paintMapCanvas(canvas: HTMLCanvasElement, model: EchoRelayState, revealTruth: boolean): void {
+  const bounds = canvas.getBoundingClientRect();
+  const width = Math.max(1, Math.round(bounds.width * (window.devicePixelRatio || 1)));
+  const height = Math.max(1, Math.round(bounds.height * (window.devicePixelRatio || 1)));
+  if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+  const mapContext = canvas.getContext("2d");
+  if (!mapContext) return;
+  mapContext.setTransform(width / 800, 0, 0, height / 600, 0, 0);
+  drawEchoMap(mapContext, model, revealTruth);
 }
 
 function render(): void {
@@ -336,6 +377,7 @@ function render(): void {
     case "cartpole": drawCartpole(context, state.model); break;
     case "hunt": drawHunt(context, state.model); break;
     case "tictactoe": case "shot": case "testchamber": case "fighterplane": drawExpansion(context, state.model); break;
+    case "echo-relay": drawEchoMap(context, state.model, false); if (ui.echoMapDetails.open) { paintMapCanvas(ui.echoTruthMap, state.model, true); paintMapCanvas(ui.echoKnownMap, state.model, false); } break;
   }
 }
 
@@ -350,6 +392,7 @@ function addManualControls(): void {
     shot: [["左移", "left"], ["右移", "right"], ["射击", "shoot"]],
     testchamber: [["左", "left"], ["右", "right"], ["上", "up"], ["下", "down"], ["拾取", "pick"], ["开关", "activate"], ["放下", "drop"]],
     fighterplane: [["左", "left"], ["右", "right"], ["上", "up"], ["下", "down"], ["开火", "fire"]],
+    "echo-relay": [["前进", "move"], ["左转", "turn_left"], ["右转", "turn_right"], ["探测", "ping"]],
   } satisfies Record<DemoId, ManualAction[]>;
   const controls = actionsByGame[gameId];
   for (const [label, action] of controls) {
@@ -380,8 +423,10 @@ function reset(seed = state.seed): void { state.seed = Number(seed) >>> 0 || 1; 
 
 function setSourceDisclosure(): void {
   const reference = document.createElement("span"); reference.textContent = `环境机制参考 ${definition.source}；许可：${definition.license}。`;
+  const priorNote = definition.narsPriorNote;
   const link = document.createElement("a"); link.href = definition.url; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = "查看源码";
   ui.sourceCopy.append(reference, document.createTextNode(" "), link);
+  if (priorNote) { const disclosure = document.createElement("span"); disclosure.className = "prior-rule-note"; disclosure.textContent = priorNote; ui.sourceCopy.append(document.createElement("br"), disclosure); }
   ui.sourceToggle.addEventListener("click", () => { const open = ui.sourceToggle.getAttribute("aria-expanded") === "true"; ui.sourceToggle.setAttribute("aria-expanded", String(!open)); ui.sourceCopy.hidden = open; });
 }
 
@@ -398,6 +443,7 @@ function addTabsAndControls(): void {
   ui.babble.addEventListener("input", () => { state.babble = Number(ui.babble.value) / 100; ui.babbleLabel.value = `${ui.babble.value}%`; });
   ui.speed.value = String(state.speed); ui.speedLabel.value = `${state.speed} 步/秒`;
   ui.speed.addEventListener("input", () => { state.speed = Number(ui.speed.value); ui.speedLabel.value = `${state.speed} 步/秒`; });
+  ui.echoMapDetails.addEventListener("toggle", () => { if (ui.echoMapDetails.open && state.model.game === "echo-relay") render(); });
   ui.run.addEventListener("click", () => setRunning(!state.running));
   ui.singleStep.addEventListener("click", () => { setRunning(false); requestStep(); });
   ui.reset.addEventListener("click", () => reset(state.seed));
@@ -418,6 +464,12 @@ function boot(): void {
   setSourceDisclosure(); addManualControls(); addTabsAndControls(); renderMetrics(); addLog("system", `模型已选中：${definition.title}`, 0); reset(state.seed); requestAnimationFrame(animationFrame);
   document.addEventListener("keydown", (event) => {
     if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLInputElement) return;
+    if (state.model.game === "echo-relay") {
+      const echoKeys: Record<string, string> = { w: "move", q: "turn_left", e: "turn_right", " ": "ping" };
+      const action = echoKeys[event.key.toLowerCase()];
+      if (action && applyManualGameControl(state.model, action)) { event.preventDefault(); renderMetrics(); render(); }
+      return;
+    }
     const keyMap: Record<string, string> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
     if (event.key === " ") { event.preventDefault(); setRunning(!state.running); }
     else if (keyMap[event.key] && applyManualGameControl(state.model, keyMap[event.key])) { event.preventDefault(); renderMetrics(); render(); }

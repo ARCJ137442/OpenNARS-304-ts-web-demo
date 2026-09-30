@@ -15,7 +15,6 @@ export const DEMO_DEFINITIONS: Readonly<Record<DemoId, DemoDefinition>> = Object
   bandrobot: bandrobot.definition,
   cartpole: cartpole.definition,
   hunt: hunt.definition,
-  ...Object.fromEntries(Object.entries(EXPANSION_DEFINITIONS).map(([id, definition]) => [id, { ...definition, babble: 0.08 }])) as Record<string, DemoDefinition>,
   ...Object.fromEntries(Object.entries(EXPANSION_DEFINITIONS).map(([id, definition]) => [id, { ...definition, babble: 0.08 }])),
 } as Record<DemoId, DemoDefinition>);
 
@@ -27,7 +26,7 @@ export function createDemoState(game: DemoId, seed = 3040304): DemoState {
     case "bandrobot": return bandrobot.create(seed);
     case "cartpole": return cartpole.create(seed);
     case "hunt": return hunt.create(seed);
-    case "tictactoe": case "shot": case "testchamber": case "fighterplane": return createExpansionState(game, seed);
+    case "tictactoe": case "shot": case "testchamber": case "fighterplane": case "echo-relay": return createExpansionState(game, seed);
   }
 }
 
@@ -38,7 +37,7 @@ export function buildNarsStep(state: DemoState): NarsStep {
     case "bandrobot": return bandrobot.buildNarsStep(state);
     case "cartpole": return cartpole.buildNarsStep(state);
     case "hunt": return hunt.buildNarsStep(state);
-    case "tictactoe": case "shot": case "testchamber": case "fighterplane": return buildExpansionNarsStep(state);
+    case "tictactoe": case "shot": case "testchamber": case "fighterplane": case "echo-relay": return buildExpansionNarsStep(state);
   }
 }
 
@@ -49,7 +48,7 @@ export function advanceDemo(state: DemoState, rawAction: string | null = null, m
     case "bandrobot": return bandrobot.advance(state, rawAction);
     case "cartpole": return cartpole.advance(state, rawAction);
     case "hunt": return hunt.advance(state, rawAction);
-    case "tictactoe": case "shot": case "testchamber": case "fighterplane": return advanceExpansion(state, rawAction);
+    case "tictactoe": case "shot": case "testchamber": case "fighterplane": case "echo-relay": return advanceExpansion(state, rawAction);
   }
 }
 
@@ -60,7 +59,7 @@ export function applyManualGameControl(state: DemoState, control: string): boole
     case "bandrobot": return bandrobot.applyManualControl(state, control);
     case "cartpole": return cartpole.applyManualControl(state, control);
     case "hunt": return hunt.applyManualControl(state, control);
-    case "tictactoe": case "shot": case "testchamber": case "fighterplane": return applyExpansionControl(state, control);
+    case "tictactoe": case "shot": case "testchamber": case "fighterplane": case "echo-relay": return applyExpansionControl(state, control);
   }
 }
 

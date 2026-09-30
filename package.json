@@ -14,6 +14,8 @@
     "check": "npm run typecheck && astro check && npm test && npm run build && node scripts/check-build.mjs",
     "test": "node --experimental-strip-types --test",
     "test:browser": "node scripts/browser-smoke.mjs",
+    "test:nars-operation": "node scripts/nars-operation-contract.mjs",
+    "test:nars-action": "node --experimental-strip-types scripts/nars-action-smoke.mjs",
     "typecheck": "tsc --project tsconfig.json",
     "deploy:pages": "node scripts/deploy-pages.mjs"
   },

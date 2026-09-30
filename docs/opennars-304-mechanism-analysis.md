@@ -32,7 +32,7 @@
     带主体、属性、时刻和真值的 Narsese 陈述
       |
       v
-    目标进入 desire 表，操作进入 Decision/Operator 路径
+    目标进入欲望（desire）表，操作进入 Decision/Operator 路径
       |
       v
     环境执行后把结果作为新的输入事件
