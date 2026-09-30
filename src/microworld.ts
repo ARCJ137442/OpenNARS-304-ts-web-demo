@@ -154,7 +154,6 @@ const state: {
   queuedAction: ActionCode;
   telemetryWindowStartedAt: number;
   environmentEvents: number;
-  reasonerEvents: number;
 } = {
   seed: INITIAL_SEED,
   world: createWorld(INITIAL_SEED),
@@ -185,7 +184,6 @@ const state: {
   queuedAction: 0,
   telemetryWindowStartedAt: performance.now(),
   environmentEvents: 0,
-  reasonerEvents: 0,
 };
 
 function randomSeed(): number {
@@ -290,11 +288,9 @@ function updateTelemetry(): void {
   elements.runtimePending.textContent = elements.runtimePending.value;
   const elapsed = Math.max(0.25, (performance.now() - state.telemetryWindowStartedAt) / 1000);
   const tps = state.environmentEvents / elapsed;
-  const rps = state.reasonerEvents / elapsed;
   elements.tps.value = `TPS ${tps.toFixed(1)}`;
-  elements.rps.value = `RPS ${rps.toFixed(1)}`;
+  elements.tps.textContent = elements.tps.value;
   elements.tps.dataset.rate = tps >= state.speed * 0.75 ? "good" : "lag";
-  elements.rps.dataset.rate = rps >= state.speed * 0.75 ? "good" : "lag";
 }
 
 function newWorker(seed: number): void {
@@ -334,7 +330,6 @@ function newWorker(seed: number): void {
     }
     if (data.type === "step-complete") {
       state.pending = false;
-      state.reasonerEvents += 1;
       telemetry.inference(Number(data.cycles ?? state.narsCycles), Number(data.elapsedMs ?? 0));
       state.lastLatency = Number(data.elapsedMs) || 0;
       state.lastNarTime = data.narTime ?? "0";
@@ -423,7 +418,6 @@ function resetRun(seed = state.seed): void {
   state.totalStepMs = 0;
   state.measuredSteps = 0;
   state.environmentEvents = 0;
-  state.reasonerEvents = 0;
   telemetry.resetRates();
   state.telemetryWindowStartedAt = performance.now();
   state.queuedAction = 0;

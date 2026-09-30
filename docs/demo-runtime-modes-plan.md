@@ -22,3 +22,7 @@ The default mode is synchronous: an environment tick is committed only after its
 - Async mode continues environment ticks while a Worker step is pending and applies the newest completed action on a future tick.
 - FPS, TPS and RPS remain visible together on desktop and mobile, with a value and color-coded progress bar.
 - Browser smoke checks mode switching, visible metrics, pause/single-step, and absence of index-page Workers.
+
+## Performance Gate
+
+RPS is cycles per second, not completed requests per second. The first optimization target is a measured steady-state RPS of at least `1.0` on the supported PC fixture at the default cycles setting. Async mode may keep TPS responsive below that threshold, but it cannot count as an RPS improvement.
