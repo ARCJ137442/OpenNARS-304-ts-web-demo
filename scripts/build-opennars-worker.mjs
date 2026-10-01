@@ -121,9 +121,9 @@ const workerSource = `
         event(channel, args) {
           try {
             const rendered = TextOutputHandler.getOutputString(channel, args[0], false, true, reasoner);
-            if (rendered !== null && String(rendered).length > 0) output(`${channelLabel}: ${String(rendered)}`, channelName);
+            if (rendered !== null && String(rendered).length > 0) output(\`\${channelLabel}: \${String(rendered)}\`, channelName);
           } catch (error) {
-            output(`[render-error] ${errorText(error)}`, "error");
+            output(\`[render-error] \${errorText(error)}\`, "error");
           }
         }
       });
@@ -149,21 +149,21 @@ const workerSource = `
       return;
     }
     if (line === ":status") {
-      output(`[shell] time=${String(nar.time())} running=${String(nar.isRunning())} volume=${String(nar.narParameters.VOLUME)}`);
+      output(\`[shell] time=\${String(nar.time())} running=\${String(nar.isRunning())} volume=\${String(nar.narParameters.VOLUME)}\`);
       return;
     }
     if (line === ":version") {
-      output(`[shell] OpenNARS ${BUILD.coreVersion} / opennars-304-ts ${BUILD.packageVersion} / ${BUILD.sourceCommitShort}`);
+      output(\`[shell] OpenNARS \${BUILD.coreVersion} / opennars-304-ts \${BUILD.packageVersion} / \${BUILD.sourceCommitShort}\`);
       return;
     }
     const cycleMatch = CYCLE_COMMAND.exec(line);
     if (cycleMatch !== null) {
       const count = Number(cycleMatch[1]);
       if (!Number.isSafeInteger(count) || count < 1 || count > MAX_CYCLES_PER_COMMAND) {
-        throw new Error(`:cycles must be an integer from 1 to ${MAX_CYCLES_PER_COMMAND}`);
+        throw new Error(\`:cycles must be an integer from 1 to \${MAX_CYCLES_PER_COMMAND}\`);
       }
       nar.cycles(count);
-      output(`[shell] cycles=${count} time=${String(nar.time())}`);
+      output(\`[shell] cycles=\${count} time=\${String(nar.time())}\`);
       return;
     }
     const volumeMatch = VOLUME_COMMAND.exec(line);
@@ -172,8 +172,8 @@ const workerSource = `
       if (!Number.isInteger(volume) || volume < 0 || volume > 100) {
         throw new Error(":volume must be an integer from 0 to 100");
       }
-      nar.addInput(`*volume=${volume}`);
-      output(`[shell] volume=${volume}`);
+      nar.addInput(\`*volume=\${volume}\`);
+      output(\`[shell] volume=\${volume}\`);
       return;
     }
     if (line === ":quit" || line === ":exit") {
@@ -197,7 +197,7 @@ const workerSource = `
         createReasoner(data.text);
         send("configured", { source: data.name ?? "custom configuration", time: String(nar.time()), volume: nar.narParameters.VOLUME });
       } catch (error) {
-        output(`[config-error] ${errorText(error)}`, "error");
+        output(\`[config-error] \${errorText(error)}\`, "error");
         send("complete", { time: String(nar?.time?.() ?? 0), volume: nar?.narParameters?.VOLUME ?? 100, failed: true });
       } finally {
         send("busy", { busy: false });
@@ -211,7 +211,7 @@ const workerSource = `
       for (const line of lines) handleLine(line);
       send("complete", { time: String(nar.time()), volume: nar.narParameters.VOLUME });
     } catch (error) {
-      output(`[shell-error] ${errorText(error)}`, "error");
+      output(\`[shell-error] \${errorText(error)}\`, "error");
       send("complete", { time: String(nar.time()), volume: nar.narParameters.VOLUME, failed: true });
     } finally {
       send("busy", { busy: false });
