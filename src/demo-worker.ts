@@ -1,5 +1,4 @@
 /* GPL-3.0-or-later NARS sensorimotor demonstration adapter. */
-import { java } from "@opennars/platform/browser/native-host-adapter.ts";
 import { Events } from "@opennars/io/events/Events.ts";
 import { OutputHandler } from "@opennars/io/events/OutputHandler.ts";
 import { Nar } from "@opennars/main/Nar.ts";
@@ -69,7 +68,7 @@ function initialize(game: string, seed: number, actions: string[], priorRules: s
     },
   });
   for (const rule of priorRules) {
-    nar.addInput(new java.lang.String(rule));
+    nar.addInput(rule);
     post("log", { kind: "PRIOR", game, text: rule });
   }
   post("ready", { game, actions: [...enabledActions] });
@@ -81,7 +80,7 @@ function runStep(message: Extract<WorkerMessage, { type: "step" }>): void {
   operationThisStep = null;
   for (const [kind, values] of [["SENSOR", message.beliefs], ["GOAL", message.goals], ["FEEDBACK", message.feedback]] as const) {
     for (const text of values ?? []) {
-      nar.addInput(new java.lang.String(text));
+      nar.addInput(text);
       post("log", { kind, game: message.game, step: message.step, text });
     }
   }
@@ -95,7 +94,7 @@ function runStep(message: Extract<WorkerMessage, { type: "step" }>): void {
     if (candidates.length > 0) {
       action = candidates[Math.floor(random() * candidates.length)];
       source = "babble";
-      nar.addInput(new java.lang.String(`${action.slice(1)}({SELF}). :|:`));
+      nar.addInput(`${action.slice(1)}({SELF}). :|:`);
       post("log", { kind: "BABBLE", game: message.game, step: message.step, text: action });
     }
   }

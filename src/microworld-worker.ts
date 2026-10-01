@@ -3,7 +3,6 @@
  * See COPYING-GPL-3.0.txt and docs/microworld-demo-implementation-plan.md.
  */
 
-import { java } from "@opennars/platform/browser/native-host-adapter.ts";
 import { Events } from "@opennars/io/events/Events.ts";
 import { OutputHandler } from "@opennars/io/events/OutputHandler.ts";
 import { Nar } from "@opennars/main/Nar.ts";
@@ -108,7 +107,7 @@ function createNar(seed: number): void {
 
 function submit(text: string, kind: string): void {
   if (!nar) return;
-  nar.addInput(new java.lang.String(text));
+  nar.addInput(text);
   post("log", { kind, text, step: stepNumber });
 }
 
@@ -195,5 +194,4 @@ self.addEventListener("message", ({ data }: MessageEvent<StepMessage | { type: "
   }
 });
 
-void java;
 post("booting", { cyclesPerStep: DEFAULT_STEP_CYCLES });

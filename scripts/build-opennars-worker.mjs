@@ -69,7 +69,6 @@ const browserHostBanner = `globalThis.__OPENNARS_DEFAULT_CONFIG__ = ${JSON.strin
 
 const modulePath = (relativePath) => JSON.stringify(resolve(openNarsRoot, relativePath).replaceAll("\\", "/"));
 const workerSource = `
-  import { java } from ${modulePath("src/platform/browser/native-host-adapter.ts")};
   import { Nar } from ${modulePath("src/main/Nar.ts")};
   import { Debug } from ${modulePath("src/main/Debug.ts")};
   import { Events } from ${modulePath("src/io/events/Events.ts")};
@@ -173,7 +172,7 @@ const workerSource = `
       if (!Number.isInteger(volume) || volume < 0 || volume > 100) {
         throw new Error(":volume must be an integer from 0 to 100");
       }
-      nar.addInput(new java.lang.String("*volume=" + volume));
+      nar.addInput("*volume=" + volume);
       output("[shell] volume=" + volume);
       return;
     }
@@ -181,7 +180,7 @@ const workerSource = `
       output("[shell] browser session remains open; use RESET SESSION to restart it.");
       return;
     }
-    nar.addInput(new java.lang.String(line));
+    nar.addInput(line);
   }
 
   try {
