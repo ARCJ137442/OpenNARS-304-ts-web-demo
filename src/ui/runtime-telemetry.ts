@@ -28,7 +28,7 @@ type RuntimeTelemetryElements = {
 };
 
 function formatMegabytes(bytes: number): string {
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 async function readPageMemory(): Promise<{ text: string; detail: string }> {
@@ -86,7 +86,7 @@ export class RuntimeTelemetryView {
     const elapsed = now - this.frameStart;
     if (elapsed < 1000) return;
     const fps = Math.round((this.frameCount * 1000) / elapsed);
-    this.elements.fps.value = String(fps) + " FPS";
+    this.elements.fps.value = `${fps} FPS`;
     this.elements.fps.textContent = this.elements.fps.value;
     this.elements.fpsBar.style.setProperty("--rate", `${Math.min(100, fps / 60 * 100)}%`);
     this.elements.fps.dataset.rate = fps >= 45 ? "good" : "lag";
@@ -156,13 +156,11 @@ export class RuntimeTelemetryView {
   updateReasoner(snapshot: ReasonerSnapshot | undefined): void {
     if (!snapshot) return;
     const concepts = snapshot.conceptCapacity > 0
-      ? snapshot.concepts.toLocaleString() + " / " + snapshot.conceptCapacity.toLocaleString()
+      ? `${snapshot.concepts.toLocaleString()} / ${snapshot.conceptCapacity.toLocaleString()}`
       : snapshot.concepts.toLocaleString();
     this.elements.concepts.value = concepts;
     this.elements.concepts.textContent = concepts;
-    this.elements.taskBags.value = "新 " + snapshot.novelTasks
-      + " · 序 " + snapshot.sequenceTasks
-      + " · 操 " + snapshot.recentOperations;
+    this.elements.taskBags.value = `新 ${snapshot.novelTasks} · 序 ${snapshot.sequenceTasks} · 操 ${snapshot.recentOperations}`;
     this.elements.taskBags.title = "新任务 · 时序任务 · 操作记录";
     this.elements.taskBags.textContent = this.elements.taskBags.value;
   }

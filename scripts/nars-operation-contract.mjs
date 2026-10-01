@@ -28,7 +28,7 @@ try {
       worker.addEventListener("message", ({ data }) => {
         events.push(data);
         if (data.type === "ready") {
-          const actionGoal = "(" + entry.action + ",{SELF})! :|:";
+          const actionGoal = `(${entry.action},{SELF})! :|:`;
           worker.postMessage({
             type: "step",
             game: entry.id,
@@ -68,9 +68,9 @@ try {
 
   for (const result of results) {
     console.log(JSON.stringify(result));
-    assert.equal(result.result, "step-complete", result.id + ": operation goal must parse and step");
-    assert.equal(result.source, "NARS", result.id + ": action source must be NARS, with Babble disabled");
-    assert.equal(result.executed, true, result.id + ": registered operator must emit operation event");
+    assert.equal(result.result, "step-complete", `${result.id}: operation goal must parse and step`);
+    assert.equal(result.source, "NARS", `${result.id}: action source must be NARS, with Babble disabled`);
+    assert.equal(result.executed, true, `${result.id}: registered operator must emit operation event`);
   }
 } finally {
   await browser.close();

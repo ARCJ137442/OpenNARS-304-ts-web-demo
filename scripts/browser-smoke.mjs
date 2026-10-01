@@ -62,7 +62,7 @@ try {
 
   const operationFindings = [];
   for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"]) {
-    await page.goto(new URL("demo.html?game=" + game, baseUrl).href);
+    await page.goto(new URL(`demo.html?game=${game}`, baseUrl).href);
     await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
     await page.locator("#babble-control").evaluate((input) => { input.value = "0"; input.dispatchEvent(new Event("input", { bubbles: true })); });
     await page.locator("#reset-demo").click();
@@ -72,7 +72,7 @@ try {
     await page.locator("#concept-count").waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
     await page.waitForFunction(() => !document.querySelector("#tps-hud")?.textContent?.includes("读取中") && !document.querySelector("#rps-hud")?.textContent?.includes("读取中"), undefined, { timeout: 5000 });
-    for (const id of ["fps-hud", "tps-hud", "rps-hud", "fps-bar", "tps-bar", "rps-bar"]) await page.locator("#" + id).waitFor({ state: "visible" });
+    for (const id of ["fps-hud", "tps-hud", "rps-hud", "fps-bar", "tps-bar", "rps-bar"]) await page.locator(`#${id}`).waitFor({ state: "visible" });
     await page.locator("#toggle-rate-hud").click();
     await page.locator("#rate-hud").waitFor({ state: "hidden" });
     await page.locator("#toggle-rate-hud").click();
@@ -81,7 +81,7 @@ try {
     await page.locator("#mode-async").check();
     await page.waitForTimeout(300);
     assert.equal(await page.locator("#runtime-mode").textContent(), "异步");
-    assert.ok(Number(await page.locator("#game-step").textContent()) > asyncStart, game + " async mode should advance world ticks while NARS runs");
+    assert.ok(Number(await page.locator("#game-step").textContent()) > asyncStart, `${game} async mode should advance world ticks while NARS runs`);
     await page.locator("#mode-sync").check();
     assert.equal(await page.locator("#runtime-mode").textContent(), "同步");
     const canvasHasPixels = await page.locator("#game-canvas").evaluate((canvas) => {
@@ -90,7 +90,7 @@ try {
       const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
       return pixels.some((value, index) => index % 4 !== 3 && value > 32);
     });
-    assert.ok(canvasHasPixels, game + " canvas should contain the running scene");
+    assert.ok(canvasHasPixels, `${game} canvas should contain the running scene`);
     await page.waitForTimeout(1500);
     const nonBabbleExecution = await page.evaluate(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) => direction === "in" && message?.type === "step-complete" && message?.source === "NARS" && typeof message?.action === "string"));
     operationFindings.push({ game, babble: 0, nonBabbleExe: nonBabbleExecution, interpretation: nonBabbleExecution ? "NARS emitted an operator action" : "No NARS operator action observed in this smoke window" });
@@ -99,7 +99,7 @@ try {
     const frozenStep = await page.locator("#game-step").textContent();
     await page.getByRole("button", { name: "单步" }).click();
     await page.waitForFunction((previous) => document.querySelector("#game-step")?.textContent !== previous, frozenStep, { timeout: 10000 });
-    assert.equal(errors.length, 0, "page errors during " + game + ": " + errors.join("; "));
+    assert.equal(errors.length, 0, `page errors during ${game}: ${errors.join("; ")}`);
   }
 
   await page.goto(new URL("microworld.html", baseUrl).href);
@@ -123,7 +123,7 @@ try {
   await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
-  assert.equal(errors.length, 0, "browser errors: " + errors.join("; "));
+  assert.equal(errors.length, 0, `browser errors: ${errors.join("; ")}`);
   console.log(JSON.stringify({ ok: true, games: 10, operationFindings, microworld: true, indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({

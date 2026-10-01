@@ -538,7 +538,7 @@ function animationFrame(now: number): void {
 
 function boot(): void {
   mountIcons();
-  document.title = definition.title + " · OpenNARS 3.0.4 Lab";
+  document.title = `${definition.title} · OpenNARS 3.0.4 Lab`;
   ui.title.textContent = definition.title; ui.subtitle.textContent = definition.subtitle; ui.family.textContent = `NARS 3.0.4 / ${gameId.toUpperCase()} MODEL`;
   setSourceDisclosure(); addManualControls(); addTabsAndControls(); setRuntimeMode("sync"); renderMetrics(); addLog("system", `模型已选中：${definition.title}`, 0); reset(state.seed); requestAnimationFrame(animationFrame);
   document.addEventListener("keydown", (event) => {
