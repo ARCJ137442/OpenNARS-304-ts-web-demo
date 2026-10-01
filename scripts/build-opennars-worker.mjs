@@ -50,6 +50,9 @@ const browserAdapterPlugin = {
     build.onResolve({ filter: /jree-host-adapter\.ts$/ }, () => ({
       path: resolve(openNarsRoot, "src", "platform", "browser", "native-host-adapter.ts"),
     }));
+    build.onResolve({ filter: /native-host-adapter\.ts$/ }, () => ({
+      path: resolve(openNarsRoot, "src", "platform", "browser", "native-host-adapter.ts"),
+    }));
     build.onResolve({ filter: /jree-compat\.ts$/ }, () => ({
       path: resolve(openNarsRoot, "src", "platform", "browser", "native-compat.ts"),
     }));
