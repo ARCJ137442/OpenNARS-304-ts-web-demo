@@ -78,10 +78,21 @@ try {
     await page.locator("#toggle-rate-hud").click();
     await page.locator("#rate-hud").waitFor({ state: "visible" });
     const asyncStart = Number(await page.locator("#game-step").textContent());
+    const asyncReasonerStart = game === "cartpole" ? await page.evaluate(() => ({
+      requests: window.__demoWorkerEvents.filter(({ direction, message }) => direction === "out" && message?.type === "step").length,
+      completions: window.__demoWorkerEvents.filter(({ direction, message }) => direction === "in" && message?.type === "step-complete").length,
+    })) : null;
     await page.locator("#mode-async").check();
     await page.waitForTimeout(300);
     assert.equal(await page.locator("#runtime-mode").textContent(), "异步");
     assert.ok(Number(await page.locator("#game-step").textContent()) > asyncStart, `${game} async mode should advance world ticks while NARS runs`);
+    if (asyncReasonerStart !== null) {
+      await page.waitForFunction(({ requests, completions }) => {
+        const events = window.__demoWorkerEvents;
+        return events.filter(({ direction, message }) => direction === "out" && message?.type === "step").length >= requests + 2
+          && events.filter(({ direction, message }) => direction === "in" && message?.type === "step-complete").length >= completions + 2;
+      }, asyncReasonerStart, { timeout: 10000 });
+    }
     await page.locator("#mode-sync").check();
     assert.equal(await page.locator("#runtime-mode").textContent(), "同步");
     const canvasHasPixels = await page.locator("#game-canvas").evaluate((canvas) => {

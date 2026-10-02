@@ -281,7 +281,9 @@ function requestStep(): void {
   const input = buildNarsStep(state.model);
   state.pending = true;
   state.pendingSteps += 1;
-  state.requestTick = state.model.tick + 1;
+  // Track the world state sent to NARS. Async mode may advance while this
+  // request is pending, but must not resend the same state on every animation frame.
+  state.requestTick = state.model.tick;
   ui.runtimeQueue.value = `待处理 ${state.pendingSteps}`; ui.runtimeQueue.textContent = ui.runtimeQueue.value;
   ui.status.textContent = "INFERENCE";
   state.worker.postMessage({ type: "step", game: gameId, step: state.model.tick + 1, ...input, cycles: state.cycles, babble: state.babble });
@@ -534,7 +536,8 @@ function animationFrame(now: number): void {
     ui.step.textContent = ui.step.value;
     state.nextStep = now + 1000 / state.speed;
   }
-  if (state.running && state.ready && !state.pending && now >= state.nextStep) requestStep();
+  if (state.running && state.ready && !state.pending
+    && (state.mode === "async" ? state.model.tick > state.requestTick : now >= state.nextStep)) requestStep();
   requestAnimationFrame(animationFrame);
 }
 

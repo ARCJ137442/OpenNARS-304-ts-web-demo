@@ -32,6 +32,10 @@ const trackedSourceClean = (directory) => execFileSync("git", ["-C", directory, 
 const sortedPercentile = (values, fraction) => values.length === 0
   ? null
   : [...values].sort((a, b) => a - b)[Math.ceil(values.length * fraction) - 1];
+const countActionSources = (events) => events.reduce((counts, event) => {
+  counts[event.source] = (counts[event.source] ?? 0) + 1;
+  return counts;
+}, { NARS: 0, babble: 0, idle: 0 });
 const pageKind = game === "microworld" ? "microworld" : "demo";
 const url = new URL(pageKind === "microworld" ? "microworld.html" : `demo.html?game=${encodeURIComponent(game)}`, baseUrl);
 url.searchParams.set("seed", String(seed));
@@ -50,11 +54,20 @@ try {
   await page.addInitScript(() => {
     window.__rateProbe = [];
     window.__rateFaults = [];
+    window.__rateRequests = [];
+    window.__rateMessages = {};
     const NativeWorker = window.Worker;
     window.Worker = new Proxy(NativeWorker, {
       construct(Target, workerArgs) {
         const worker = Reflect.construct(Target, workerArgs);
+        const nativePostMessage = worker.postMessage.bind(worker);
+        worker.postMessage = (message, transfer) => {
+          if (message?.type === "step") window.__rateRequests.push({ atMs: performance.now(), step: message.step ?? null });
+          return nativePostMessage(message, transfer);
+        };
         worker.addEventListener("message", ({ data }) => {
+          const kind = String(data?.type ?? "unknown");
+          window.__rateMessages[kind] = (window.__rateMessages[kind] ?? 0) + 1;
           if (data?.type === "step-complete") window.__rateProbe.push({
             atMs: performance.now(),
             cycles: Number(data.cycles ?? 0),
@@ -99,6 +112,7 @@ try {
     atMs: performance.now(),
     step: Number(document.querySelector(selector)?.textContent ?? 0),
     eventIndex: window.__rateProbe.length,
+    requestIndex: window.__rateRequests.length,
   }), stepSelector);
   const samples = [start];
   let remainingMs = durationMs;
@@ -117,6 +131,9 @@ try {
     atMs: performance.now(),
     step: Number(document.querySelector(selector)?.textContent ?? 0),
     events: window.__rateProbe,
+    requests: window.__rateRequests,
+    messageCounts: window.__rateMessages,
+    pending: document.querySelector("#runtime-queue")?.textContent ?? document.querySelector("#runtime-pending")?.textContent ?? null,
     hud: {
       fps: document.querySelector("#fps-hud")?.textContent,
       tps: document.querySelector("#tps-hud")?.textContent,
@@ -140,6 +157,7 @@ try {
       wallRps: windowEvents.reduce((sum, event) => sum + event.cycles, 0) / seconds,
       p95InferenceMs: sortedPercentile(windowEvents.map((event) => event.elapsedMs), 0.95),
       concepts: sample.concepts,
+      actionSources: countActionSources(windowEvents),
     };
   });
   const result = {
@@ -158,6 +176,10 @@ try {
       actualTps: (end.step - start.step) / elapsedSeconds,
       actualToTargetRatio: (end.step - start.step) / elapsedSeconds / targetTps,
       completedReasonerSteps: events.length,
+      requestedReasonerSteps: end.requests.length - start.requestIndex,
+      latestReasonerRequest: end.requests.at(-1) ?? null,
+      workerMessageCounts: end.messageCounts,
+      pendingAtEnd: end.pending,
       completedCycles,
       wallRps: completedCycles / elapsedSeconds,
       activeRps: activeInferenceMs > 0 ? completedCycles * 1000 / activeInferenceMs : null,
@@ -165,6 +187,7 @@ try {
       firstConcepts: events[0]?.concepts ?? null,
       lastConcepts: events.at(-1)?.concepts ?? null,
       nonBabbleOperations: events.filter((event) => event.source === "NARS").length,
+      actionSources: countActionSources(events),
       pageHeapBytes: end.pageHeapBytes,
       windows,
       hud: end.hud,
