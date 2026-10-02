@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,5 +55,10 @@ if (metadata.coreVersion !== "v3.0.4" || !/^\d+\.\d+\.\d+$/.test(metadata.packag
   throw new Error("build metadata versions are invalid");
 }
 if (!/^[0-9a-f]{40}$/.test(metadata.sourceCommit)) throw new Error("build metadata source commit is invalid");
+const coreRoot = resolve(process.env.OPENNARS_TS_ROOT ?? resolve(projectRoot, "..", "OpenNARS-304-ts"));
+const currentCoreCommit = execFileSync("git", ["-C", coreRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+if (metadata.sourceCommit !== currentCoreCommit) {
+  throw new Error(`Worker bundle is stale: built from ${metadata.sourceCommit}, current core is ${currentCoreCommit}`);
+}
 
 console.log(JSON.stringify({ ok: true, files: requiredFiles.length, astroAssets: astroAssets.length, ...metadata }, null, 2));

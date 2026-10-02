@@ -47,17 +47,11 @@ const browserAdapterPlugin = {
     build.onResolve({ filter: /^@opennars\// }, ({ path }) => ({
       path: resolve(openNarsRoot, "src", path.slice("@opennars/".length)),
     }));
-    build.onResolve({ filter: /jree-host-adapter\.ts$/ }, () => ({
-      path: resolve(openNarsRoot, "src", "platform", "browser", "native-host-adapter.ts"),
-    }));
     build.onResolve({ filter: /native-host-adapter\.ts$/ }, () => ({
       path: resolve(openNarsRoot, "src", "platform", "browser", "native-host-adapter.ts"),
     }));
     build.onResolve({ filter: /platform[\\/]host-adapter\.ts$/ }, () => ({
       path: resolve(openNarsRoot, "src", "platform", "browser", "native-host-adapter.ts"),
-    }));
-    build.onResolve({ filter: /jree-compat\.ts$/ }, () => ({
-      path: resolve(openNarsRoot, "src", "platform", "browser", "native-compat.ts"),
     }));
     build.onResolve({ filter: /^(?:node:)?(?:fs|path|os|url|child_process|process|crypto|util|stream)$/ }, ({ path }) => ({
       path: resolve(browserAdapterDirectory, `${path.replace(/^node:/, "")}.js`),

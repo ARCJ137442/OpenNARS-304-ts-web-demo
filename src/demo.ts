@@ -18,6 +18,8 @@ import type { EchoRelayState } from "./games/expansion-types.ts";
 import { isDemoId } from "./data/demo-catalog.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
+import { nextWorldStepDeadline } from "./world-clock.ts";
+import { initialDemoSeed } from "./demo-seed.ts";
 import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
 
 type LogKind = "operation" | "input" | "feedback" | "system" | "fault";
@@ -162,7 +164,7 @@ const state: {
   lateActions: number;
   queuedAction: string | null;
 } = {
-  seed: randomSeed(), model: createDemoState(gameId), worker: null, generation: 0,
+  seed: initialDemoSeed(location.search, randomSeed), model: createDemoState(gameId), worker: null, generation: 0,
   ready: false, running: true, pending: false, waitingForWorker: true,
   nextStep: 0, speed: 5, cycles: definition.cycles, babble: definition.babble, filter: "all", mode: "sync", requestTick: 0, pendingSteps: 0, lateActions: 0, queuedAction: null,
 };
@@ -237,7 +239,7 @@ function initializeWorker(): void {
         renderMetrics();
         ui.step.value = String(state.model.tick).padStart(6, "0");
         ui.step.textContent = ui.step.value;
-        state.nextStep = performance.now() + 1000 / state.speed;
+        state.nextStep = nextWorldStepDeadline(state.nextStep, performance.now(), state.speed);
       } else if (data.action) {
         if (state.queuedAction !== null) {
           state.lateActions += 1;

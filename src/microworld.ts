@@ -21,6 +21,8 @@ import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
 import { MICROWORLD_DEFAULT_TPS, MICROWORLD_MAX_TPS, MICROWORLD_MIN_SMOOTH_TPS } from "./microworld/runtime-config.ts";
+import { nextWorldStepDeadline } from "./world-clock.ts";
+import { initialDemoSeed } from "./demo-seed.ts";
 
 type MicroworldWorkerEvent = {
   type: string;
@@ -130,7 +132,7 @@ const sprites: Record<string, HTMLImageElement> = {
 const SENSOR_LABELS = ["G1", "G2", "G3", "B1", "B2", "B3"];
 const LOG_LIMIT = 180;
 const DRAW_INTERVAL_MS = 1000 / 30;
-const INITIAL_SEED = randomSeed();
+const INITIAL_SEED = initialDemoSeed(location.search, randomSeed);
 const state: {
   seed: number;
   world: WorldState;
@@ -346,9 +348,7 @@ function newWorker(seed: number): void {
       if (state.running) {
         // Keep the world clock fixed like Processing's frameRate(50): inference
         // consumes the current period instead of being added to the next one.
-        const period = 1000 / Math.max(1, state.speed);
-        const nextDeadline = state.nextStepAt + period;
-        state.nextStepAt = Math.max(nextDeadline, performance.now());
+        state.nextStepAt = nextWorldStepDeadline(state.nextStepAt, performance.now(), state.speed);
       }
       else elements.worldStatus.textContent = "已暂停";
       requestRender();
