@@ -31,7 +31,9 @@ See docs/opennars-304-mechanism-analysis.md and docs/demo-adaptation-guide.md fo
 See docs/demo-expansion-plan.md, docs/demo-candidate-survey.md, and docs/original-demo-proposals.md for the next demo batch and original experiment proposals.
 See docs/terminology.md for the project's Chinese NARS/Narsese terminology map.
 See [One image is worth a thousand words](docs/design-principle-one-image.md) for the pre-release interface rules, and [the Java Lab feature map](docs/java-lab-feature-map.md) for implemented versus planned Launcher counterparts.
+The [2026-10-03 Demo handoff](docs/probes/20261003-demo-batch-requirements.md) distinguishes shipped foundations from future functions. An experimental Grid model lives on the `codex/gridworld-foundation-wip` branch; no Grid page is on main.
 The demo HUD separates `FPS` (rendering), `TPS` (world ticks), and `RPS` (NARS inference cycles); the collapsed Performance Diagnostics panel exposes sync/async pacing and runtime backlog. See [the runtime pacing plan](docs/demo-runtime-modes-plan.md).
+Every current Demo now requests at least 20 TPS. This configuration does not prove a sustained measured rate of 20; check the actual-to-target ratio and RPS, especially in synchronous mode. See [the experiment record](docs/probes/20261003-embodied-operation-adaptation.md) for known limitations.
 HUD RPS counts cycles actually completed in an approximately one-second wall-clock window and drops to zero when reasoning makes no progress. Its bar compares against target TPS × cycles per world tick, rather than reporting one fast inference call as sustained throughput.
 The five expansion environments report state changes immediately and refresh unchanged state every five ticks; outcome feedback is always sent. This is an explicit Demo input adaptation, not a same-semantics speedup of the reasoner core.
 

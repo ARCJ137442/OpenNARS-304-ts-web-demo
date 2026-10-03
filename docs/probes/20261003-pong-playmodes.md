@@ -12,7 +12,7 @@
 - `pong_test_2p`、`pong_test_2p_one`、`pong_test_2p_one_no_diff`：上下双挡板场景，推理器数与感知处理不同。
 - `pong_test2_diff`、`pong_test_diff`、`pong_test_2p_diff`：差分感知（最后一项是双玩家对照）。
 
-当前 Demo 是 OpenNARS Lab 风格的连续坐标 Pong，只注册一个 Worker 的 `^Left/^Right`，配置目标原为 5 TPS。工作区已把普通 Demo 的目标范围改为 20–60、默认20；这仅改变**请求运行速率**，实际同步 TPS 仍须真实测量，不能凭滑块值宣布达标。历史 5 TPS 测量仍是历史证据，不回写。
+当前 Demo 是 OpenNARS Lab 风格的连续坐标 Pong，只注册一个 Worker 的 `^Left/^Right`，配置目标原为 5 TPS。Demo `aa06eb6` 已把普通 Demo 的目标范围改为 20–60、默认20；这仅改变**请求运行速率**，实际同步 TPS 仍须真实测量，不能凭滑块值宣布达标。历史 5 TPS 测量仍是历史证据，不回写。
 
 ## 实施路线
 

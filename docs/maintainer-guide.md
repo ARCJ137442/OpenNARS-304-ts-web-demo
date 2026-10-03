@@ -38,7 +38,8 @@ Astro owns page composition and static output. Environment models are plain Type
 - src/microworld.ts: Microworld browser presentation and Worker client.
 - src/microworld-worker.ts: Microworld NARS adapter.
 - src/microworld/nars-priors.ts: optional, explicitly disclosed starter knowledge; classic blank mode remains available.
-- scripts/prepare-site.mjs: stages terminal/Microworld pages, sprite files, and license texts for Astro.
+- src/pages/terminal.astro and src/app.js: Astro terminal route and browser Worker client; the old standalone terminal HTML copy has been removed.
+- scripts/prepare-site.mjs: stages the Microworld page, sprite files, and license texts for Astro.
 - scripts/check-build.mjs: asserts required pages, worker bundles, licenses, metadata, assets, and Astro output exist.
 - scripts/deploy-pages.mjs: builds, verifies, and copies the output tree to the Pages repository.
 
@@ -52,7 +53,7 @@ Astro owns page composition and static output. Environment models are plain Type
 6. Add model tests for initial values, sensor/goal terms, each meaningful action, collision or terminal outcome, feedback sent to NARS, deterministic reset, and bounds.
 7. Run npm run check. Then run npm run dev and verify the route in a browser: Worker online, inference progress, pause/resume, single-step, reset, manual control, operation result, logs, and a visible canvas. Turn Babble off and verify an actual `source=NARS` operation changes the world; a counterfactual or success-state check is stronger than counting EXE alone. Check desktop and narrow mobile layout.
 
-Run npm run test:browser when a local Chromium/Chrome installation is available. The smoke suite verifies the index preview pixels, confirms the index starts no Worker, and exercises all ten game pages plus Microworld.
+Run npm run test:browser when a local Chromium/Chrome installation is available. The smoke suite checks slashless and slash-terminated index paths, sprite pixels, terminal judgment/goal/cycle/reset and narrow-screen input, HUD layout stability, ten game pages, and Microworld. The index starts no NARS Worker.
 For a same-input reasoner A/B, `scripts/profile-demo-worker.mjs --bundle <built-worker.js>` and `scripts/profile-microworld-worker.mjs --bundle <built-worker.js>` execute a specific byte-identifiable Worker bundle with the TypeScript world model. Record the bundle SHA, seed, cycles, babble, final concepts, actions, and RSS; this Node harness does not replace the real-browser rate gate.
 
 If the environment needs an operator (操作算子) not already registered, add it to src/demo-worker.ts and verify its actual EXECUTION event; a button or predicted action alone does not prove the NARS operation ran. Preloaded causal rules must be disclosed as starter knowledge, not described as rules learned from scratch.

@@ -18,7 +18,7 @@ The 2026-10-02 browser smoke exposed a release-build trap: `astro build` had suc
 
 The Worker build no longer resolves obsolete `jree-host-adapter.ts` or `jree-compat.ts` aliases. Current core imports resolve through the native host adapters; the new build and real-browser smoke must confirm those aliases were dead before this removal is accepted.
 
-The multi-game target control now allows 20 TPS (previously capped at 12), so its target is not artificially below the stated performance aspiration. Raising a selectable target does not assert that synchronous actual TPS can reach it.
+The multi-game target control now defaults to and starts at 20 TPS (range 20–60); older measurements in this document used earlier 5 or 20 TPS settings as labeled. Raising a configured target does not establish that synchronous actual TPS reaches it.
 
 `scripts/browser-rate-benchmark.mjs` records actual world steps, wall-clock RPS, active-inference RPS, p95 inference latency, concept growth, non-babble operations, HUD readings and page errors from a fixed URL seed. Run it only when core long tests are idle so CPU contention does not contaminate the comparison.
 
