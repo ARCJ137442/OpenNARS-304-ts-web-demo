@@ -52,12 +52,12 @@ const games: readonly DemoCatalogEntry[] = [
   {
     id: "bandrobot",
     title: DEMO_DEFINITIONS.bandrobot.title,
-    summary: "移动 · 拾取 · 运输 · 放置",
+    summary: "多步搬运实验 · 自主完整交付尚未验证",
     family: "04 / MULTI-STEP TASK",
     href: "./demo.html?game=bandrobot",
     preview: "bandrobot",
     artwork: artworkClasses.bandrobot,
-    sourceLabel: "SEQUENCE / PICK / DELIVER",
+    sourceLabel: "EXPERIMENTAL / PICK / DELIVER",
   },
   {
     id: "cartpole",

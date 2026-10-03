@@ -3,7 +3,7 @@ import type { BandRobotState, DemoDefinition, DemoStepResult, NarsStep } from ".
 
 export const definition: DemoDefinition = {
   title: "BandRobot 搬运",
-  subtitle: "抓取 / 运输 / 放置",
+  subtitle: "抓取 / 运输 / 放置 · 多步任务实验",
   actions: ["^left", "^right", "^pick", "^drop"],
   babble: 0.1,
   cycles: 10,
@@ -15,7 +15,7 @@ export const definition: DemoDefinition = {
     "<(&/,<{SELF} --> [delivery_left]>,(^left,{SELF})) =/> <{SELF} --> [delivery_approach]>>.",
     "<(&/,<{SELF} --> [delivery_aligned]>,(^drop,{SELF})) =/> <{SELF} --> [delivered]>>.",
   ],
-  narsPriorNote: "相对方位、接近、抓取与交付的六条因果规则是预置知识；目标随搬运阶段改变。",
+  narsPriorNote: "相对方位、接近、抓取与交付的六条因果规则是预置知识；目标随搬运阶段改变。当前固定场景尚未证明 NARS 可自主完成整段交付。",
   source: "NARust-o / examples/_games/bandrobot.rs",
   url: "https://github.com/ARCJ137442/NARust-o/blob/main/examples/_games/bandrobot.rs",
   license: "MIT / Apache-2.0 / ONA attribution",
