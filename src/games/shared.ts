@@ -23,11 +23,11 @@ export function dedupe(values: string[]): string[] {
 }
 
 export function selfBelief(property: string): string {
-  return "<{SELF} --> [" + property + "]>. :|:";
+  return `<{SELF} --> [${property}]>. :|:`;
 }
 
 export function selfGoal(property: string): string {
-  return "<{SELF} --> [" + property + "]>! :|:";
+  return `<{SELF} --> [${property}]>! :|:`;
 }
 
 export function clamp(value: number, minimum: number, maximum: number): number {

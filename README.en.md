@@ -28,6 +28,7 @@ See docs/opennars-304-mechanism-analysis.md and docs/demo-adaptation-guide.md fo
 See docs/demo-expansion-plan.md, docs/demo-candidate-survey.md, and docs/original-demo-proposals.md for the next demo batch and original experiment proposals.
 See docs/terminology.md for the project's Chinese NARS/Narsese terminology map.
 The demo HUD separates `FPS` (rendering), `TPS` (world ticks), and `RPS` (NARS inference cycles); the collapsed Performance Diagnostics panel exposes sync/async pacing and runtime backlog. See [the runtime pacing plan](docs/demo-runtime-modes-plan.md).
+The five expansion environments report state changes immediately and refresh unchanged state every five ticks; outcome feedback is always sent. This is an explicit Demo input adaptation, not a same-semantics speedup of the reasoner core.
 
 ### Source map
 

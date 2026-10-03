@@ -7,25 +7,31 @@ import { performance } from "node:perf_hooks";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEMO_DEFINITIONS, advanceDemo, buildNarsStep, createDemoState } from "../src/games/models.ts";
+import { PerceptionCadence } from "../src/games/perception-cadence.ts";
 
 const args = Object.fromEntries(process.argv.slice(2).flatMap((argument, index, all) =>
   argument.startsWith("--") && all[index + 1] && !all[index + 1].startsWith("--")
     ? [[argument.slice(2), all[index + 1]]]
     : []));
 const game = args.game ?? "cartpole";
+const definition = DEMO_DEFINITIONS[game];
 const seed = Number(args.seed ?? 3040304);
 const ticks = Number(args.ticks ?? 67);
 const cycles = Number(args.cycles ?? 5);
 const babble = args.babble === undefined ? null : Number(args.babble);
 const suppressFeedback = args["suppress-feedback"] === "true";
 const reportEvery = Number(args["report-every"] ?? 10);
+const requestedRefresh = args["refresh-every"] === undefined ? null : Number(args["refresh-every"]);
+const refreshEvery = requestedRefresh === 0 ? null : requestedRefresh ?? definition?.perceptionCadence?.refreshEvery ?? null;
+const warmupTicks = Number(args["warmup-ticks"] ?? definition?.perceptionCadence?.warmupTicks ?? 0);
 const output = resolve(args.output ?? "test-results/profile-demo-worker.json");
 const extraPriorRules = args["prior-rules-file"]
   ? JSON.parse(readFileSync(resolve(args["prior-rules-file"]), "utf8"))
   : [];
-const definition = DEMO_DEFINITIONS[game];
 if (!definition || !Number.isSafeInteger(seed) || !Number.isSafeInteger(ticks) || !Number.isSafeInteger(cycles)
   || !Number.isSafeInteger(reportEvery) || seed < 1 || ticks < 1 || cycles < 1 || reportEvery < 1
+  || (refreshEvery !== null && (!Number.isSafeInteger(refreshEvery) || refreshEvery < 1))
+  || !Number.isSafeInteger(warmupTicks) || warmupTicks < 0
   || !Array.isArray(extraPriorRules) || !extraPriorRules.every((rule) => typeof rule === "string")
   || (babble !== null && (!Number.isFinite(babble) || babble < 0 || babble > 0.5))) {
   throw new Error("Invalid game, seed, ticks, cycles, or report interval");
@@ -56,8 +62,15 @@ let peakRssBytes = process.memoryUsage().rss;
 const actionSources = { NARS: 0, babble: 0, idle: 0 };
 let firstNarsOperation = null;
 const narsOperations = [];
+const observableWorld = ({ tick, reward, pendingFeedback, ...physical }) => JSON.stringify(physical);
+const cadence = refreshEvery === null ? null : new PerceptionCadence(warmupTicks, refreshEvery);
+let submittedBeliefs = 0;
+let submittedGoals = 0;
 for (let tick = 1; tick <= ticks; tick += 1) {
-  const input = buildNarsStep(state);
+  const rawInput = buildNarsStep(state);
+  const input = cadence?.select(tick, rawInput) ?? rawInput;
+  submittedBeliefs += input.beliefs.length;
+  submittedGoals += input.goals.length;
   const start = performance.now();
   send({ type: "step", game, step: state.tick + 1, ...input,
     feedback: suppressFeedback ? [] : input.feedback,
@@ -68,12 +81,13 @@ for (let tick = 1; tick <= ticks; tick += 1) {
   lastConcepts = Number(response.reasoner?.concepts ?? 0);
   const source = response.source === "NARS" || response.source === "babble" ? response.source : "idle";
   actionSources[source] += 1;
-  const before = source === "NARS" ? JSON.stringify({ ...state, tick: 0 }) : null;
+  const withoutAction = source === "NARS" ? structuredClone(state) : null;
+  if (withoutAction !== null) advanceDemo(withoutAction, null);
   const transition = advanceDemo(state, response.action ?? null);
-  if (before !== null) {
+  if (withoutAction !== null) {
     const operation = {
       tick, action: response.action,
-      worldChanged: JSON.stringify({ ...state, tick: 0 }) !== before,
+      worldChanged: observableWorld(state) !== observableWorld(withoutAction),
       reward: transition.reward,
       notes: transition.notes,
     };
@@ -101,13 +115,16 @@ const result = {
   demoCommit: gitHead(projectRoot),
   nodeVersion: process.version,
   configuration: { game, seed, ticks, cycles, babble: babble ?? definition.babble,
-    suppressFeedback, reportEvery, extraPriorRules },
+    suppressFeedback, refreshEvery, warmupTicks, reportEvery, extraPriorRules },
   segments,
   finalConcepts: lastConcepts,
   peakRssBytes,
+  submittedBeliefs,
+  submittedGoals,
   actionSources,
   firstNarsOperation,
   narsOperations,
+  effectiveNarsOperations: narsOperations.filter((operation) => operation.worldChanged).length,
   finalState: game === "bandrobot"
     ? { position: state.position, target: state.target, goal: state.goal, picked: state.picked, successes: state.successes }
     : null,

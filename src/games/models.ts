@@ -4,6 +4,7 @@ import * as cartpole from "./worlds/cartpole.ts";
 import * as hunt from "./worlds/hunt.ts";
 import * as pong from "./worlds/pong.ts";
 import { EXPANSION_DEFINITIONS, createExpansionState, buildExpansionNarsStep, advanceExpansion, applyExpansionControl } from "./expansion-models.ts";
+import { EXPANSION_INPUT_CADENCE } from "./perception-cadence.ts";
 import type { DemoDefinition, DemoId, DemoState, DemoStepResult, NarsStep, StateFor } from "./types.ts";
 
 export * from "./types.ts";
@@ -15,7 +16,9 @@ export const DEMO_DEFINITIONS: Readonly<Record<DemoId, DemoDefinition>> = Object
   bandrobot: bandrobot.definition,
   cartpole: cartpole.definition,
   hunt: hunt.definition,
-  ...Object.fromEntries(Object.entries(EXPANSION_DEFINITIONS).map(([id, definition]) => [id, { ...definition, babble: 0.08 }])),
+  ...Object.fromEntries(Object.entries(EXPANSION_DEFINITIONS).map(([id, definition]) => [id, {
+    ...definition, babble: 0.08, perceptionCadence: EXPANSION_INPUT_CADENCE,
+  }])),
 } as Record<DemoId, DemoDefinition>);
 
 export function createDemoState<G extends DemoId>(game: G, seed?: number): StateFor<G>;

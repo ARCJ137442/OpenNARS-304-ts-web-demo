@@ -16,6 +16,7 @@ import {
 import type { ExpansionState } from "./games/expansion-types.ts";
 import type { EchoRelayState } from "./games/expansion-types.ts";
 import { isDemoId } from "./data/demo-catalog.ts";
+import { PerceptionCadence } from "./games/perception-cadence.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
@@ -66,6 +67,8 @@ if (!isDemoId(candidate)) {
 }
 const gameId = candidate;
 const definition = DEMO_DEFINITIONS[gameId];
+const perceptionCadence = definition.perceptionCadence === undefined ? null
+  : new PerceptionCadence(definition.perceptionCadence.warmupTicks, definition.perceptionCadence.refreshEvery);
 
 const ui = {
   title: element<HTMLElement>("#game-title"),
@@ -278,7 +281,8 @@ function initializeWorker(): void {
 function requestStep(): void {
   if (!state.worker || !state.ready || state.pending) { state.waitingForWorker = true; return; }
   state.waitingForWorker = false;
-  const input = buildNarsStep(state.model);
+  const rawInput = buildNarsStep(state.model);
+  const input = perceptionCadence?.select(state.model.tick + 1, rawInput) ?? rawInput;
   state.pending = true;
   state.pendingSteps += 1;
   // Track the world state sent to NARS. Async mode may advance while this
@@ -480,7 +484,29 @@ function setRunning(running: boolean): void {
   ui.status.textContent = state.pending ? "INFERENCE" : running ? "RUNNING" : "PAUSED";
   state.nextStep = performance.now();
 }
-function reset(seed = state.seed): void { state.seed = Number(seed) >>> 0 || 1; state.model = createDemoState(gameId, state.seed); state.running = true; state.pending = false; state.pendingSteps = 0; state.queuedAction = null; state.ready = false; state.waitingForWorker = true; telemetry.resetRates(); ui.log.replaceChildren(); ui.step.value = "000000"; ui.step.textContent = "000000"; ui.operation.value = "等待第一步"; ui.source.value = "WAITING"; ui.runtimeQueue.value = "待处理 0"; ui.runtimeQueue.textContent = ui.runtimeQueue.value; renderMetrics(); initializeWorker(); setRunning(true); render(); }
+function reset(seed = state.seed): void {
+  state.seed = Number(seed) >>> 0 || 1;
+  state.model = createDemoState(gameId, state.seed);
+  perceptionCadence?.reset();
+  state.running = true;
+  state.pending = false;
+  state.pendingSteps = 0;
+  state.queuedAction = null;
+  state.ready = false;
+  state.waitingForWorker = true;
+  telemetry.resetRates();
+  ui.log.replaceChildren();
+  ui.step.value = "000000";
+  ui.step.textContent = "000000";
+  ui.operation.value = "等待第一步";
+  ui.source.value = "WAITING";
+  ui.runtimeQueue.value = "待处理 0";
+  ui.runtimeQueue.textContent = ui.runtimeQueue.value;
+  renderMetrics();
+  initializeWorker();
+  setRunning(true);
+  render();
+}
 
 function setSourceDisclosure(): void {
   const reference = document.createElement("span"); reference.textContent = `环境机制参考 ${definition.source}；许可：${definition.license}。`;
@@ -488,6 +514,12 @@ function setSourceDisclosure(): void {
   const link = document.createElement("a"); link.href = definition.url; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = "查看源码";
   ui.sourceCopy.append(reference, document.createTextNode(" "), link);
   if (priorNote) { const disclosure = document.createElement("span"); disclosure.className = "prior-rule-note"; disclosure.textContent = priorNote; ui.sourceCopy.append(document.createElement("br"), disclosure); }
+  if (definition.perceptionCadence) {
+    const cadenceNote = document.createElement("span");
+    cadenceNote.className = "prior-rule-note";
+    cadenceNote.textContent = "前 5 刻完整输入；此后感知或目标变化立即输入，稳定状态每 5 刻刷新；结果反馈每次都保留。";
+    ui.sourceCopy.append(document.createElement("br"), cadenceNote);
+  }
   ui.sourceToggle.addEventListener("click", () => { const open = ui.sourceToggle.getAttribute("aria-expanded") === "true"; ui.sourceToggle.setAttribute("aria-expanded", String(!open)); ui.sourceCopy.hidden = open; });
 }
 

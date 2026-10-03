@@ -14,6 +14,7 @@ export type DemoDefinition = {
   license: string;
   narsPriorRules?: readonly string[];
   narsPriorNote?: string;
+  perceptionCadence?: Readonly<{ warmupTicks: number; refreshEvery: number }>;
 };
 
 type BaseState<G extends DemoId> = { game: G; seed: number; tick: number; reward: number; pendingFeedback: string[] };
