@@ -6,7 +6,14 @@ export const definition: DemoDefinition = {
   subtitle: "四方向追逐 / 差分感知",
   actions: ["^left", "^right", "^up", "^down"],
   babble: 0.08,
-  cycles: 1,
+  cycles: 2,
+  narsPriorRules: [
+    "<(&/,<{SELF} --> [ball_left]>,(^left,{SELF})) =/> <{SELF} --> [good]>>.",
+    "<(&/,<{SELF} --> [ball_right]>,(^right,{SELF})) =/> <{SELF} --> [good]>>.",
+    "<(&/,<{SELF} --> [ball_up]>,(^up,{SELF})) =/> <{SELF} --> [good]>>.",
+    "<(&/,<{SELF} --> [ball_down]>,(^down,{SELF})) =/> <{SELF} --> [good]>>.",
+  ],
+  narsPriorNote: "四个方向的感知—操作因果规则是预置知识；NARS 根据当前球的位置选择操作，不声称从零学出规则。",
   source: "NARust-o / examples/_games/hunt.rs",
   url: "https://github.com/ARCJ137442/NARust-o/blob/main/examples/_games/hunt.rs",
   license: "MIT / Apache-2.0 / ONA attribution",
@@ -28,7 +35,7 @@ export function buildNarsStep(state: HuntState): NarsStep {
   const feedback = [...state.pendingFeedback];
   state.pendingFeedback = [];
   if (dx === 0 && dy === 0) feedback.push(selfBelief("good"));
-  return { beliefs: dedupe(beliefs), goals: [selfGoal("good")], feedback: dedupe(feedback), cycles: 1 };
+  return { beliefs: dedupe(beliefs), goals: [selfGoal("good")], feedback: dedupe(feedback), cycles: definition.cycles };
 }
 
 export function advance(state: HuntState, rawAction: string | null): DemoStepResult {

@@ -21,6 +21,7 @@ import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
 import { MICROWORLD_DEFAULT_TPS, MICROWORLD_MAX_TPS, MICROWORLD_MIN_SMOOTH_TPS } from "./microworld/runtime-config.ts";
+import { MICROWORLD_STARTER_PRIORS } from "./microworld/nars-priors.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
 import { initialDemoSeed } from "./demo-seed.ts";
 
@@ -63,6 +64,8 @@ const elements = {
   stepOnce: element<HTMLButtonElement>("#step-once"),
   reset: element<HTMLButtonElement>("#reset-run"),
   newSeed: element<HTMLButtonElement>("#new-seed"),
+  knowledgeToggle: element<HTMLButtonElement>("#knowledge-toggle"),
+  knowledgeLabel: element<HTMLElement>("#knowledge-label"),
   speed: element<HTMLInputElement>("#speed-input"),
   speedValue: element<HTMLOutputElement>("#speed-value"),
   sensorGrid: element<HTMLElement>("#sensor-grid"),
@@ -133,6 +136,7 @@ const SENSOR_LABELS = ["G1", "G2", "G3", "B1", "B2", "B3"];
 const LOG_LIMIT = 180;
 const DRAW_INTERVAL_MS = 1000 / 30;
 const INITIAL_SEED = initialDemoSeed(location.search, randomSeed);
+const INITIAL_STARTER_KNOWLEDGE = new URLSearchParams(location.search).get("knowledge") === "starter";
 const state: {
   seed: number;
   world: WorldState;
@@ -148,6 +152,7 @@ const state: {
   speed: number;
   narsCycles: number;
   babbleProbability: number;
+  starterKnowledge: boolean;
   camera: { zoom: number; x: number; y: number };
   pointer: { button: number; x: number; y: number } | null;
   objectDragId: string | null;
@@ -176,6 +181,7 @@ const state: {
   speed: MICROWORLD_DEFAULT_TPS,
   narsCycles: Number(elements.narsCycles.value),
   babbleProbability: Number(elements.narsBabble.value) / 100,
+  starterKnowledge: INITIAL_STARTER_KNOWLEDGE,
   camera: { zoom: 1, x: 0, y: 0 },
   pointer: null,
   objectDragId: null,
@@ -370,7 +376,8 @@ function newWorker(seed: number): void {
     setRuntime("fault", "Worker 异常");
     appendLog("fault", event.message || "Microworld Worker crashed");
   });
-  worker.postMessage({ type: "reset", seed });
+  worker.postMessage({ type: "reset", seed,
+    priorRules: state.starterKnowledge ? MICROWORLD_STARTER_PRIORS : [] });
 }
 
 function requestStep(): void {
@@ -626,6 +633,16 @@ elements.stepOnce.addEventListener("click", () => {
 });
 elements.reset.addEventListener("click", () => resetRun(state.seed));
 elements.newSeed.addEventListener("click", () => resetRun(randomSeed()));
+function updateKnowledgeControl(): void {
+  elements.knowledgeToggle.setAttribute("aria-pressed", String(state.starterKnowledge));
+  elements.knowledgeLabel.textContent = state.starterKnowledge ? "示例知识" : "空白探索";
+  elements.knowledgeToggle.setAttribute("aria-label", state.starterKnowledge ? "切换为空白探索" : "启用示例知识");
+}
+elements.knowledgeToggle.addEventListener("click", () => {
+  state.starterKnowledge = !state.starterKnowledge;
+  updateKnowledgeControl();
+  resetRun(state.seed);
+});
 elements.speed.addEventListener("input", () => {
   state.speed = Math.min(MICROWORLD_MAX_TPS, Math.max(MICROWORLD_MIN_SMOOTH_TPS, Number(elements.speed.value) || MICROWORLD_DEFAULT_TPS));
   elements.speed.value = String(state.speed);
@@ -687,6 +704,7 @@ document.addEventListener("keydown", (event) => {
 
 function boot() {
   mountIcons();
+  updateKnowledgeControl();
   elements.speed.min = String(MICROWORLD_MIN_SMOOTH_TPS);
   elements.speed.max = String(MICROWORLD_MAX_TPS);
   elements.speed.value = String(MICROWORLD_DEFAULT_TPS);

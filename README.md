@@ -6,7 +6,9 @@
 
 ## Demo Lab
 
-入口页面索引 Microworld、Pong、Alien、BandRobot、CartPole、Hunt、TicTacToe、Shot、Grid2D TestChamber 与 FighterPlane。每个演示使用同一套 NARS Worker 控制与日志界面，但保留独立、可测试的环境模型。项目使用 Astro 生成静态 HTML/CSS/JS，浏览器不加载 Astro runtime，也不需要后端。
+入口页面索引 Microworld、Pong、Alien、BandRobot、CartPole、Hunt、TicTacToe、Shot、Grid2D TestChamber、FighterPlane 与 Echo Relay。普通游戏共用 NARS Worker 控制与日志界面，Microworld 使用独立的原版场景适配。项目使用 Astro 生成静态 HTML/CSS/JS，浏览器不加载 Astro runtime，也不需要后端。
+
+Microworld 导航入口使用可复现的 `microworld.html?seed=19&knowledge=starter` 场景。页面的灯泡按钮可切换“示例知识”和“空白探索”；示例模式预置一条前方好食物与前进操作的因果假设，**不代表 NARS 从零学出该规则**。目前示例模式已在真实浏览器发出非 babble 操作，但持续 20 TPS 尚未达成，详见 [适配说明](docs/demo-adaptation-guide.md)。
 
 克隆后先运行：
 
@@ -35,6 +37,7 @@ OpenNARS 3.0.4 的机制边界与 ONA demo 适配理由见 [机制分析](docs/o
 - src/games/models.ts：纯 TypeScript 环境模型、感知/反馈合同。
 - src/demo.ts 与 src/demo-worker.ts：共享游戏工作台与 NARS Worker 控制。
 - src/microworld/simulation.ts：Microworld 独立模拟合同。
+- src/microworld/nars-priors.ts：可选的 Microworld 示例起点知识。
 - scripts/prepare-site.mjs：准备静态资源和独立终端/Microworld 页面。
 - scripts/check-build.mjs：发布目录完整性检查。
 

@@ -60,14 +60,16 @@ test("Alien resolves shooting and feeds a successful hit back into NARS", () => 
 test("BandRobot completes pick, transport, drop and emits delivery feedback", () => {
   const game = createDemoState("bandrobot", 3);
   const perception = buildNarsStep(game);
-  assert.deepEqual(perception.beliefs, [
-    "<position0 --> [pickPosX]>. :|:",
-    "<target3 --> [pickPosX]>. :|:",
-  ]);
+  assert.deepEqual(perception.beliefs, ["<{SELF} --> [pickup_right]>. :|:"]);
+  assert.deepEqual(perception.goals, ["<{SELF} --> [pickup_approach]>! :|:"]);
   assert.ok(perception.beliefs.every((belief) => !belief.includes("|->")));
+  advanceDemo(game, "^right");
+  assert.ok(buildNarsStep(game).feedback.includes("<{SELF} --> [pickup_approach]>. :|:"));
   game.position = game.target;
+  assert.deepEqual(buildNarsStep(game).goals, ["<{SELF} --> [picked]>! :|:"]);
   advanceDemo(game, "^pick");
   assert.equal(game.picked, true);
+  assert.deepEqual(buildNarsStep(game).goals, ["<{SELF} --> [delivery_approach]>! :|:"]);
   game.position = game.goal;
   const result = advanceDemo(game, "^drop");
   assert.equal(game.picked, false);
@@ -75,15 +77,23 @@ test("BandRobot completes pick, transport, drop and emits delivery feedback", ()
   assert.ok(result.feedback.includes("<{SELF} --> [delivered]>. :|:"));
 });
 
-test("CartPole emits a good outcome while upright and keeps bounded angular velocity", () => {
+test("CartPole feeds back an acted-on upright outcome and uses fixed left/right torque", () => {
   const game = createDemoState("cartpole", 4);
   const input = buildNarsStep(game);
-  assert.ok(input.feedback.includes("<{SELF} --> [good]>. :|:"));
+  assert.deepEqual(input.beliefs, ["<{SELF} --> [tilt_right]>. :|:"]);
+  assert.deepEqual(input.feedback, [], "the initial upright state is not an action outcome");
   assert.ok(Math.abs(game.angle) < 0.1, "the initial pole must be near upright, not horizontal");
   const noAction = createDemoState("cartpole", 4);
   advanceDemo(noAction, null);
   advanceDemo(noAction, null);
   assert.ok(noAction.angle > 0.08 && noAction.angleVelocity > 0, "gravity must pull a positive perturbation toward down");
+  const left = createDemoState("cartpole", 4);
+  const right = createDemoState("cartpole", 4);
+  advanceDemo(left, "^left");
+  advanceDemo(right, "^right");
+  assert.ok(left.angleVelocity < 0 && right.angleVelocity > 0, "actions apply fixed opposite torques");
+  assert.ok(buildNarsStep(left).feedback.includes("<{SELF} --> [good]>. :|:"));
+  assert.deepEqual(buildNarsStep(right).feedback, [], "an action that increases deviation is not a good result");
   for (let index = 0; index < 20; index += 1) advanceDemo(game, index % 2 ? "^Left" : "^Right");
   assert.ok(Math.abs(game.angleVelocity) <= game.maxAngleVelocity);
   assert.ok(game.position >= 0 && game.position <= 1);

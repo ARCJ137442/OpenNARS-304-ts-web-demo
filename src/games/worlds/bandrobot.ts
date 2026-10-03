@@ -7,6 +7,15 @@ export const definition: DemoDefinition = {
   actions: ["^left", "^right", "^pick", "^drop"],
   babble: 0.1,
   cycles: 10,
+  narsPriorRules: [
+    "<(&/,<{SELF} --> [pickup_right]>,(^right,{SELF})) =/> <{SELF} --> [pickup_approach]>>.",
+    "<(&/,<{SELF} --> [pickup_left]>,(^left,{SELF})) =/> <{SELF} --> [pickup_approach]>>.",
+    "<(&/,<{SELF} --> [pickup_aligned]>,(^pick,{SELF})) =/> <{SELF} --> [picked]>>.",
+    "<(&/,<{SELF} --> [delivery_right]>,(^right,{SELF})) =/> <{SELF} --> [delivery_approach]>>.",
+    "<(&/,<{SELF} --> [delivery_left]>,(^left,{SELF})) =/> <{SELF} --> [delivery_approach]>>.",
+    "<(&/,<{SELF} --> [delivery_aligned]>,(^drop,{SELF})) =/> <{SELF} --> [delivered]>>.",
+  ],
+  narsPriorNote: "相对方位、接近、抓取与交付的六条因果规则是预置知识；目标随搬运阶段改变。",
   source: "NARust-o / examples/_games/bandrobot.rs",
   url: "https://github.com/ARCJ137442/NARust-o/blob/main/examples/_games/bandrobot.rs",
   license: "MIT / Apache-2.0 / ONA attribution",
@@ -17,17 +26,18 @@ export function create(seed: number): BandRobotState {
 }
 
 export function buildNarsStep(state: BandRobotState): NarsStep {
-  const property = state.picked ? "dropPosX" : "pickPosX";
   const target = state.picked ? state.goal : state.target;
-  const beliefs = [
-    "<position" + state.position + " --> [" + property + "]>. :|:",
-    "<target" + target + " --> [" + property + "]>. :|:",
-  ];
+  const phase = state.picked ? "delivery" : "pickup";
+  const relative = target > state.position ? "right" : target < state.position ? "left" : "aligned";
+  const beliefs = [selfBelief(`${phase}_${relative}`)];
   if (state.picked && !state.lastPicked) beliefs.push(selfBelief("picked"));
   const feedback = [...state.pendingFeedback];
   state.pendingFeedback = [];
   state.lastPicked = state.picked;
-  return { beliefs: dedupe(beliefs), goals: [selfGoal("delivered")], feedback: dedupe(feedback), cycles: definition.cycles };
+  const goal = relative === "aligned"
+    ? (state.picked ? "delivered" : "picked")
+    : `${phase}_approach`;
+  return { beliefs: dedupe(beliefs), goals: [selfGoal(goal)], feedback: dedupe(feedback), cycles: definition.cycles };
 }
 
 export function advance(state: BandRobotState, rawAction: string | null): DemoStepResult {
@@ -35,10 +45,16 @@ export function advance(state: BandRobotState, rawAction: string | null): DemoSt
   const action = normalizeAction(rawAction);
   const notes: string[] = [];
   const feedback: string[] = [];
+  const wasPicked = state.picked;
+  const destination = wasPicked ? state.goal : state.target;
+  const previousDistance = Math.abs(state.position - destination);
   state.reward = 0;
   if (action === "left") state.position -= 1;
   if (action === "right") state.position += 1;
   state.position = clamp(state.position, 0, 20);
+  if (Math.abs(state.position - destination) < previousDistance) {
+    feedback.push(selfBelief(wasPicked ? "delivery_approach" : "pickup_approach"));
+  }
   if (state.picked) state.target = state.position;
   if (action === "pick" && state.position === state.target) { state.picked = true; notes.push("PICKED"); }
   if (action === "drop" && state.picked) {

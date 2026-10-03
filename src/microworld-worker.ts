@@ -24,7 +24,9 @@ type StepMessage = {
   seed: number;
   cycles?: number;
   babble?: number;
+  priorRules?: readonly string[];
 };
+type ResetMessage = { type: "reset"; seed: number; priorRules?: readonly string[] };
 
 const DEFAULT_STEP_CYCLES = 10;
 const DEFAULT_BABBLE_PROBABILITY = 0.1;
@@ -79,7 +81,7 @@ class MicroworldOperator extends Operator {
   }
 }
 
-function createNar(seed: number): void {
+function createNar(seed: number, priorRules: readonly string[] = []): void {
   setSeed(seed ^ 0x4e415253);
   stepNumber = 0;
   lastSensorInputs = new Set<string>();
@@ -103,6 +105,7 @@ function createNar(seed: number): void {
   nar.on(OutputHandler.EXE.class, eventLog("EXE"));
   nar.on(Events.UnexecutableOperation.class, eventLog("UNEXECUTABLE"));
   nar.on(Events.Answer.class, eventLog("ANSWER"));
+  for (const rule of priorRules) submit(rule, "PRIOR");
 }
 
 function submit(text: string, kind: string): void {
@@ -112,7 +115,7 @@ function submit(text: string, kind: string): void {
 }
 
 function runStep(message: StepMessage): void {
-  if (!nar) createNar(message.seed);
+  if (!nar) createNar(message.seed, message.priorRules);
   if (!nar) return;
 
   const start = performance.now();
@@ -178,10 +181,10 @@ function runStep(message: StepMessage): void {
   post("step-complete", result);
 }
 
-self.addEventListener("message", ({ data }: MessageEvent<StepMessage | { type: "reset"; seed: number }>) => {
+self.addEventListener("message", ({ data }: MessageEvent<StepMessage | ResetMessage>) => {
   try {
     if (data?.type === "reset") {
-      createNar(data.seed);
+      createNar(data.seed, data.priorRules);
       post("ready", { step: 0, cyclesPerStep: DEFAULT_STEP_CYCLES });
     } else if (data?.type === "step") {
       runStep(data);

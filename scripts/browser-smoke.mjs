@@ -44,6 +44,7 @@ try {
   });
   await page.goto(baseUrl);
   await page.locator("#lab-preview").waitFor({ state: "visible" });
+  assert.match(await page.locator(".launch-link").getAttribute("href"), /microworld\.html\?seed=19&knowledge=starter/);
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#lab-preview");
     if (!(canvas instanceof HTMLCanvasElement)) return false;
@@ -68,6 +69,12 @@ try {
     await page.locator("#reset-demo").click();
     await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
     await page.waitForFunction(() => Number(document.querySelector("#game-step")?.textContent) > 0, undefined, { timeout: 30000 });
+    if (["pong", "alien", "bandrobot", "cartpole", "hunt", "fighterplane"].includes(game)) {
+      await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+        direction === "in" && message?.type === "step-complete"
+        && message.source === "NARS" && typeof message.action === "string"),
+      undefined, { timeout: 30000 });
+    }
     await page.getByText("性能诊断", { exact: true }).click();
     await page.locator("#concept-count").waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
@@ -125,6 +132,27 @@ try {
   await page.getByText("性能诊断", { exact: true }).click();
   assert.ok(await page.locator("#concept-count").textContent());
   await page.screenshot({ path: "test-results/microworld-desktop.png", fullPage: true });
+  await page.goto(new URL("microworld.html?seed=19&knowledge=starter", baseUrl).href);
+  await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
+  assert.equal(await page.locator("#knowledge-toggle").getAttribute("aria-pressed"), "true");
+  await page.locator("#nars-babble").evaluate((input) => {
+    input.value = "0";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#reset-run").click();
+  await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
+  await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+    direction === "in" && message?.type === "step-complete"
+    && message.actionSource === "NARS" && message.action > 0),
+  undefined, { timeout: 30000 });
+  const microworldStarterOperation = await page.evaluate(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+    direction === "in" && message?.type === "step-complete"
+    && message.actionSource === "NARS" && message.action > 0));
+  await page.locator("#knowledge-toggle").click();
+  assert.equal(await page.locator("#knowledge-toggle").getAttribute("aria-pressed"), "false");
+  const microworldClassicPriorCount = await page.evaluate(() => [...window.__demoWorkerEvents].reverse()
+    .find(({ direction, message }) => direction === "out" && message?.type === "reset")?.message.priorRules.length);
+  assert.equal(microworldClassicPriorCount, 0);
   await page.goto(new URL("demo.html?game=echo-relay", baseUrl).href);
   await page.locator("#game-runtime.ready").waitFor({ timeout: 30000 });
   await page.locator("#echo-map-details summary").click();
@@ -135,7 +163,9 @@ try {
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
   assert.equal(errors.length, 0, `browser errors: ${errors.join("; ")}`);
-  console.log(JSON.stringify({ ok: true, games: 10, operationFindings, microworld: true, indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
+  console.log(JSON.stringify({ ok: true, games: 10, operationFindings, microworld: true,
+    microworldStarterOperation, microworldClassicPriorCount,
+    indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({
     error: error instanceof Error ? error.message : String(error),

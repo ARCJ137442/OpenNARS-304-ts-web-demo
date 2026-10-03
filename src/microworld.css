@@ -111,6 +111,7 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 .transport button:hover, .manual-controls button:hover, .log-filters button:hover { border-color: var(--green); color: var(--green); }
 .transport .primary-control { border-color: var(--green-deep); color: var(--green); }
 .transport .quiet-control { margin-left: auto; color: var(--muted); }
+.transport .knowledge-control[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
 .speed-control { display: flex; min-width: 220px; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
 .speed-control input { min-width: 65px; width: 78px; accent-color: var(--green); }
 .speed-control output { min-width: 50px; color: var(--ink); font: 10px var(--mono); }

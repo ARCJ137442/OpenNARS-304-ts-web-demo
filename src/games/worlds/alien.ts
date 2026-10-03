@@ -7,6 +7,12 @@ export const definition: DemoDefinition = {
   actions: ["^left", "^right", "^shoot"],
   babble: 0.1,
   cycles: 10,
+  narsPriorRules: [
+    "<(&/,<{SELF} --> [left]>,(^right,{SELF})) =/> <{SELF} --> [shoot]>>.",
+    "<(&/,<{SELF} --> [right]>,(^left,{SELF})) =/> <{SELF} --> [shoot]>>.",
+    "<(&/,<{SELF} --> [center]>,(^shoot,{SELF})) =/> <{SELF} --> [shoot]>>.",
+  ],
+  narsPriorNote: "朝目标移动与居中射击的因果规则是预置知识；NARS 仍依据当前感知决定是否执行操作。",
   source: "NARust-o / examples/_games/alien.rs",
   url: "https://github.com/ARCJ137442/NARust-o/blob/main/examples/_games/alien.rs",
   license: "MIT / Apache-2.0 / ONA attribution",

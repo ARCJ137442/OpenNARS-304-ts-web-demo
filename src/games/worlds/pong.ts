@@ -7,6 +7,11 @@ export const definition: DemoDefinition = {
   actions: ["^Left", "^Right"],
   babble: 0.08,
   cycles: 10,
+  narsPriorRules: [
+    "<(&/,<right --> [on]>,(^Right,{SELF})) =/> <{SELF} --> [good]>>.",
+    "<(&/,<left --> [on]>,(^Left,{SELF})) =/> <{SELF} --> [good]>>.",
+  ],
+  narsPriorNote: "球位与移动方向的两条因果规则是预置知识；NARS 根据当前感知执行操作，不声称从零学出规则。",
   source: "OpenNARS Lab / Pong.java",
   url: "https://github.com/opennars/opennars-lab/blob/master/src/main/java/org/opennars/lab/microworld/Pong.java",
   license: "GPL-3.0-or-later",
@@ -23,7 +28,7 @@ export function buildNarsStep(state: PongState): NarsStep {
   if (Math.abs(state.paddleX - state.ballX) < 20 && state.ballY < 120) feedback.push("<{SELF} --> [good]>. :|:");
   else if (state.paddleX < state.ballX) sense = "right";
   else if (state.paddleX > state.ballX) sense = "left";
-  const beliefs = sense !== state.lastSense || state.tick % 20 === 0 ? ["<" + sense + " --> [on]>. :|:"] : [];
+  const beliefs = sense !== state.lastSense || state.tick % 20 === 0 ? [`<${sense} --> [on]>. :|:`] : [];
   const goals = state.tick % 4 === 0 ? ["<{SELF} --> [good]>! :|:"] : [];
   state.lastSense = sense;
   return { beliefs: dedupe(beliefs), goals, feedback: dedupe(feedback), cycles: definition.cycles };

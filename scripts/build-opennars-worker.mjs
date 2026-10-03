@@ -269,6 +269,27 @@ await esbuild.build({
   logLevel: "info",
 });
 
+if (process.env.OPENNARS_PROFILE_WORKER === "1") {
+  const profileDirectory = resolve(projectRoot, "test-results");
+  mkdirSync(profileDirectory, { recursive: true });
+  await esbuild.build({
+    entryPoints: [resolve(projectRoot, "src", "microworld-worker.ts")],
+    outfile: resolve(profileDirectory, "microworld-worker-profile.js"),
+    bundle: true,
+    minify: false,
+    sourcemap: false,
+    platform: "browser",
+    format: "iife",
+    target: ["es2022"],
+    treeShaking: true,
+    legalComments: "eof",
+    nodePaths: [nodeModules],
+    banner: { js: browserHostBanner },
+    plugins: [browserAdapterPlugin],
+    logLevel: "warning",
+  });
+}
+
 const metadata = {
   application: "OpenNARS 3.0.4 TypeScript Demo Lab",
   packageVersion: openNarsPackage.version,

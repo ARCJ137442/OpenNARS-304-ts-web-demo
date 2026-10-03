@@ -6,7 +6,9 @@ This repository contains the standalone browser demo for <https://arcj137442.git
 
 ## Demo Lab
 
-The index links Microworld, Pong, Alien, BandRobot, CartPole, Hunt, TicTacToe, Shot, Grid2D TestChamber, and FighterPlane. Each environment uses the same NARS Worker controls and activity monitor while keeping its model independent and testable. Astro generates static HTML, CSS, and JavaScript; no Astro runtime or backend is shipped.
+The index links Microworld, Pong, Alien, BandRobot, CartPole, Hunt, TicTacToe, Shot, Grid2D TestChamber, FighterPlane, and Echo Relay. The ordinary games share NARS Worker controls and activity monitoring; Microworld has its own adapter for the classic scene. Astro generates static HTML, CSS, and JavaScript; no Astro runtime or backend is shipped.
+
+The Microworld catalog entry opens a reproducible `microworld.html?seed=19&knowledge=starter` scenario. Its lightbulb control switches between starter knowledge and blank exploration. Starter mode preloads one causal hypothesis connecting food directly ahead with moving forward; **NARS did not learn this rule from scratch**. A real-browser test observed a non-babble operation in this mode, while sustained 20 TPS remains unproven. See the [adaptation guide](docs/demo-adaptation-guide.md).
 
 Clone and run locally:
 
@@ -35,6 +37,7 @@ The demo HUD separates `FPS` (rendering), `TPS` (world ticks), and `RPS` (NARS i
 - src/games/models.ts: pure TypeScript environment and perception/feedback contracts.
 - src/demo.ts and src/demo-worker.ts: shared game workspace and NARS Worker control.
 - src/microworld/simulation.ts: independent Microworld simulation contract.
+- src/microworld/nars-priors.ts: optional Microworld starter knowledge.
 - scripts/prepare-site.mjs: stages static assets and standalone terminal/Microworld pages.
 - scripts/check-build.mjs: validates the release tree.
 

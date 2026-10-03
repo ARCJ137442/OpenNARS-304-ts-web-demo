@@ -107,7 +107,7 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
     title: "虫脑 Microworld",
     summary: "六路离散视觉 · 好坏食物 · 感知—操作闭环",
     family: "01 / PERCEPTION & FEEDBACK",
-    href: "./microworld.html",
+    href: "./microworld.html?seed=19&knowledge=starter",
     preview: "microworld",
     artwork: artworkClasses.microworld,
     sourceLabel: "SimNAR / OpenNARS Lab 3.0.4",

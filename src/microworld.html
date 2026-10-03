@@ -30,7 +30,7 @@
           <h1 id="page-title">一只虫，十份食物，一个会学习的脑</h1>
         </div>
         <button id="about-toggle" class="about-toggle" type="button" aria-expanded="false" aria-controls="about-copy"><i data-lucide="info"></i><span>说明</span></button>
-        <div id="about-copy" class="about-copy" hidden><p>虫子只有前方六个离散感受点。OpenNARS 接收视野和满足/健康目标，在推理周期中学习行动关系；没有推理操作时会以低概率随机探索。绿色食物带来正反馈，红色食物带来负反馈。Microworld 仅实现经典 2D 模式。</p><p>依据 OpenNARS Lab 3.0.4 <a href="https://github.com/opennars/opennars-lab/blob/master/src/main/java/org/opennars/lab/microworld/SimNAR.java" target="_blank" rel="noreferrer">SimNAR.java</a> 与 Tessergon 注释版重写；原版 GPL-3.0-or-later，资源与改写源见 <a href="./COPYING-GPL-3.0.txt">许可文本</a>。</p></div>
+        <div id="about-copy" class="about-copy" hidden><p>虫子只有前方六个离散感受点。OpenNARS 接收视野和满足/健康目标；没有推理操作时会以低概率随机探索。绿色食物带来正反馈，红色食物带来负反馈。Microworld 仅实现经典 2D 模式。</p><p>“示例知识”模式预置一条“看见前方好食物、执行前进、预期满足”的因果假设，便于观察 NARS 自主操作；这条规则由本项目编写，不是从空白学出，也不是 Java 原版默认规则。“空白探索”模式不装入它。</p><p>依据 OpenNARS Lab 3.0.4 <a href="https://github.com/opennars/opennars-lab/blob/master/src/main/java/org/opennars/lab/microworld/SimNAR.java" target="_blank" rel="noreferrer">SimNAR.java</a> 与 Tessergon 注释版重写；原版 GPL-3.0-or-later，资源与改写源见 <a href="./COPYING-GPL-3.0.txt">许可文本</a>。</p></div>
       </section>
 
       <div class="lab-layout">
@@ -58,6 +58,7 @@
             <button id="new-seed" class="quiet-control" type="button" aria-label="新布局" title="新布局"><i data-lucide="dices"></i><span>新布局</span></button>
             <label class="mode-control" for="runtime-mode"><span>节奏</span><select id="runtime-mode"><option value="sync">同步</option><option value="async">异步</option></select></label>
             <button id="toggle-rate-hud" class="quiet-control" type="button" aria-label="隐藏速率 HUD" title="隐藏速率 HUD"><i data-lucide="eye"></i><span>HUD</span></button>
+            <button id="knowledge-toggle" class="knowledge-control" type="button" aria-label="启用示例知识" aria-pressed="false" title="切换示例知识与空白探索；重置世界和 NARS 后生效"><i data-lucide="lightbulb"></i><span id="knowledge-label">空白探索</span></button>
           </div>
           <div class="manual-controls" role="group" aria-label="手动操作">
             <span class="manual-label">手动输入</span>

@@ -11,8 +11,10 @@ const args = Object.fromEntries(process.argv.slice(2).flatMap((argument, index, 
 const game = args.game ?? "microworld";
 const seed = Number(args.seed ?? 3040304);
 const mode = args.mode ?? "sync";
+const knowledge = args.knowledge ?? null;
 const targetTps = Number(args["target-tps"] ?? (game === "microworld" ? 20 : 5));
 const cycles = Number(args.cycles ?? 10);
+const babblePercent = args["babble-percent"] === undefined ? null : Number(args["babble-percent"]);
 const durationMs = Number(args["duration-ms"] ?? 20000);
 const output = resolve(args.output ?? `test-results/rate-${game}-${mode}.json`);
 const baseUrl = args["base-url"] ?? "http://127.0.0.1:4321/opennars-304-ts-lab/";
@@ -23,7 +25,9 @@ const coreRoot = resolve(projectRoot, "..", "OpenNARS-304-ts");
 if (!Number.isSafeInteger(seed) || seed < 1 || seed > 0xffff_ffff
   || !["microworld", "pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"].includes(game)
   || !["sync", "async"].includes(mode)
-  || !(targetTps > 0) || !(cycles > 0) || !(durationMs >= 1000)) {
+  || (knowledge !== null && !["starter", "classic"].includes(knowledge))
+  || !(targetTps > 0) || !(cycles > 0) || !(durationMs >= 1000)
+  || (babblePercent !== null && (!Number.isInteger(babblePercent) || babblePercent < 0 || babblePercent > 30))) {
   throw new Error("Invalid benchmark seed, mode, target TPS, cycles, or duration");
 }
 
@@ -39,6 +43,7 @@ const countActionSources = (events) => events.reduce((counts, event) => {
 const pageKind = game === "microworld" ? "microworld" : "demo";
 const url = new URL(pageKind === "microworld" ? "microworld.html" : `demo.html?game=${encodeURIComponent(game)}`, baseUrl);
 url.searchParams.set("seed", String(seed));
+if (game === "microworld" && knowledge !== null) url.searchParams.set("knowledge", knowledge);
 
 mkdirSync(dirname(output), { recursive: true });
 const browser = await chromium.launch({ headless: true, executablePath: chromePath });
@@ -73,6 +78,7 @@ try {
             cycles: Number(data.cycles ?? 0),
             elapsedMs: Number(data.elapsedMs ?? 0),
             source: String(data.actionSource ?? data.source ?? "idle"),
+            action: data.action ?? data.operator ?? null,
             concepts: Number(data.reasoner?.concepts ?? 0),
           });
           if (data?.type === "fault") window.__rateFaults.push(String(data.message ?? "Worker fault"));
@@ -86,14 +92,21 @@ try {
   const stepSelector = pageKind === "microworld" ? "#step-count" : "#game-step";
   await page.locator(ready).waitFor({ timeout: 60000 });
   const controls = pageKind === "microworld"
-    ? { speed: "#speed-input", cycles: "#nars-cycles", mode: "#runtime-mode", reset: "#reset-run" }
-    : { speed: "#speed", cycles: "#cycles-control", mode: mode === "sync" ? "#mode-sync" : "#mode-async", reset: "#reset-demo" };
+    ? { speed: "#speed-input", cycles: "#nars-cycles", babble: "#nars-babble", mode: "#runtime-mode", reset: "#reset-run" }
+    : { speed: "#speed", cycles: "#cycles-control", babble: "#babble-control", mode: mode === "sync" ? "#mode-sync" : "#mode-async", reset: "#reset-demo" };
   for (const [selector, value] of [[controls.speed, targetTps], [controls.cycles, cycles]]) {
     await page.locator(selector).evaluate((input, newValue) => {
       input.value = String(newValue);
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
     }, value);
+  }
+  if (babblePercent !== null) {
+    await page.locator(controls.babble).evaluate((input, value) => {
+      input.value = String(value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }, babblePercent);
   }
   const effectiveTargetTps = Number(await page.locator(controls.speed).inputValue());
   const effectiveCycles = Number(await page.locator(controls.cycles).inputValue());
@@ -169,7 +182,7 @@ try {
     browserVersion: browser.version(),
     nodeVersion: process.version,
     url: url.href,
-    configuration: { game, seed, mode, targetTps, cycles, durationMs },
+    configuration: { game, seed, mode, knowledge, targetTps, cycles, babblePercent, durationMs },
     result: {
       elapsedSeconds,
       worldSteps: end.step - start.step,
@@ -187,6 +200,8 @@ try {
       firstConcepts: events[0]?.concepts ?? null,
       lastConcepts: events.at(-1)?.concepts ?? null,
       nonBabbleOperations: events.filter((event) => event.source === "NARS").length,
+      narsOperations: events.filter((event) => event.source === "NARS")
+        .map((event) => ({ atMs: Number(event.atMs.toFixed(2)), action: event.action })),
       actionSources: countActionSources(events),
       pageHeapBytes: end.pageHeapBytes,
       windows,
