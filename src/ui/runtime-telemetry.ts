@@ -57,9 +57,15 @@ export class RuntimeTelemetryView {
   private tickCount = 0;
   private tpsValue = 0;
   private rpsValue = 0;
+  private rpsWindowStart = 0;
+  private completedCycles = 0;
+  private hasRpsSample = false;
   private targetTps = 1;
+  private targetCyclesPerTick = 1;
+  private readonly elements: RuntimeTelemetryElements;
 
-  constructor(private readonly elements: RuntimeTelemetryElements) {
+  constructor(elements: RuntimeTelemetryElements) {
+    this.elements = elements;
     elements.fps.value = "-- FPS";
     elements.fps.textContent = "-- FPS";
     for (const [output, bar] of [[elements.fps, elements.fpsBar], [elements.tps, elements.tpsBar], [elements.rps, elements.rpsBar]] as const) {
@@ -78,6 +84,7 @@ export class RuntimeTelemetryView {
   }
 
   frame(now: number): void {
+    this.sampleRps(now);
     this.frameCount += 1;
     if (this.frameStart === 0) {
       this.frameStart = now;
@@ -111,6 +118,12 @@ export class RuntimeTelemetryView {
     this.elements.tpsTarget.value = `${this.targetTps.toFixed(1)} TPS`;
     this.elements.tpsTarget.textContent = this.elements.tpsTarget.value;
     this.renderTps();
+    if (this.hasRpsSample) this.renderRps();
+  }
+
+  setCyclesPerTick(cycles: number): void {
+    this.targetCyclesPerTick = Math.max(1, Number(cycles) || 1);
+    if (this.hasRpsSample) this.renderRps();
   }
 
   private renderTps(): void {
@@ -126,13 +139,32 @@ export class RuntimeTelemetryView {
     this.elements.tpsBar.style.setProperty("--rate", `${Math.min(100, Math.max(0, ratio * 100))}%`);
   }
 
-  inference(cycles: number, elapsedMs: number): void {
-    if (!(elapsedMs > 0) || !(cycles > 0)) return;
-    this.rpsValue = cycles * 1000 / elapsedMs;
+  inference(cycles: number): void {
+    if (Number.isFinite(cycles) && cycles > 0) this.completedCycles += cycles;
+  }
+
+  private sampleRps(now: number): void {
+    if (this.rpsWindowStart === 0) {
+      this.rpsWindowStart = now;
+      return;
+    }
+    const elapsed = now - this.rpsWindowStart;
+    if (elapsed < 1000) return;
+    this.rpsValue = this.completedCycles * 1000 / elapsed;
+    this.completedCycles = 0;
+    this.rpsWindowStart = now;
+    this.hasRpsSample = true;
+    this.renderRps();
+  }
+
+  private renderRps(): void {
     this.elements.rps.value = `${this.rpsValue.toFixed(1)} RPS`;
     this.elements.rps.textContent = this.elements.rps.value;
-    this.elements.rpsBar.style.setProperty("--rate", `${Math.min(100, this.rpsValue / 120 * 100)}%`);
-    this.elements.rps.dataset.rate = this.rpsValue >= 90 ? "good" : "lag";
+    const targetRps = this.targetTps * this.targetCyclesPerTick;
+    const ratio = this.rpsValue / targetRps;
+    this.elements.rps.title = `过去约一秒完成的推理周期 / 墙钟；目标 ${targetRps.toFixed(1)} RPS`;
+    this.elements.rpsBar.style.setProperty("--rate", `${Math.min(100, Math.max(0, ratio * 100))}%`);
+    this.elements.rps.dataset.rate = ratio >= 0.5 ? "good" : "lag";
     this.elements.rpsBar.dataset.rate = this.elements.rps.dataset.rate;
   }
 
@@ -143,6 +175,9 @@ export class RuntimeTelemetryView {
     this.tickCount = 0;
     this.tpsValue = 0;
     this.rpsValue = 0;
+    this.rpsWindowStart = performance.now();
+    this.completedCycles = 0;
+    this.hasRpsSample = false;
     for (const [output, bar, placeholder] of [[this.elements.fps, this.elements.fpsBar, "-- FPS"], [this.elements.tps, this.elements.tpsBar, "-- TPS"], [this.elements.rps, this.elements.rpsBar, "-- RPS"]] as const) {
       output.value = placeholder;
       output.textContent = placeholder;

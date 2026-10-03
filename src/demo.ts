@@ -231,7 +231,7 @@ function initializeWorker(): void {
     if (data.type === "step-complete") {
       state.pending = false;
       state.pendingSteps = Math.max(0, state.pendingSteps - 1);
-      telemetry.inference(Number(data.cycles ?? state.cycles), Number(data.elapsedMs ?? 0));
+      telemetry.inference(Number(data.cycles ?? state.cycles));
       ui.operation.value = data.action ? `${data.action}({SELF})` : "本步未发出操作";
       ui.source.value = data.action ? data.source ?? "NARS" : "IDLE";
       ui.opState.textContent = `NAR ${data.narTime ?? "0"} · ${data.cycles ?? state.cycles} cycles · ${Number(data.elapsedMs ?? 0).toFixed(1)} ms`;
@@ -531,11 +531,12 @@ function addTabsAndControls(): void {
   });
   ui.clearLog.addEventListener("click", () => ui.log.replaceChildren());
   ui.cycles.value = String(state.cycles); ui.cyclesLabel.value = String(state.cycles);
-  ui.cycles.addEventListener("input", () => { state.cycles = Number(ui.cycles.value); ui.cyclesLabel.value = String(state.cycles); });
+  ui.cycles.addEventListener("input", () => { state.cycles = Number(ui.cycles.value); ui.cyclesLabel.value = String(state.cycles); telemetry.setCyclesPerTick(state.cycles); });
   ui.babble.value = String(Math.round(state.babble * 100)); ui.babbleLabel.value = `${Math.round(state.babble * 100)}%`;
   ui.babble.addEventListener("input", () => { state.babble = Number(ui.babble.value) / 100; ui.babbleLabel.value = `${ui.babble.value}%`; });
   ui.speed.value = String(state.speed); ui.speedLabel.value = `${state.speed} 步/秒`;
   telemetry.setTargetTps(state.speed);
+  telemetry.setCyclesPerTick(state.cycles);
   ui.speed.addEventListener("input", () => { state.speed = Number(ui.speed.value); ui.speedLabel.value = `${state.speed} TPS`; telemetry.setTargetTps(state.speed); });
   ui.toggleRateHud.addEventListener("click", () => { const hidden = ui.rateHud.classList.toggle("is-hidden"); ui.toggleRateHud.setAttribute("aria-label", hidden ? "显示速率 HUD" : "隐藏速率 HUD"); ui.toggleRateHud.title = hidden ? "显示速率 HUD" : "隐藏速率 HUD"; });
   ui.modeSync.addEventListener("change", () => setRuntimeMode("sync"));

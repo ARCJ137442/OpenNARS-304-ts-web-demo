@@ -336,7 +336,7 @@ function newWorker(seed: number): void {
     }
     if (data.type === "step-complete") {
       state.pending = false;
-      telemetry.inference(Number(data.cycles ?? state.narsCycles), Number(data.elapsedMs ?? 0));
+      telemetry.inference(Number(data.cycles ?? state.narsCycles));
       state.lastLatency = Number(data.elapsedMs) || 0;
       state.lastNarTime = data.narTime ?? "0";
       telemetry.updateReasoner(data.reasoner);
@@ -664,6 +664,7 @@ elements.narsBabbleValue.value = `${Math.round(state.babbleProbability * 100)}%`
 elements.narsCycles.addEventListener("input", () => {
   state.narsCycles = Number(elements.narsCycles.value);
   elements.narsCyclesValue.value = `${state.narsCycles} cycles`;
+  telemetry.setCyclesPerTick(state.narsCycles);
 });
 elements.narsBabble.addEventListener("input", () => {
   state.babbleProbability = Number(elements.narsBabble.value) / 100;
@@ -710,6 +711,7 @@ function boot() {
   elements.speed.value = String(MICROWORLD_DEFAULT_TPS);
   elements.speedValue.textContent = `${MICROWORLD_DEFAULT_TPS} 步/秒`;
   telemetry.setTargetTps(MICROWORLD_DEFAULT_TPS);
+  telemetry.setCyclesPerTick(state.narsCycles);
   state.world = createWorld(state.seed);
   state.random = createRandom(state.seed ^ 0x2d2d304);
   for (let index = 0; index < 6; index += 1) {

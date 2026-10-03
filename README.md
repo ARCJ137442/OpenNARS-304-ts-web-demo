@@ -28,6 +28,7 @@ OpenNARS 3.0.4 的机制边界与 ONA demo 适配理由见 [机制分析](docs/o
 指定 demo 的扩展计划和原创候选见 [扩展计划](docs/demo-expansion-plan.md)、[候选审阅](docs/demo-candidate-survey.md) 与 [原创提案](docs/original-demo-proposals.md)。
 项目统一术语见 [NARS 与 Narsese 术语表](docs/terminology.md)。
 演示页的性能 HUD 严格区分 `FPS`（画面刷新）、`TPS`（世界刻）和 `RPS`（NARS 推理周期）；“性能诊断”面板默认折叠，可切换同步/异步节奏。实现边界见 [运行节奏计划](docs/demo-runtime-modes-plan.md)。
+HUD 的 RPS 统计最近约一秒墙钟内**实际完成**的周期，推理无进展时归零；速率条以目标 TPS × 每刻周期数为参照，不把单次推理的活跃速度写成整场吞吐。
 五个扩展环境使用“变化即报、稳定状态每五刻刷新”的输入节奏，结果反馈仍逐次提交；这是明确的 Demo 行为适配，不作为推理核心的同语义性能提升计算。
 
 ### 源码入口

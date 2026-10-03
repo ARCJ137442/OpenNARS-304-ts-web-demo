@@ -58,6 +58,8 @@ TestChamber 的输入频率试验仅在 harness 内进行，产品源码未改�
 
 新原始文件均为忽略的 `test-results/<game>-cadence-default30-fixed-80ec4da-20261003.json`，两仓库 `trackedSourceClean=true`，页面/控制台/Worker 故障均 0。平均吞吐改善约 45.9%–215.2%，但输入时序改变导致世界经历不同步数，不能作为核心同语义 A/B 或“持续学习已证实”。Shot 的末窗接近5TPS；另外四项末窗仍低于目标，尤其 TicTacToe/TestChamber。下一步独立修正 HUD：当前 `RuntimeTelemetryView.inference` 用最近一次操作的 `cycles / elapsedMs` 显示 RPS，空窗不归零，Microworld 曾显示两千多 RPS 而实际墙钟约158 RPS；必须改为已完成周期的墙钟窗口，并让进度条相对于目标TPS×每刻周期数。
 
+HUD 修正候选已在 `src/ui/runtime-telemetry.ts` 改为约一秒墙钟窗口累计**完成**周期，空窗归零，条宽与颜色以目标 TPS×配置周期数为参照；`elapsedMs` 仍由页面单独展示为单步延迟。直接测试保护“10 完成周期/秒后空窗显示 0”以及目标速率提示，Node 22.17 可擦除 TypeScript 源码直接测试通过；Demo 全套 TypeScript/Astro、35 项单测、build/artifact 检查均通过。当前源码/产物还未固定提交，真实 Chrome HUD 与基准计数对照待验证。该修改只改变监测口径，不宣称 NARS 算得更快。
+
 随后的 Demo typecheck、32/32 单测、静态 build/artifact 与真实 Chrome smoke 均通过；十个普通 Demo 在 babble 0 的有界观察窗口中全部出现 NARS 操作。CartPole 的 Chrome 30 秒压力样本（目标 20 TPS、5 cycles、默认 babble）平均 `9.910 TPS`、末窗 `7.577 TPS`、概念终点 `1831`、NARS 4 次，较旧模型同设置平均 `2.229 TPS`、末窗 `1.595 TPS`、概念 `7232` 明显改善，但仍低于目标半速 `10 TPS` 的门。该基准退出码为 1，仅因为 `Logger.log("INFO", ...)` 被核心 `Logger` 错投到 `console.error`，并非 Worker/page fault；原始 `test-results/cartpole-browser-tilt-outcome-20tps-20261003.json` 同时保存 `consoleErrors` 字段。核心 `Logger` 已开始把 INFO 路由到 `console.info`，直接合同与 typecheck 通过；**核心 M2/M1′/重建后的浏览器复测尚未完成**。这次生产核心更改使先前 `708afc5` 门禁不能自动覆盖最终提交。
 
 原始结果位于忽略的 `test-results/*operation*20261003.json`、`hunt-browser-*-20261003.json` 和 `bandrobot-*-20261003.json`。最新源码事实高于此段描述；改动或验收后立刻同步本文件。
