@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { DEMO_DEFINITIONS, advanceDemo, buildNarsStep, createDemoState } from "../src/games/models.ts";
 import { PerceptionCadence } from "../src/games/perception-cadence.ts";
 
@@ -25,6 +25,7 @@ const requestedRefresh = args["refresh-every"] === undefined ? null : Number(arg
 const refreshEvery = requestedRefresh === 0 ? null : requestedRefresh ?? definition?.perceptionCadence?.refreshEvery ?? null;
 const warmupTicks = Number(args["warmup-ticks"] ?? definition?.perceptionCadence?.warmupTicks ?? 0);
 const output = resolve(args.output ?? "test-results/profile-demo-worker.json");
+const bundle = resolve(args.bundle ?? "public/demo-worker.js");
 const extraPriorRules = args["prior-rules-file"]
   ? JSON.parse(readFileSync(resolve(args["prior-rules-file"]), "utf8"))
   : [];
@@ -47,7 +48,7 @@ globalThis.self = {
   },
   postMessage(message) { messages.push(message); },
 };
-await import("../public/demo-worker.js");
+await import(pathToFileURL(bundle).href);
 if (typeof receiveMessage !== "function") throw new Error("Built Worker did not register a message listener");
 const send = (data) => receiveMessage({ data });
 const state = createDemoState(game, seed);
@@ -115,7 +116,7 @@ const result = {
   demoCommit: gitHead(projectRoot),
   nodeVersion: process.version,
   configuration: { game, seed, ticks, cycles, babble: babble ?? definition.babble,
-    suppressFeedback, refreshEvery, warmupTicks, reportEvery, extraPriorRules },
+    suppressFeedback, refreshEvery, warmupTicks, reportEvery, extraPriorRules, bundle },
   segments,
   finalConcepts: lastConcepts,
   peakRssBytes,

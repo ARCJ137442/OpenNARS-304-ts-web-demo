@@ -44,3 +44,5 @@ Microworld seed19、babble0、目标20TPS、10 cycles：固定 `2b888c8` 示例�
 3. 优化 Microworld **示例知识**模式的持续推理长尾，目标真实同步 20 TPS。等核心候选通过 M1′/M2/markerless 后重建 Worker，再对固定提交复测。
 4. 最终完成 Node/API、页面与发布资产审计，更新 Pages、推送修订发行；当前 `/goal` 与 spec 042 仍进行中。
 
+2026-10-03 后续核心性能反证：在同输入 Microworld 474 刻中，临时计数确证 Bag 有 29202388 次同类键扫描，但两版具备改名观察的原生名称索引在 Microworld 仅约 3%–5% 端到端收益；TestChamber 要么收益约 1% 且多占约 71 MB RSS，要么快约 5% 却多占约 44 MB。两版核心源码和实验 bundle 均已撤销。原始 bundle/JSON 的固定身份及 patch 哈希在核心仓库 `docs/probes/20261002-bag-term-equality.md`。当前 Demo 的生产代码未因这次核心试验改变；`profile-demo-worker.mjs` 新增可选 `--bundle`，便于复用保存在 `test-results/` 的基线 Worker 字节进行交叉测量。下一候选转向词项构造、Set 工厂与 Bag 插入分配，而非把名称索引计为已接受优化。
+
