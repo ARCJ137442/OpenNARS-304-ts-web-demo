@@ -44,7 +44,19 @@ BandRobot 的 123 次 NARS 操作大多是被夹在位置 0 后反复 `^left`，
 
 TestChamber 的输入频率试验仅在 harness 内进行，产品源码未改：原每刻四条感知与一条目标，25 刻概念 `4401`、末五刻 `0.351 TPS`、NARS 1 次有效动作；仅在状态变化或每 5 刻刷新时概念 `1848`、末 `6.160 TPS`，但 NARS 0 次；每 2 刻刷新时概念 `3258`、末 `1.205 TPS`，NARS 1 次有效动作，但首操作从第 4 刻 `^right` 变为第 15 刻 `^up`。这是改变时序输入的**行为实验**，不能作为同语义性能优化接受。下一可证伪实验是先完整输入 5 刻用于形成初始反应，再改为变化驱动加 5 刻刷新，检查操作时机、有效性、概念增长与末窗 TPS。
 
-该下一实验已完成：TestChamber 的“前 5 刻完整输入，之后变化即报、每 5 刻刷新”在 25 刻同输入 Worker 中保留了第 4 刻同一 `^right` 有效操作，概念 `4401 → 2866`、末段 `0.351 → 3.558 TPS`、峰值 RSS `822026240 → 343150592 bytes`。对其余四个扩展环境做同样短探针，都仍有至少一次真正改变物理世界的 NARS 操作：TicTacToe 首次第 3 刻 `^cell4`、末段 `10.289 TPS`；Shot 第 2 刻 `^shoot`、末段 `53.239 TPS`；FighterPlane 第 15 刻 `^fire`、末段 `5.049 TPS`；Echo Relay 第 2 刻 `^ping`、末段 `15.626 TPS`。这只是 Node Worker 25 刻筛选。产品候选在 `src/games/perception-cadence.ts` 实现共同状态事件节奏，并只对五个扩展 Demo 装配；反馈每刻保留。Node 22.17 的 `--experimental-strip-types` 不接受 TypeScript 构造器参数属性，改为可擦除的字段赋值后，直接合同、全套 34/34 单测、TS/Astro 和 build/artifact 均通过；真实 Chrome smoke 继续观察到普通十 Demo 与 Microworld 示例模式的 NARS 操作。**五个扩展 Demo 的固定提交 30 秒性能与长期行为仍未验证。**
+该下一实验已完成：TestChamber 的“前 5 刻完整输入，之后变化即报、每 5 刻刷新”在 25 刻同输入 Worker 中保留了第 4 刻同一 `^right` 有效操作，概念 `4401 → 2866`、末段 `0.351 → 3.558 TPS`、峰值 RSS `822026240 → 343150592 bytes`。对其余四个扩展环境做同样短探针，都仍有至少一次真正改变物理世界的 NARS 操作：TicTacToe 首次第 3 刻 `^cell4`、末段 `10.289 TPS`；Shot 第 2 刻 `^shoot`、末段 `53.239 TPS`；FighterPlane 第 15 刻 `^fire`、末段 `5.049 TPS`；Echo Relay 第 2 刻 `^ping`、末段 `15.626 TPS`。这只是 Node Worker 25 刻筛选。产品候选在 `src/games/perception-cadence.ts` 实现共同状态事件节奏，并只对五个扩展 Demo 装配；反馈每刻保留。Node 22.17 的 `--experimental-strip-types` 不接受 TypeScript 构造器参数属性，改为可擦除的字段赋值后，直接合同、全套 34/34 单测、TS/Astro 和 build/artifact 均通过；真实 Chrome smoke 继续观察到普通十 Demo 与 Microworld 示例模式的 NARS 操作。随后再补固定提交的 30 秒性能证据如下。
+
+固定 Demo `80ec4da`、核心 `083d7b8` 的真实 Chrome smoke 再次通过：普通十 Demo 在 babble 0 下全部有 NARS 操作，Microworld 示例模式操作为真、空白模式规则数 0、首页 Worker 0、pageErrors 0。随后五个扩展环境在同 seed3040304、同步目标5TPS、10 cycles、默认 babble、30秒下测得：
+
+| 环境 | 旧输入平均/末窗 TPS | 变化节奏平均/末窗 TPS | 变化节奏末概念 | NARS 操作 | SHA-256（新原始 JSON） |
+| --- | ---: | ---: | ---: | ---: | --- |
+| TicTacToe | 1.264 / 0.598 | 2.995 / 1.399 | 4295 | 9 | `4AD2985F04F43971D981704114D237FEA5DF1CDBDC89572AECD74ED4AA1FFEF7` |
+| Shot | 3.327 / 1.399 | 4.855 / 4.594 | 1526 | 1 | `BF85506ED3452F657FC602D2C895029B913AD006FA5ECED71BCA8D75860B7A28` |
+| TestChamber | 0.665 / 0.399 | 2.097 / 1.399 | 5710 | 2 | `2183F51907D08CD237A7DF3734D71D87150D3FA2FA7BDAF49209D0B0662AD916` |
+| FighterPlane | 0.998 / 0.800 | 2.995 / 2.396 | 3792 | 6 | `630139838B3A31EF604FCEB685AD7028776344131A60CE0BBA7A3AAC809430AE` |
+| Echo Relay | 1.431 / 1.197 | 2.763 / 1.798 | 6280 | 7 | `1CAB3693AD9CA049DCA10C0C149D098A1A8B8D1193CA7A799BA7D5AA8BFB4F3A` |
+
+新原始文件均为忽略的 `test-results/<game>-cadence-default30-fixed-80ec4da-20261003.json`，两仓库 `trackedSourceClean=true`，页面/控制台/Worker 故障均 0。平均吞吐改善约 45.9%–215.2%，但输入时序改变导致世界经历不同步数，不能作为核心同语义 A/B 或“持续学习已证实”。Shot 的末窗接近5TPS；另外四项末窗仍低于目标，尤其 TicTacToe/TestChamber。下一步独立修正 HUD：当前 `RuntimeTelemetryView.inference` 用最近一次操作的 `cycles / elapsedMs` 显示 RPS，空窗不归零，Microworld 曾显示两千多 RPS 而实际墙钟约158 RPS；必须改为已完成周期的墙钟窗口，并让进度条相对于目标TPS×每刻周期数。
 
 随后的 Demo typecheck、32/32 单测、静态 build/artifact 与真实 Chrome smoke 均通过；十个普通 Demo 在 babble 0 的有界观察窗口中全部出现 NARS 操作。CartPole 的 Chrome 30 秒压力样本（目标 20 TPS、5 cycles、默认 babble）平均 `9.910 TPS`、末窗 `7.577 TPS`、概念终点 `1831`、NARS 4 次，较旧模型同设置平均 `2.229 TPS`、末窗 `1.595 TPS`、概念 `7232` 明显改善，但仍低于目标半速 `10 TPS` 的门。该基准退出码为 1，仅因为 `Logger.log("INFO", ...)` 被核心 `Logger` 错投到 `console.error`，并非 Worker/page fault；原始 `test-results/cartpole-browser-tilt-outcome-20tps-20261003.json` 同时保存 `consoleErrors` 字段。核心 `Logger` 已开始把 INFO 路由到 `console.info`，直接合同与 typecheck 通过；**核心 M2/M1′/重建后的浏览器复测尚未完成**。这次生产核心更改使先前 `708afc5` 门禁不能自动覆盖最终提交。
 
