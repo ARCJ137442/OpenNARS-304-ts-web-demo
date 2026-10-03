@@ -39,10 +39,10 @@ Microworld seed19、babble0、目标20TPS、10 cycles：固定 `2b888c8` 示例�
 
 ## 下一步可证伪实验
 
-1. 对 TicTacToe、TestChamber、FighterPlane、Echo Relay 在现有输入节奏下做真实 Worker CPU/profile 与感知/目标 cardinality 审计；以 30 秒末窗 TPS、非 babble **有效**操作和内存为共同判据。不得靠进一步减周期、隐藏目标或异步世界 TPS 冒充核心优化。
+1. 本轮性能试探已按用户要求停止。TicTacToe、TestChamber、FighterPlane、Echo Relay 的 30 秒末窗 TPS 未达预期；保留这些限制与已有原始数据，不再启动新的吞吐候选。不得靠进一步减周期、隐藏目标或异步世界 TPS 冒充核心优化。
 2. 让 BandRobot 在无外部 babble 的固定场景完成抓取—运输—交付；若当前 NARS 规则无法形成该闭环，明确降格或调整因果/反馈语义并复测。
-3. 优化 Microworld **示例知识**模式的持续推理长尾，目标真实同步 20 TPS。等核心候选通过 M1′/M2/markerless 后重建 Worker，再对固定提交复测。
+3. Microworld **示例知识**模式真实同步 20 TPS 目标未达成；下一版发布资料必须披露 30 秒平均 `15.875`、末窗 `11.776 TPS`，不能用 classic 空白模式、短时峰值或 Worker harness 的近 20 TPS 替代。
 4. 最终完成 Node/API、页面与发布资产审计，更新 Pages、推送修订发行；当前 `/goal` 与 spec 042 仍进行中。
 
-2026-10-03 后续核心性能反证：在同输入 Microworld 474 刻中，临时计数确证 Bag 有 29202388 次同类键扫描，但两版具备改名观察的原生名称索引在 Microworld 仅约 3%–5% 端到端收益；TestChamber 要么收益约 1% 且多占约 71 MB RSS，要么快约 5% 却多占约 44 MB。两版核心源码和实验 bundle 均已撤销。原始 bundle/JSON 的固定身份及 patch 哈希在核心仓库 `docs/probes/20261002-bag-term-equality.md`。当前 Demo 的生产代码未因这次核心试验改变；`profile-demo-worker.mjs` 新增可选 `--bundle`，便于复用保存在 `test-results/` 的基线 Worker 字节进行交叉测量。下一候选转向词项构造、Set 工厂与 Bag 插入分配，而非把名称索引计为已接受优化。
+2026-10-03 后续核心性能反证：在同输入 Microworld 474 刻中，临时计数确证 Bag 有 29202388 次同类键扫描，但两版具备改名观察的原生名称索引在 Microworld 仅约 3%–5% 端到端收益；TestChamber 要么收益约 1% 且多占约 71 MB RSS，要么快约 5% 却多占约 44 MB。其后的几何对象快路两版也没有端到端收益，RSS 上升。所有候选核心源码和实验 bundle 均已撤销。原始 bundle/JSON 的固定身份及 patch 哈希在核心仓库 `docs/probes/20261002-bag-term-equality.md`。当前 Demo 的生产代码未因这些核心试验改变；`profile-demo-worker.mjs` 新增可选 `--bundle`，便于复用保存在 `test-results/` 的基线 Worker 字节进行交叉测量。用户已要求重复无明显优化时停止，本轮不再安排新的性能实验；这不等于严格收敛或目标 TPS 达标。
 
