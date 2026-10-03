@@ -114,6 +114,11 @@ try {
     operationFindings.push({ game, babble: 0, nonBabbleExe: nonBabbleExecution, interpretation: nonBabbleExecution ? "NARS emitted an operator action" : "No NARS operator action observed in this smoke window" });
     await page.getByRole("button", { name: "暂停" }).click();
     await page.getByText("PAUSED", { exact: true }).waitFor();
+    if (game === "pong") {
+      await page.waitForFunction(() => document.querySelector("#rps-hud")?.textContent === "0.0 RPS",
+      undefined, { timeout: 5000 });
+      assert.match(await page.locator("#rps-hud").getAttribute("title"), /目标 50\.0 RPS/);
+    }
     const frozenStep = await page.locator("#game-step").textContent();
     await page.getByRole("button", { name: "单步" }).click();
     await page.waitForFunction((previous) => document.querySelector("#game-step")?.textContent !== previous, frozenStep, { timeout: 10000 });
