@@ -160,12 +160,13 @@ export function applyActionAndAdvance(world: WorldState, action: number = ACTION
   }
 
   agent.speed *= 0.9;
+  // Canvas Y points downward: a smaller angle is counterclockwise on screen.
   if (normalizedAction === ACTION.FORWARD) {
     agent.speed = Math.min(15, agent.speed + 10);
   } else if (normalizedAction === ACTION.LEFT) {
-    agent.angle = wrapAngle(agent.angle + 0.5);
-  } else if (normalizedAction === ACTION.RIGHT) {
     agent.angle = wrapAngle(agent.angle - 0.5);
+  } else if (normalizedAction === ACTION.RIGHT) {
+    agent.angle = wrapAngle(agent.angle + 0.5);
   }
 
   agent.x += Math.cos(agent.angle) * agent.speed + agent.driftX;

@@ -12,7 +12,7 @@ const game = args.game ?? "microworld";
 const seed = Number(args.seed ?? 3040304);
 const mode = args.mode ?? "sync";
 const knowledge = args.knowledge ?? null;
-const targetTps = Number(args["target-tps"] ?? (game === "microworld" ? 20 : 5));
+const targetTps = Number(args["target-tps"] ?? 20);
 const cycles = Number(args.cycles ?? 10);
 const babblePercent = args["babble-percent"] === undefined ? null : Number(args["babble-percent"]);
 const durationMs = Number(args["duration-ms"] ?? 20000);

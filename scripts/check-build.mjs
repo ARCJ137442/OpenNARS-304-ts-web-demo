@@ -7,7 +7,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const distRoot = resolve(projectRoot, "dist");
 const requiredFiles = [
   "index.html", "terminal.html", "demo.html", "demo-worker.js", "microworld.html", "microworld.css", "microworld.js",
-  "microworld-worker.js", "styles.css", "app.js", "input-behavior.js", "build-meta.json", "README.md",
+  "microworld-worker.js", "build-meta.json", "README.md",
   "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "assets/agent.png", "assets/food.png", "assets/fire.png",
   "assets/ball.png", "assets/bar.png",
 ];
@@ -17,11 +17,16 @@ for (const file of requiredFiles) {
 }
 
 const index = readFileSync(resolve(distRoot, "index.html"), "utf8");
-for (const text of ["DEMO LAB", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "11 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"echo-relay\"", "data-preview=\"microworld\""]) {
+for (const text of ["DEMO LAB", "NARS 终端", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "12 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\""]) {
   if (!index.includes(text)) throw new Error(`index.html is missing ${text}`);
 }
 if (!index.includes("/opennars-304-ts-lab/_astro/")) throw new Error("index.html is missing the Pages base path for Astro assets");
 if (!index.includes("favicon.svg")) throw new Error("index.html is missing its favicon");
+if (!index.includes('<base href="/opennars-304-ts-lab/">')) throw new Error("index.html is missing its canonical asset base");
+const terminal = readFileSync(resolve(distRoot, "terminal.html"), "utf8");
+for (const text of ["terminal-form", "terminal-output", "cycle-clock", "runtime-state", "/opennars-304-ts-lab/_astro/"]) {
+  if (!terminal.includes(text)) throw new Error(`terminal.html is missing ${text}`);
+}
 const astroAssets = readdirSync(resolve(distRoot, "_astro"));
 if (astroAssets.length === 0) throw new Error("Astro-generated asset directory is empty");
 for (const asset of astroAssets) {

@@ -151,11 +151,7 @@ main {
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
-  gap: clamp(36px, 7vw, 110px);
-  align-items: end;
-  margin-bottom: clamp(34px, 5vw, 64px);
+  margin-bottom: clamp(28px, 4vw, 48px);
 }
 
 .hero h1 {
@@ -337,6 +333,30 @@ body.busy #terminal-activity {
   color: var(--amber);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .terminal-line.input,
+  .terminal-line.out,
+  .terminal-line.answer,
+  .terminal-line.error {
+    animation: terminal-event 260ms ease-out both;
+  }
+  body.busy .terminal-toolbar {
+    background: linear-gradient(90deg, transparent 0%, rgba(98, 255, 227, .13) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: terminal-reasoning 900ms linear infinite;
+  }
+}
+
+@keyframes terminal-event {
+  from { opacity: .45; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes terminal-reasoning {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
 .terminal-form {
   position: relative;
   z-index: 3;
@@ -396,13 +416,25 @@ body.busy #terminal-activity {
 
 .send-button {
   align-self: stretch;
-  min-width: 110px;
+  min-width: 58px;
   border-width: 0 0 0 1px;
   color: var(--cyan);
   font-family: var(--font-display);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.11em;
+}
+
+.send-button svg,
+.icon-action svg,
+.quick-buttons svg,
+.microworld-entry svg,
+.shortcut-hint svg,
+.quick-help svg,
+.telemetry-details svg {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
 }
 
 .send-button:hover:not(:disabled),
@@ -431,6 +463,38 @@ body.busy #terminal-activity {
   font-size: 0.66rem;
 }
 
+.shortcut-hint summary,
+.quick-help summary,
+.telemetry-details summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.shortcut-hint summary::-webkit-details-marker,
+.quick-help summary::-webkit-details-marker,
+.telemetry-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.shortcut-hint {
+  color: var(--muted);
+  font-size: 0.67rem;
+}
+
+.shortcut-hint p,
+.quick-help p {
+  margin-top: 10px;
+}
+
+.shortcut-hint[open] summary svg:last-child,
+.quick-help[open] summary svg:last-child,
+.telemetry-details[open] summary svg:last-child {
+  transform: rotate(180deg);
+}
+
 .action-group {
   display: flex;
   gap: 9px;
@@ -440,6 +504,13 @@ body.busy #terminal-activity {
   padding: 8px 10px;
   font-size: 0.62rem;
   letter-spacing: 0.08em;
+}
+
+.icon-action {
+  display: grid;
+  width: 38px;
+  height: 34px;
+  place-items: center;
 }
 
 .text-button:hover,
@@ -458,6 +529,31 @@ body.busy #terminal-activity {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.telemetry-details {
+  display: grid;
+  gap: 12px;
+}
+
+.telemetry-details > summary {
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--panel);
+  font-size: 0.7rem;
+}
+
+.telemetry-details > summary:hover,
+.telemetry-details > summary:focus-visible {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.telemetry-details:not([open]) > section {
+  display: none;
 }
 
 .telemetry-block {
@@ -609,11 +705,20 @@ body.busy #terminal-activity {
 }
 
 .quick-buttons button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 10px;
   color: #b9cecb;
   font-size: 0.65rem;
   letter-spacing: 0.07em;
   text-align: left;
+}
+
+.quick-help {
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 0.68rem;
 }
 
 .quick-buttons button:hover,
@@ -666,6 +771,10 @@ a:focus-visible {
   .telemetry {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemetry-details {
+    grid-column: 1 / -1;
   }
 
 }

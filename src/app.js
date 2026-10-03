@@ -5,6 +5,7 @@ import {
   normalizeVolume,
   shouldSubmitFromKeydown,
 } from "./input-behavior.js";
+import { mountIcons } from "./ui/icons.ts";
 
 const elements = {
   body: document.body,
@@ -64,7 +65,6 @@ function appendLine(text, channel = "system") {
 
 function clearOutput() {
   elements.output.replaceChildren();
-  appendLine("[display] output buffer cleared; reasoner state is unchanged.", "system");
 }
 
 function setClock(value) {
@@ -142,7 +142,7 @@ function stopWorker(reason = "session reset") {
   busy = false;
   elements.body.classList.remove("ready", "busy", "failed");
   updateControls();
-  appendLine(`[runtime] ${reason}; starting a clean reasoner…`, "system");
+  if (reason !== "initial boot") appendLine(`[session] ${reason}`, "system");
 }
 
 function startWorker(reason = "initial boot") {
@@ -160,8 +160,6 @@ function startWorker(reason = "initial boot") {
       applyBuildMetadata(data.build);
       setClock(data.time);
       setVolumeDisplay(data.volume);
-      appendLine(`OpenNARS ${data.build.coreVersion} TypeScript worker online.`, "system");
-      appendLine("Type :help for commands, or use QUICK INPUT to run the first inference.", "system");
       updateControls();
       elements.input.focus({ preventScroll: true });
       return;
@@ -298,19 +296,18 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.ctrlKey && event.key.toLowerCase() === "c" && busy) {
     event.preventDefault();
-    startWorker("inference interrupted by Control+C");
+    startWorker("推理已中断");
   }
 });
 
 elements.clear.addEventListener("click", clearOutput);
-elements.interrupt.addEventListener("click", () => startWorker(busy ? "inference interrupted" : "session reset"));
+elements.interrupt.addEventListener("click", () => startWorker(busy ? "推理已中断" : "会话已重置"));
 
 for (const button of elements.quickButtons) {
   button.addEventListener("click", () => submitCommand(button.dataset.command));
 }
 
-appendLine("[boot] loading OpenNARS 3.0.4 TypeScript runtime…", "system");
-appendLine("[boot] reasoner state is local to this browser tab.", "system");
+mountIcons();
 updateControls();
 resizeInput();
 await loadBuildMetadata();

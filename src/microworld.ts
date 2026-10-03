@@ -20,6 +20,7 @@ import {
 import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
+import { signalFeedback } from "./ui/semantic-feedback.ts";
 import { MICROWORLD_DEFAULT_TPS, MICROWORLD_MAX_TPS, MICROWORLD_MIN_SMOOTH_TPS } from "./microworld/runtime-config.ts";
 import { MICROWORLD_STARTER_PRIORS } from "./microworld/nars-priors.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
@@ -36,6 +37,7 @@ type MicroworldWorkerEvent = {
   source?: string;
   actionSource?: string;
   elapsedMs?: number;
+  reward?: number;
   cycles?: number;
   narTime?: string;
   message?: string;
@@ -331,6 +333,7 @@ function newWorker(seed: number): void {
       state.currentOperation = `${data.operator ?? "?"}({SELF})`;
       state.operationSource = source;
       appendLog("operation", `[EXE] ${data.operator ?? "?"}({SELF}) · ${source} / 已执行`, data.step);
+      signalFeedback(elements.operation.closest<HTMLElement>(".decision-panel"), "reasoned");
       updateTelemetry();
       return;
     }
@@ -344,12 +347,14 @@ function newWorker(seed: number): void {
       state.measuredSteps += 1;
       state.currentOperation = data.operator ? `${data.operator}({SELF})` : "本步未发出操作";
       state.operationSource = (data.actionSource ?? "idle") === "idle" ? "IDLE" : (data.actionSource ?? "NARS").toUpperCase();
+      if (data.actionSource === "babble") signalFeedback(elements.operation.closest<HTMLElement>(".decision-panel"), "exploratory");
+      if (data.reward) signalFeedback(elements.reward.closest<HTMLElement>(".reward-panel"), data.reward > 0 ? "reward" : "cost");
       if (state.runtimeMode === "sync") {
         applyActionAndAdvance(state.world, data.action ?? 0);
         telemetry.environmentTick(performance.now());
       }
       else state.queuedAction = (data.action ?? 0) as ActionCode;
-      if (state.runtimeMode === "async" && state.running) elements.worldStatus.textContent = "异步运行 · NARS 已完成";
+      if (state.runtimeMode === "async" && state.running) elements.worldStatus.textContent = "推理完成";
       updateTelemetry();
       if (state.running) {
         // Keep the world clock fixed like Processing's frameRate(50): inference
@@ -653,7 +658,7 @@ elements.toggleRateHud.addEventListener("click", () => { const hidden = elements
 elements.runtimeMode.addEventListener("change", () => {
   state.runtimeMode = elements.runtimeMode.value === "async" ? "async" : "sync";
   state.queuedAction = 0;
-  elements.worldStatus.textContent = state.runtimeMode === "async" ? "异步运行 · 等待 NARS" : "同步运行";
+  elements.worldStatus.textContent = state.runtimeMode === "async" ? "等待 NARS" : "同步运行";
   elements.runtimeModeValue.value = state.runtimeMode === "async" ? "异步" : "同步";
   elements.runtimeModeValue.textContent = elements.runtimeModeValue.value;
   appendLog("system", state.runtimeMode === "async" ? "已切换异步节奏：世界按速度推进，NARS 操作稍后应用。" : "已切换同步节奏：环境步等待 NARS 完成。", state.world.tick);

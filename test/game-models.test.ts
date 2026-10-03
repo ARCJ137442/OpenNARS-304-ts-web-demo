@@ -31,7 +31,8 @@ test("the static Lab catalog provides one reachable route for every registered g
   const ids = GAME_DEMOS.map((entry) => entry.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual([...ids].sort(), Object.keys(DEMO_DEFINITIONS).sort());
-  assert.equal(DEMO_CATALOG.length, GAME_DEMOS.length + 1);
+  assert.equal(DEMO_CATALOG.length, GAME_DEMOS.length + 2);
+  assert.equal(DEMO_CATALOG.find((entry) => entry.id === "terminal")?.href, "./terminal.html");
   for (const entry of GAME_DEMOS) {
     assert.equal(isDemoId(entry.id), true);
     assert.equal(entry.href, "./demo.html?game=" + entry.id);

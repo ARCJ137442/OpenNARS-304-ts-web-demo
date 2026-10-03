@@ -3,19 +3,20 @@ import { EXPANSION_DEFINITIONS } from "../games/expansion-models.ts";
 import { isDemoId } from "../games/shared.ts";
 
 export type DemoCatalogEntry = {
-  id: "microworld" | DemoId;
+  id: "microworld" | "terminal" | DemoId;
   title: string;
   summary: string;
   family: string;
   href: string;
-  preview: "microworld" | DemoId;
+  preview: "microworld" | "terminal" | DemoId;
   artwork: string;
   sourceLabel: string;
   featured?: boolean;
 };
 
-const artworkClasses: Record<"microworld" | DemoId, string> = {
+const artworkClasses: Record<"microworld" | "terminal" | DemoId, string> = {
   microworld: "art-microworld",
+  terminal: "art-terminal",
   pong: "art-pong",
   alien: "art-alien",
   bandrobot: "art-robot",
@@ -33,7 +34,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "pong",
     title: DEMO_DEFINITIONS.pong.title,
     summary: "球的位置感知 · 左右操作 · 击球反馈",
-    family: "02 / CLASSIC",
+    family: "03 / CLASSIC",
     href: "./demo.html?game=pong",
     preview: "pong",
     artwork: artworkClasses.pong,
@@ -43,7 +44,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "alien",
     title: DEMO_DEFINITIONS.alien.title,
     summary: "左右移动 · 瞄准 · 射击命中",
-    family: "03 / DISCRETE CONTROL",
+    family: "04 / DISCRETE CONTROL",
     href: "./demo.html?game=alien",
     preview: "alien",
     artwork: artworkClasses.alien,
@@ -53,7 +54,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "bandrobot",
     title: DEMO_DEFINITIONS.bandrobot.title,
     summary: "多步搬运实验 · 自主完整交付尚未验证",
-    family: "04 / MULTI-STEP TASK",
+    family: "05 / MULTI-STEP TASK",
     href: "./demo.html?game=bandrobot",
     preview: "bandrobot",
     artwork: artworkClasses.bandrobot,
@@ -63,7 +64,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "cartpole",
     title: DEMO_DEFINITIONS.cartpole.title,
     summary: "离散方向输入 · 角度状态 · 稳定时间",
-    family: "05 / BALANCE",
+    family: "06 / BALANCE",
     href: "./demo.html?game=cartpole",
     preview: "cartpole",
     artwork: artworkClasses.cartpole,
@@ -73,7 +74,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "hunt",
     title: DEMO_DEFINITIONS.hunt.title,
     summary: "四方向追逐 · 差分感知 · 捕获反馈",
-    family: "06 / PURSUIT",
+    family: "07 / PURSUIT",
     href: "./demo.html?game=hunt",
     preview: "hunt",
     artwork: artworkClasses.hunt,
@@ -83,7 +84,7 @@ const games: readonly DemoCatalogEntry[] = [
     id,
     title: EXPANSION_DEFINITIONS[id].title,
     summary: EXPANSION_DEFINITIONS[id].subtitle,
-    family: `${String(index + 7).padStart(2, "0")} / EXPANSION`,
+    family: `${String(index + 8).padStart(2, "0")} / EXPANSION`,
     href: `./demo.html?game=${id}`,
     preview: id,
     artwork: artworkClasses[id],
@@ -93,7 +94,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "echo-relay",
     title: "Echo Relay",
     summary: "回声探测 · 部分可观测迷宫 · 信标导航",
-    family: "11 / PARTIAL OBSERVABILITY",
+    family: "12 / PARTIAL OBSERVABILITY",
     href: "./demo.html?game=echo-relay",
     preview: "echo-relay",
     artwork: artworkClasses["echo-relay"],
@@ -112,6 +113,16 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
     artwork: artworkClasses.microworld,
     sourceLabel: "SimNAR / OpenNARS Lab 3.0.4",
     featured: true,
+  },
+  {
+    id: "terminal",
+    title: "NARS 终端",
+    summary: "输入 Narsese · 推进周期 · 观察推理输出",
+    family: "02 / REASONER INSTRUMENT",
+    href: "./terminal.html",
+    preview: "terminal",
+    artwork: artworkClasses.terminal,
+    sourceLabel: "NARSESE / CYCLES / OUTPUT",
   },
   ...games,
 ]);

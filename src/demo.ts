@@ -19,6 +19,7 @@ import { isDemoId } from "./data/demo-catalog.ts";
 import { PerceptionCadence } from "./games/perception-cadence.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { RuntimeTelemetryView } from "./ui/runtime-telemetry.ts";
+import { signalFeedback } from "./ui/semantic-feedback.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
 import { initialDemoSeed } from "./demo-seed.ts";
 import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
@@ -169,7 +170,7 @@ const state: {
 } = {
   seed: initialDemoSeed(location.search, randomSeed), model: createDemoState(gameId), worker: null, generation: 0,
   ready: false, running: true, pending: false, waitingForWorker: true,
-  nextStep: 0, speed: 5, cycles: definition.cycles, babble: definition.babble, filter: "all", mode: "sync", requestTick: 0, pendingSteps: 0, lateActions: 0, queuedAction: null,
+  nextStep: 0, speed: 20, cycles: definition.cycles, babble: definition.babble, filter: "all", mode: "sync", requestTick: 0, pendingSteps: 0, lateActions: 0, queuedAction: null,
 };
 
 function randomSeed(): number {
@@ -226,6 +227,7 @@ function initializeWorker(): void {
       ui.source.value = "NARS / EXE";
       ui.opState.textContent = "NARS 操作符已执行";
       addLog("operation", `[EXECUTED] ${action}({SELF})`);
+      signalFeedback(ui.operation.closest<HTMLElement>(".operation-monitor"), "reasoned");
       return;
     }
     if (data.type === "step-complete") {
@@ -235,8 +237,10 @@ function initializeWorker(): void {
       ui.operation.value = data.action ? `${data.action}({SELF})` : "本步未发出操作";
       ui.source.value = data.action ? data.source ?? "NARS" : "IDLE";
       ui.opState.textContent = `NAR ${data.narTime ?? "0"} · ${data.cycles ?? state.cycles} cycles · ${Number(data.elapsedMs ?? 0).toFixed(1)} ms`;
+      if (data.action && data.source === "babble") signalFeedback(ui.operation.closest<HTMLElement>(".operation-monitor"), "exploratory");
       if (state.mode === "sync") {
         const result = advanceDemo(state.model, data.action ?? null);
+        if (result.reward !== 0) signalFeedback(ui.metrics.closest<HTMLElement>(".metrics-monitor"), result.reward > 0 ? "reward" : "cost");
         telemetry.environmentTick(performance.now());
         for (const note of result.notes) addLog(["PADDLE_HIT", "DELIVERED", "HIT"].includes(note) ? "feedback" : "input", `[${note}]`);
         renderMetrics();
@@ -258,6 +262,7 @@ function initializeWorker(): void {
       return;
     }
     if (data.type === "fault") {
+      signalFeedback(ui.runtime, "error");
       state.pending = false;
       state.running = false;
       ui.runtime.classList.add("fault");

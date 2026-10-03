@@ -10,12 +10,14 @@ const {
   description = "OpenNARS 3.0.4 TS：在浏览器中探索非公理推理与感知行动。",
   themeColor = "#111813",
 } = Astro.props;
+const siteBase = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/`;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
+    <base href={siteBase} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content={themeColor} />
     <meta name="description" content={description} />
@@ -23,6 +25,7 @@ const {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <slot name="head" />
     <title>{title}</title>
   </head>
   <body>

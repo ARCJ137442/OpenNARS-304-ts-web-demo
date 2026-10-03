@@ -6,7 +6,7 @@
 
 ## Demo Lab
 
-入口页面索引 Microworld、Pong、Alien、BandRobot、CartPole、Hunt、TicTacToe、Shot、Grid2D TestChamber、FighterPlane 与 Echo Relay。普通游戏共用 NARS Worker 控制与日志界面，Microworld 使用独立的原版场景适配。项目使用 Astro 生成静态 HTML/CSS/JS，浏览器不加载 Astro runtime，也不需要后端。
+入口页面索引浏览器 NARS 终端、Microworld、Pong、Alien、BandRobot、CartPole、Hunt、TicTacToe、Shot、Grid2D TestChamber、FighterPlane 与 Echo Relay。普通游戏共用 NARS Worker 控制与日志界面，Microworld 使用独立的原版场景适配。项目使用 Astro 生成静态 HTML/CSS/JS，浏览器不加载 Astro runtime，也不需要后端。BandRobot 仍是多步任务实验，固定场景尚未证明自主完成整段交付。
 
 Microworld 导航入口使用可复现的 `microworld.html?seed=19&knowledge=starter` 场景。页面的灯泡按钮可切换“示例知识”和“空白探索”；示例模式预置一条前方好食物与前进操作的因果假设，**不代表 NARS 从零学出该规则**。目前示例模式已在真实浏览器发出非 babble 操作，但持续 20 TPS 尚未达成，详见 [适配说明](docs/demo-adaptation-guide.md)。
 
@@ -19,6 +19,9 @@ Microworld 导航入口使用可复现的 `microworld.html?seed=19&knowledge=sta
 
     npm run check
 
+若运行的是静态构建预览（`npm run build` 后执行 `npm run preview`），页面位于项目子路径；CartPole 的本地预览入口是 [http://127.0.0.1:4321/opennars-304-ts-lab/demo.html?game=cartpole](http://127.0.0.1:4321/opennars-304-ts-lab/demo.html?game=cartpole)。直接访问 `/demo.html` 会返回 404。浏览器测试默认使用预览子路径；测试 `npm run dev` 的根路径时，显式设置 `DEMO_BASE_URL=http://127.0.0.1:4321/`。
+首页在带尾斜杠和不带尾斜杠的子路径都能加载预览素材并进入终端；`terminal.html` 是 Astro 路由，Worker 只在进入后启动。
+
 可直接把 dist/ 上传到任何静态主机。GitHub Pages 同步命令只复制生成目录内容：
 
     npm run deploy:pages -- "C:\\path\\to\\ARCJ137442.github.io"
@@ -27,6 +30,7 @@ Microworld 导航入口使用可复现的 `microworld.html?seed=19&knowledge=sta
 OpenNARS 3.0.4 的机制边界与 ONA demo 适配理由见 [机制分析](docs/opennars-304-mechanism-analysis.md) 和 [Demo 适配说明](docs/demo-adaptation-guide.md)。
 指定 demo 的扩展计划和原创候选见 [扩展计划](docs/demo-expansion-plan.md)、[候选审阅](docs/demo-candidate-survey.md) 与 [原创提案](docs/original-demo-proposals.md)。
 项目统一术语见 [NARS 与 Narsese 术语表](docs/terminology.md)。
+发布前的界面原则见 [一图胜千言](docs/design-principle-one-image.md)；Java 3.0.4 Lab Launcher 与 Web Lab 的已实现/规划对应关系见 [功能索引](docs/java-lab-feature-map.md)。
 演示页的性能 HUD 严格区分 `FPS`（画面刷新）、`TPS`（世界刻）和 `RPS`（NARS 推理周期）；“性能诊断”面板默认折叠，可切换同步/异步节奏。实现边界见 [运行节奏计划](docs/demo-runtime-modes-plan.md)。
 HUD 的 RPS 统计最近约一秒墙钟内**实际完成**的周期，推理无进展时归零；速率条以目标 TPS × 每刻周期数为参照，不把单次推理的活跃速度写成整场吞吐。
 五个扩展环境使用“变化即报、稳定状态每五刻刷新”的输入节奏，结果反馈仍逐次提交；这是明确的 Demo 行为适配，不作为推理核心的同语义性能提升计算。
@@ -40,7 +44,8 @@ HUD 的 RPS 统计最近约一秒墙钟内**实际完成**的周期，推理无�
 - src/demo.ts 与 src/demo-worker.ts：共享游戏工作台与 NARS Worker 控制。
 - src/microworld/simulation.ts：Microworld 独立模拟合同。
 - src/microworld/nars-priors.ts：可选的 Microworld 示例起点知识。
-- scripts/prepare-site.mjs：准备静态资源和独立终端/Microworld 页面。
+- src/pages/terminal.astro 与 src/app.js：Astro 终端路由和 Worker 交互。
+- scripts/prepare-site.mjs：准备 Microworld 的静态资源与许可文本。
 - scripts/check-build.mjs：发布目录完整性检查。
 
 ## 交互合同
@@ -60,7 +65,7 @@ HUD 的 RPS 统计最近约一秒墙钟内**实际完成**的周期，推理无�
     npm test
     npm run check
 
-`npm run build` 使用 Astro 输出静态目录/演示页，并复制终端、Microworld、Workers、精灵与许可文本到 `dist/`。只修改网页壳时不需要重新构建 OpenNARS Worker。需要 Node.js 22.19 或更新版本。
+`npm run build` 使用 Astro 输出目录、终端与演示页，并准备 Microworld、Workers、精灵与许可文本到 `dist/`。构建脚本会核对核心源码提交并重建 Worker。需要 Node.js 22.19 或更新版本。
 
 ## 重新构建 Worker
 

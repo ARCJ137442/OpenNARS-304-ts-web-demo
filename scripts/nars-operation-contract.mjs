@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.DEMO_BASE_URL ?? "http://127.0.0.1:4321/";
+const baseUrl = process.env.DEMO_BASE_URL ?? "http://127.0.0.1:4321/opennars-304-ts-lab/";
 const executablePath = process.env.CHROME_PATH
   ?? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const browser = await chromium.launch({ headless: true, executablePath });

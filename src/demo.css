@@ -268,6 +268,11 @@ a {
   margin-top: 6px;
   display: block;
 }
+.operation-monitor[data-feedback="reasoned"] { border-color: var(--teal); }
+.operation-monitor[data-feedback="exploratory"] { border-color: var(--amber); }
+.metrics-monitor[data-feedback="reward"] { border-color: var(--lime); }
+.metrics-monitor[data-feedback="cost"] { border-color: var(--coral); }
+.runtime-state[data-feedback="error"] { border-color: var(--coral); }
 .operation-monitor p {
   color: var(--quiet);
   margin: 0;

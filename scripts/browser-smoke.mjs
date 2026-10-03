@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.DEMO_BASE_URL ?? "http://127.0.0.1:4321/";
+const baseUrl = process.env.DEMO_BASE_URL ?? "http://127.0.0.1:4321/opennars-304-ts-lab/";
 const executablePath = process.env.CHROME_PATH
   ?? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 mkdirSync(resolve("test-results"), { recursive: true });
@@ -17,6 +17,63 @@ page.on("console", (message) => {
 });
 
 try {
+  const slashlessBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  const entryPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const spriteResponses = new Map();
+  entryPage.on("response", (response) => {
+    if (response.url().includes("/assets/") && response.url().endsWith(".png")) {
+      spriteResponses.set(new URL(response.url()).pathname.split("/").at(-1), response.status());
+    }
+  });
+  await entryPage.goto(slashlessBaseUrl);
+  await entryPage.locator("#lab-preview").waitFor({ state: "visible" });
+  await entryPage.waitForFunction(() => {
+    const canvas = document.querySelector("#lab-preview");
+    if (!(canvas instanceof HTMLCanvasElement)) return false;
+    const context = canvas.getContext("2d");
+    if (!context) return false;
+    const pixels = context.getImageData(Math.floor(canvas.width * .7) - 12, Math.floor(canvas.height * .34) - 12, 24, 24).data;
+    for (let index = 0; index < pixels.length; index += 4) {
+      if (pixels[index + 1] > pixels[index] + 25 && pixels[index + 1] > pixels[index + 2] + 20) return true;
+    }
+    return false;
+  }, undefined, { timeout: 10000 });
+  for (const name of ["agent.png", "food.png", "fire.png", "ball.png", "bar.png"]) {
+    assert.equal(spriteResponses.get(name), 200, `the slashless Lab URL must load ${name}`);
+  }
+  await entryPage.getByRole("link", { name: "NARS 终端", exact: true }).click();
+  assert.match(entryPage.url(), /\/opennars-304-ts-lab\/terminal\.html$/);
+  await entryPage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE"), undefined, { timeout: 30000 });
+  assert.equal(await entryPage.locator(".send-button svg").count(), 1, "terminal action icons must render");
+  assert.equal(await entryPage.locator(".telemetry-details").getAttribute("open"), null, "advanced runtime details stay collapsed initially");
+  await entryPage.locator("#terminal-input").fill("<bird --> animal>.\n:cycles 2");
+  await entryPage.locator(".send-button").click();
+  await entryPage.waitForFunction(() => Number(document.querySelector("#cycle-clock")?.textContent) >= 2, undefined, { timeout: 30000 });
+  assert.match(await entryPage.locator("#terminal-output").innerText(), /bird --> animal/);
+  await entryPage.locator("#terminal-input").fill("<(*, {SELF}) --> ^left>! :|:\n:cycles 10");
+  await entryPage.locator(".send-button").click();
+  await entryPage.waitForFunction(() => Number(document.querySelector("#cycle-clock")?.textContent) >= 12, undefined, { timeout: 30000 });
+  assert.match(await entryPage.locator("#terminal-output").innerText(), /\^left/);
+  await entryPage.locator("#interrupt-button").click();
+  await entryPage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE")
+    && Number(document.querySelector("#cycle-clock")?.textContent) === 0, undefined, { timeout: 30000 });
+  await entryPage.screenshot({ path: "test-results/demo-lab-terminal.png", fullPage: true });
+  await entryPage.locator(".telemetry-details > summary").click();
+  await entryPage.locator("#source-commit").waitFor({ state: "visible" });
+  await entryPage.close();
+
+  const mobilePage = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+  await mobilePage.goto(new URL("terminal.html", baseUrl).href);
+  await mobilePage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE"), undefined, { timeout: 30000 });
+  const mobileOverflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(mobileOverflow <= 1, `terminal must fit the narrow viewport (overflow ${mobileOverflow}px)`);
+  await mobilePage.locator("#terminal-input").focus();
+  await mobilePage.locator("#terminal-input").fill("<robin --> bird>.");
+  await mobilePage.locator("#terminal-input").press("Enter");
+  await mobilePage.waitForFunction(() => document.querySelector("#terminal-output")?.textContent?.includes("robin --> bird"), undefined, { timeout: 30000 });
+  await mobilePage.screenshot({ path: "test-results/demo-lab-terminal-mobile.png", fullPage: true });
+  await mobilePage.close();
+
   await page.addInitScript(() => {
     window.__demoWorkerEvents = [];
     const NativeWorker = window.Worker;
@@ -44,6 +101,7 @@ try {
   });
   await page.goto(baseUrl);
   await page.locator("#lab-preview").waitFor({ state: "visible" });
+  assert.equal(await page.locator('[data-experiment="terminal"] canvas[data-preview="terminal"]').count(), 1);
   assert.match(await page.locator(".launch-link").getAttribute("href"), /microworld\.html\?seed=19&knowledge=starter/);
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#lab-preview");
@@ -117,7 +175,7 @@ try {
     if (game === "pong") {
       await page.waitForFunction(() => document.querySelector("#rps-hud")?.textContent === "0.0 RPS",
       undefined, { timeout: 5000 });
-      assert.match(await page.locator("#rps-hud").getAttribute("title"), /目标 50\.0 RPS/);
+      assert.match(await page.locator("#rps-hud").getAttribute("title"), /目标 200\.0 RPS/);
     }
     const frozenStep = await page.locator("#game-step").textContent();
     await page.getByRole("button", { name: "单步" }).click();
@@ -132,6 +190,21 @@ try {
   await page.locator("#rate-hud").waitFor({ state: "hidden" });
   await page.locator("#toggle-rate-hud").click();
   await page.locator("#rate-hud").waitFor({ state: "visible" });
+  const hudGeometry = await page.evaluate(() => {
+    const status = document.querySelector("#world-status");
+    const ids = ["step-latency", "fps-hud", "tps-hud", "rps-hud", "fps-bar", "tps-bar", "rps-bar"];
+    const read = () => ids.map((id) => {
+      const rect = document.getElementById(id).getBoundingClientRect();
+      return [rect.x, rect.y, rect.width];
+    });
+    const original = status.textContent;
+    const before = read();
+    status.textContent = "异步运行 · NARS 已完成";
+    const after = read();
+    status.textContent = original;
+    return { before, after };
+  });
+  assert.deepEqual(hudGeometry.after, hudGeometry.before, "status wording must not move latency or rate HUD cells");
   assert.ok(await page.locator("#tps-target").textContent());
   assert.ok(await page.locator("#tps-ratio").textContent());
   await page.getByText("性能诊断", { exact: true }).click();

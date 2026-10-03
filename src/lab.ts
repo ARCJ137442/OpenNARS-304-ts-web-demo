@@ -1,4 +1,4 @@
-type PreviewName = "microworld" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
+type PreviewName = "microworld" | "terminal" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
 type PreviewRenderer = (context: CanvasRenderingContext2D, width: number, height: number, time: number) => void;
 
 const canvases = [...document.querySelectorAll<HTMLCanvasElement>("canvas[data-preview]")];
@@ -43,6 +43,40 @@ function drawMicroworld(context: CanvasRenderingContext2D, width: number, height
   image(context, assets.agent, cx + Math.sin(time / 1200) * 8, cy, 28, 28, Math.PI + Math.sin(time / 900) * .2);
   image(context, assets.food, width * .7, height * .34, 24, 24, 0);
   image(context, assets.fire, width * .72, height * .75, 26, 26, time / 1000);
+}
+
+function drawTerminal(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#071013";
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = "rgba(98,255,227,.1)";
+  context.lineWidth = 1;
+  for (let x = 24; x < width; x += 24) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, height); context.stroke(); }
+  for (let y = 24; y < height; y += 24) { context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
+  context.fillStyle = "#62ffe3";
+  context.fillRect(34, 38, 9, 9);
+  context.fillStyle = "#dce9e7";
+  context.font = "600 13px monospace";
+  context.fillText("nars> <bird --> animal>.", 54, 48);
+  context.strokeStyle = "#426e62";
+  context.lineWidth = 2;
+  context.beginPath(); context.moveTo(42, 100); context.lineTo(width - 42, 100); context.stroke();
+  const progress = (Math.sin(time / 650) + 1) / 2;
+  const pulseX = 42 + (width - 84) * progress;
+  context.fillStyle = "#b7e66e";
+  context.beginPath(); context.arc(pulseX, 100, 5, 0, Math.PI * 2); context.fill();
+  context.strokeStyle = "#ffc56c";
+  context.beginPath(); context.arc(width / 2, 100, 20, 0, Math.PI * 2); context.stroke();
+  context.fillStyle = "#ffc56c";
+  context.font = "600 12px monospace";
+  context.fillText("INFERENCE", width / 2 - 31, 105);
+  context.fillStyle = "#62ffe3";
+  context.fillRect(34, 158, 9, 9);
+  context.fillText("OUT: <bird --> animal>.", 54, 168);
+  context.fillStyle = "#789b94";
+  context.font = "10px monospace";
+  context.fillText("INPUT", 34, 216);
+  context.fillText("REASON", width / 2 - 20, 216);
+  context.fillText("OUTPUT", width - 75, 216);
 }
 
 function drawPong(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
@@ -153,6 +187,7 @@ function drawAll(now: number): void {
     context.setTransform(width / 420, 0, 0, height / 240, 0, 0);
     const draw: Record<PreviewName, PreviewRenderer> = {
       microworld: drawMicroworld,
+      terminal: drawTerminal,
       pong: drawPong,
       alien: drawAlien,
       bandrobot: drawBandRobot,

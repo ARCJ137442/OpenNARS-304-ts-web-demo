@@ -6,7 +6,7 @@ This repository contains the standalone browser demo for <https://arcj137442.git
 
 ## Demo Lab
 
-The index links Microworld, Pong, Alien, BandRobot, CartPole, Hunt, TicTacToe, Shot, Grid2D TestChamber, FighterPlane, and Echo Relay. The ordinary games share NARS Worker controls and activity monitoring; Microworld has its own adapter for the classic scene. Astro generates static HTML, CSS, and JavaScript; no Astro runtime or backend is shipped.
+The index links a browser NARS terminal, Microworld, Pong, Alien, BandRobot, CartPole, Hunt, TicTacToe, Shot, Grid2D TestChamber, FighterPlane, and Echo Relay. The ordinary games share NARS Worker controls and activity monitoring; Microworld has its own adapter for the classic scene. Astro generates static HTML, CSS, and JavaScript; no Astro runtime or backend is shipped. BandRobot remains a multi-step experiment: autonomous delivery has not been demonstrated in the fixed scenario.
 
 The Microworld catalog entry opens a reproducible `microworld.html?seed=19&knowledge=starter` scenario. Its lightbulb control switches between starter knowledge and blank exploration. Starter mode preloads one causal hypothesis connecting food directly ahead with moving forward; **NARS did not learn this rule from scratch**. A real-browser test observed a non-babble operation in this mode, while sustained 20 TPS remains unproven. See the [adaptation guide](docs/demo-adaptation-guide.md).
 
@@ -19,6 +19,9 @@ Open the local URL printed by the command. Run type checks, Astro diagnostics, m
 
     npm run check
 
+For a built-site preview (`npm run build`, then `npm run preview`), Astro serves the project subpath. The local CartPole URL is [http://127.0.0.1:4321/opennars-304-ts-lab/demo.html?game=cartpole](http://127.0.0.1:4321/opennars-304-ts-lab/demo.html?game=cartpole); `/demo.html` at the root returns 404. Browser scripts default to the preview subpath. Set `DEMO_BASE_URL=http://127.0.0.1:4321/` explicitly when testing the root-based development server.
+The index loads previews and reaches the terminal with or without a trailing slash on the project path. `terminal.html` is an Astro route; its NARS Worker starts only after navigation.
+
 Upload dist/ to any static host. The Pages command synchronizes the generated tree:
 
     npm run deploy:pages -- /path/to/ARCJ137442.github.io
@@ -27,6 +30,7 @@ See docs/maintainer-guide.md for module boundaries, the new-demo workflow, model
 See docs/opennars-304-mechanism-analysis.md and docs/demo-adaptation-guide.md for the OpenNARS 3.0.4 mechanism boundary and ONA demo adaptation rationale.
 See docs/demo-expansion-plan.md, docs/demo-candidate-survey.md, and docs/original-demo-proposals.md for the next demo batch and original experiment proposals.
 See docs/terminology.md for the project's Chinese NARS/Narsese terminology map.
+See [One image is worth a thousand words](docs/design-principle-one-image.md) for the pre-release interface rules, and [the Java Lab feature map](docs/java-lab-feature-map.md) for implemented versus planned Launcher counterparts.
 The demo HUD separates `FPS` (rendering), `TPS` (world ticks), and `RPS` (NARS inference cycles); the collapsed Performance Diagnostics panel exposes sync/async pacing and runtime backlog. See [the runtime pacing plan](docs/demo-runtime-modes-plan.md).
 HUD RPS counts cycles actually completed in an approximately one-second wall-clock window and drops to zero when reasoning makes no progress. Its bar compares against target TPS × cycles per world tick, rather than reporting one fast inference call as sustained throughput.
 The five expansion environments report state changes immediately and refresh unchanged state every five ticks; outcome feedback is always sent. This is an explicit Demo input adaptation, not a same-semantics speedup of the reasoner core.
@@ -40,7 +44,8 @@ The five expansion environments report state changes immediately and refresh unc
 - src/demo.ts and src/demo-worker.ts: shared game workspace and NARS Worker control.
 - src/microworld/simulation.ts: independent Microworld simulation contract.
 - src/microworld/nars-priors.ts: optional Microworld starter knowledge.
-- scripts/prepare-site.mjs: stages static assets and standalone terminal/Microworld pages.
+- src/pages/terminal.astro and src/app.js: Astro terminal route and Worker interaction.
+- scripts/prepare-site.mjs: stages Microworld assets and license texts.
 - scripts/check-build.mjs: validates the release tree.
 
 ## Interaction contract
@@ -61,7 +66,7 @@ npm test
 npm run check
 ```
 
-`npm run build` uses Astro to generate the static index and game page, then stages the terminal, Microworld, Workers, sprites, and license texts in `dist/`. A web-shell change does not require rebuilding the OpenNARS Worker. Requires Node.js 22.19 or newer.
+`npm run build` uses Astro to generate the index, terminal, and game pages, then stages Microworld, Workers, sprites, and license texts in `dist/`. The build checks the core source commit and rebuilds the Worker. Requires Node.js 22.19 or newer.
 
 ## Rebuild the Worker
 

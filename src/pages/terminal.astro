@@ -1,0 +1,151 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import "../styles.css";
+---
+
+<SiteLayout title="OpenNARS 3.0.4 TS · 终端" description="在浏览器中运行 OpenNARS TypeScript 推理器" themeColor="#071013">
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&amp;family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&amp;display=swap" rel="stylesheet" />
+  </Fragment>
+  <a class="skip-link" href="#terminal-input">跳到命令输入</a>
+
+    <header class="masthead">
+      <a class="identity" href="./" aria-label="返回 OpenNARS Demo Lab">
+        <span class="identity-mark" aria-hidden="true">N</span>
+        <span>
+          <span class="eyebrow">ARCJ137442 / NARS WORKS</span>
+          <strong>OPENNARS · 304 TS</strong>
+        </span>
+      </a>
+      <a class="microworld-entry" href="./" aria-label="返回 Demo Lab" title="返回 Demo Lab"><i data-lucide="arrow-left"></i><span>DEMO LAB</span></a>
+      <div class="runtime-state" aria-label="运行时状态">
+        <span class="state-light" aria-hidden="true"></span>
+        <span id="runtime-state">BOOTING WORKER</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">OPENNARS 3.0.4 / LAB INSTRUMENT</p>
+          <h1 id="page-title">NARS 终端</h1>
+        </div>
+      </section>
+
+      <div class="workbench">
+        <section class="terminal-panel" aria-labelledby="terminal-title">
+          <div class="panel-topline">
+            <div>
+              <span class="panel-index">LOCAL REASONER</span>
+              <h2 id="terminal-title">推理记录</h2>
+            </div>
+            <div class="clock-readout" aria-label="当前 NARS 周期">
+              <span>CYCLE</span>
+              <output id="cycle-clock">000000</output>
+            </div>
+          </div>
+
+          <div class="terminal-shell">
+            <div class="terminal-toolbar" aria-hidden="true">
+              <span>WORKER / STEP MODE</span>
+              <span id="terminal-activity">INITIALIZING</span>
+            </div>
+            <div id="terminal-output" class="terminal-output" role="log" aria-live="polite" aria-relevant="additions text" aria-label="OpenNARS 输出"></div>
+            <form id="terminal-form" class="terminal-form">
+              <label for="terminal-input" class="prompt-mark">nars&gt;</label>
+              <textarea
+                id="terminal-input"
+                name="command"
+                inputmode="text"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                rows="1"
+                aria-describedby="terminal-hint"
+                placeholder="输入 Narsese 或 :cycles N"
+                disabled
+              ></textarea>
+              <button class="send-button" type="submit" aria-label="执行输入" title="执行输入" disabled><i data-lucide="arrow-right"></i></button>
+            </form>
+          </div>
+
+          <div class="terminal-actions">
+            <details class="shortcut-hint"><summary id="terminal-hint">Enter 执行 <i data-lucide="chevron-down"></i></summary><p>Shift+Enter 换行 · ↑↓ 历史 · Ctrl+L 清屏 · Ctrl+C 中断</p></details>
+            <div class="action-group">
+              <button id="clear-button" class="text-button icon-action" type="button" aria-label="清空显示" title="清空显示"><i data-lucide="trash-2"></i></button>
+              <button id="interrupt-button" class="text-button danger icon-action" type="button" aria-label="中断并重置推理器" title="中断并重置推理器"><i data-lucide="rotate-ccw"></i></button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="telemetry" aria-label="构建与使用信息">
+          <section class="telemetry-block quickstart">
+            <span class="block-label">快速实验</span>
+            <div class="quick-buttons">
+              <button type="button" data-command=":volume 0" title="降低派生输出"><i data-lucide="activity"></i>安静模式</button>
+              <button type="button" data-command="&lt;(*, {SELF}) --&gt; ^left&gt;! :|:" title="提交自我操作目标"><i data-lucide="arrow-right"></i>自我操作</button>
+              <button type="button" data-command="&lt;(*, {SELF}, P) --&gt; ^left&gt;! :|:" title="提交带参数操作目标"><i data-lucide="boxes"></i>带参操作</button>
+              <button type="button" data-command=":cycles 100" title="推进 100 个推理周期"><i data-lucide="step-forward"></i>推理 100 步</button>
+              <button type="button" data-command=":volume 0&#10;&lt;(*, {SELF}) --&gt; ^left&gt;! :|:&#10;&lt;(*, {SELF}, P) --&gt; ^left&gt;! :|:&#10;:cycles 100" title="运行完整 NAL-8 操作示例"><i data-lucide="play"></i>运行示例</button>
+            </div>
+            <details class="quick-help"><summary>示例说明 <i data-lucide="chevron-down"></i></summary><p>NAL-8 示例提交复合操作目标，再推进推理周期；预置命令可逐条或整批运行。</p></details>
+          </section>
+
+          <section class="telemetry-block volume-block">
+            <div class="volume-heading">
+              <span class="block-label">输出音量</span>
+              <output id="volume-value" for="volume-input">100</output>
+            </div>
+            <input id="volume-input" type="range" min="0" max="100" step="5" value="100" aria-describedby="volume-help" disabled>
+            <p id="volume-help">调低可减少派生输出；答案仍会显示。</p>
+          </section>
+
+          <details class="telemetry-details">
+            <summary><i data-lucide="info"></i><span>运行环境与配置</span><i data-lucide="chevron-down"></i></summary>
+          <section class="telemetry-block version-block">
+            <span class="block-label">RUNTIME IDENTITY</span>
+            <dl>
+              <div>
+                <dt>CORE</dt>
+                <dd id="core-version">3.0.4</dd>
+              </div>
+              <div>
+                <dt>TS LIB</dt>
+                <dd id="package-version" data-package-version>0.1.0</dd>
+              </div>
+              <div>
+                <dt>SOURCE</dt>
+                <dd><a id="source-commit" href="https://github.com/ARCJ137442/OpenNARS-304-ts" rel="noreferrer">loading…</a></dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="telemetry-block">
+            <span class="block-label">BUILD STAMP</span>
+            <time id="build-time" data-build-time datetime="">loading…</time>
+            <span class="timezone">ASIA / SHANGHAI</span>
+          </section>
+
+          <section class="telemetry-block config-block" aria-labelledby="config-title">
+            <span id="config-title" class="block-label">HOST CONFIGURATION</span>
+            <label for="config-file">LOAD XML CONFIG</label>
+            <input id="config-file" class="config-file" type="file" accept=".xml,text/xml,application/xml">
+            <output id="config-status" aria-live="polite">DEFAULT CONFIG</output>
+            <p>配置文本只在浏览器 Worker 内生效；重新加载后恢复默认配置。</p>
+          </section>
+          </details>
+
+        </aside>
+      </div>
+    </main>
+
+    <footer>
+      <span>PUBLIC RESEARCH ARTIFACT · OPENNARS 3.0.4 TYPESCRIPT</span>
+      <a href="https://github.com/ARCJ137442/OpenNARS-304-ts" rel="noreferrer">SOURCE / GITHUB ↗</a>
+    </footer>
+
+    <noscript>此终端需要 JavaScript 与 Web Worker 支持。</noscript>
+    <script>import "../app.js";</script>
+</SiteLayout>

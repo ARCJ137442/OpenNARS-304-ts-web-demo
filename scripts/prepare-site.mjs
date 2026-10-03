@@ -1,4 +1,4 @@
-import { copyFileSync, cpSync, mkdirSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
@@ -8,7 +8,10 @@ const sourceRoot = resolve(projectRoot, "src");
 const publicRoot = resolve(projectRoot, "public");
 
 mkdirSync(publicRoot, { recursive: true });
-for (const file of ["terminal.html", "styles.css", "app.js", "input-behavior.js", "microworld.html", "microworld.css", "nars-controls.css"]) {
+for (const staleFile of ["terminal.html", "styles.css", "app.js", "input-behavior.js"]) {
+  rmSync(resolve(publicRoot, staleFile), { force: true });
+}
+for (const file of ["microworld.html", "microworld.css", "nars-controls.css"]) {
   copyFileSync(resolve(sourceRoot, file), resolve(publicRoot, file));
 }
 for (const file of ["COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt"]) {
@@ -27,4 +30,4 @@ await esbuild.build({
   legalComments: "eof",
 });
 
-console.log(JSON.stringify({ ok: true, publicRoot, preparedFiles: 7, spriteCount: 5 }, null, 2));
+console.log(JSON.stringify({ ok: true, publicRoot, preparedFiles: 3, spriteCount: 5 }, null, 2));

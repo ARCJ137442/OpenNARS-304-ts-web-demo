@@ -86,8 +86,19 @@ test("physics applies friction, acceleration, turning, wraparound, and tick adva
 
   const beforeAngle = world.agent.angle;
   applyActionAndAdvance(world, ACTION.LEFT);
-  assert.equal(world.agent.angle, wrapAngle(beforeAngle + 0.5));
+  assert.equal(world.agent.angle, wrapAngle(beforeAngle - 0.5));
   assert.ok(Math.abs(world.agent.speed - 9) < 1e-9);
+});
+
+test("left turns counterclockwise and right clockwise in screen coordinates", () => {
+  const left = createWorld(6, { foodCount: 0 });
+  const right = createWorld(6, { foodCount: 0 });
+  left.agent.angle = right.agent.angle = 0;
+  left.agent.speed = right.agent.speed = 0;
+  applyActionAndAdvance(left, ACTION.LEFT);
+  applyActionAndAdvance(right, ACTION.RIGHT);
+  assert.ok(left.agent.angle < 0, "left must face above the initial east heading");
+  assert.ok(right.agent.angle > 0, "right must face below the initial east heading");
 });
 
 test("selection and manual object placement use world-space coordinates", () => {
