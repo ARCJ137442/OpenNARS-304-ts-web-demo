@@ -26,6 +26,9 @@ ensureGridObservatoryFields();
 const ui = {
   canvas: element<HTMLCanvasElement>("#grid-canvas"), runtime: element<HTMLElement>("#grid-runtime"), status: element<HTMLElement>("#grid-status"), topology: element<HTMLSelectElement>("#grid-topology"), topologyMark: element<HTMLElement>("#topology-mark"), cols: element<HTMLInputElement>("#grid-cols"), rows: element<HTMLInputElement>("#grid-rows"), cycles: element<HTMLInputElement>("#grid-cycles"), babble: element<HTMLInputElement>("#grid-babble"), speed: element<HTMLInputElement>("#grid-speed"), speedValue: element<HTMLOutputElement>("#grid-speed-value"), colsValue: element<HTMLOutputElement>("#grid-cols-value"), rowsValue: element<HTMLOutputElement>("#grid-rows-value"), cyclesValue: element<HTMLOutputElement>("#grid-cycles-value"), babbleValue: element<HTMLOutputElement>("#grid-babble-value"), run: element<HTMLButtonElement>("#grid-run"), step: element<HTMLButtonElement>("#grid-step"), reset: element<HTMLButtonElement>("#grid-reset"), operation: element<HTMLElement>("#grid-operation"), source: element<HTMLOutputElement>("#grid-source"), narTime: element<HTMLElement>("#grid-nar-time"), operationDetail: element<HTMLElement>("#grid-operation-detail"), stepCount: element<HTMLOutputElement>("#grid-step-count"), rewardState: element<HTMLOutputElement>("#grid-reward-state"), foodRatio: element<HTMLElement>("#grid-food-ratio"), ratioFill: element<HTMLElement>("#grid-ratio-fill"), sensorFocus: element<HTMLOutputElement>("#grid-sensor-focus"), good: element<HTMLElement>("#grid-good"), bad: element<HTMLElement>("#grid-bad"), sensors: element<HTMLElement>("#grid-sensors"), log: element<HTMLOListElement>("#grid-log"), clearLog: element<HTMLButtonElement>("#grid-clear-log"), fps: element<HTMLOutputElement>("#fps-hud"), tps: element<HTMLOutputElement>("#tps-hud"), rps: element<HTMLOutputElement>("#rps-hud"), fpsBar: element<HTMLElement>("#fps-bar"), tpsBar: element<HTMLElement>("#tps-bar"), rpsBar: element<HTMLElement>("#rps-bar"), tpsTarget: element<HTMLOutputElement>("#tps-target"), tpsRatio: element<HTMLOutputElement>("#tps-ratio"), pageMemory: element<HTMLOutputElement>("#page-memory"), concepts: element<HTMLOutputElement>("#concept-count"), taskBags: element<HTMLOutputElement>("#task-bags"), experiencePanel: element<HTMLDetailsElement>("#grid-experience-panel"), experienceList: element<HTMLOListElement>("#grid-experience-list"), experienceStatus: element<HTMLOutputElement>("#grid-experience-status"), experienceMeta: element<HTMLElement>("#grid-experience-meta"), modeInputs: [...document.querySelectorAll<HTMLInputElement>('input[name="grid-mode"]')], manual: [...document.querySelectorAll<HTMLButtonElement>("[data-grid-action]")], };
 const telemetry = new RuntimeTelemetryView({ fps: ui.fps, tps: ui.tps, rps: ui.rps, tpsTarget: ui.tpsTarget, tpsRatio: ui.tpsRatio, fpsBar: ui.fpsBar, tpsBar: ui.tpsBar, rpsBar: ui.rpsBar, pageMemory: ui.pageMemory, concepts: ui.concepts, taskBags: ui.taskBags });
+const gridRateHud = document.querySelector<HTMLElement>(".grid-rate");
+const toggleGridHud = document.querySelector<HTMLButtonElement>("#grid-toggle-rate-hud");
+toggleGridHud?.addEventListener("click", () => { const hidden = gridRateHud?.classList.toggle("is-hidden") ?? false; toggleGridHud.setAttribute("aria-label", hidden ? "显示速率 HUD" : "隐藏速率 HUD"); });
 const context = ui.canvas.getContext("2d"); if (!context) throw new Error("Grid canvas is unavailable"); const gridContext = context as CanvasRenderingContext2D;
 const gridAssets = { agent: new Image(), food: new Image(), fire: new Image() };
 gridAssets.agent.src = "./assets/agent.png";
@@ -57,10 +60,13 @@ const operationAuthority = new MutationObserver(() => {
     state.operationSource = source;
     state.operationStep = state.world.tick;
     state.operationNarTime = ui.narTime.textContent?.replace(/^NAR\s*/, "") || state.operationNarTime;
-  } else if (source === "IDLE" && state.operationStep !== null) {
-    restoringOperation = true;
-    renderMetrics();
-    restoringOperation = false;
+  } else if (source === "IDLE") {
+    state.operationSource = "IDLE";
+    if (state.operationStep !== null) {
+      restoringOperation = true;
+      renderMetrics();
+      restoringOperation = false;
+    }
   }
 });
 operationAuthority.observe(ui.operation, { childList: true, characterData: true, subtree: true });
