@@ -1,4 +1,4 @@
-type PreviewName = "microworld" | "terminal" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
+type PreviewName = "microworld" | "gridworld" | "terminal" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
 type PreviewRenderer = (context: CanvasRenderingContext2D, width: number, height: number, time: number) => void;
 
 const canvases = [...document.querySelectorAll<HTMLCanvasElement>("canvas[data-preview]")];
@@ -77,6 +77,21 @@ function drawTerminal(context: CanvasRenderingContext2D, width: number, height: 
   context.fillText("INPUT", 34, 216);
   context.fillText("REASON", width / 2 - 20, 216);
   context.fillText("OUTPUT", width - 75, 216);
+}
+
+function drawGridworld(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
+  context.fillStyle = "#151e18"; context.fillRect(0, 0, width, height);
+  const cols = 10, rows = 6, cell = Math.min(width / cols, height / rows);
+  for (let row = 0; row < rows; row += 1) for (let col = 0; col < cols; col += 1) {
+    context.fillStyle = (row + col) % 2 ? "#26352a" : "#202d24";
+    context.fillRect(col * cell + 1, row * cell + 1, cell - 2, cell - 2);
+    context.strokeStyle = "#3b5541"; context.strokeRect(col * cell + 1, row * cell + 1, cell - 2, cell - 2);
+  }
+  const x = width * (.5 + Math.sin(time / 1300) * .16), y = height * (.5 + Math.cos(time / 1100) * .18);
+  context.fillStyle = "#b7e66e"; context.beginPath(); context.arc(x, y, 12, 0, Math.PI * 2); context.fill();
+  context.strokeStyle = "#73d8c7"; context.beginPath(); context.arc(x, y, 34, -Math.PI / 3, Math.PI / 3); context.stroke();
+  context.fillStyle = "#ff7661"; context.fillRect(width * .72, height * .3, 11, 11);
+  context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(width * .27, height * .7, 7, 0, Math.PI * 2); context.fill();
 }
 
 function drawPong(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
@@ -187,6 +202,7 @@ function drawAll(now: number): void {
     context.setTransform(width / 420, 0, 0, height / 240, 0, 0);
     const draw: Record<PreviewName, PreviewRenderer> = {
       microworld: drawMicroworld,
+      gridworld: drawGridworld,
       terminal: drawTerminal,
       pong: drawPong,
       alien: drawAlien,

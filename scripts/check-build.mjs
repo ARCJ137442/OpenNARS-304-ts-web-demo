@@ -17,7 +17,7 @@ for (const file of requiredFiles) {
 }
 
 const index = readFileSync(resolve(distRoot, "index.html"), "utf8");
-for (const text of ["DEMO LAB", "NARS 终端", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "12 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\""]) {
+for (const text of ["DEMO LAB", "NARS 终端", "Grid Microworld 格中虫脑", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "13 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\"", "gridworld.html"]) {
   if (!index.includes(text)) throw new Error(`index.html is missing ${text}`);
 }
 if (!index.includes("/opennars-304-ts-lab/_astro/")) throw new Error("index.html is missing the Pages base path for Astro assets");

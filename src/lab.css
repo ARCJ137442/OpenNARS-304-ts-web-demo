@@ -267,6 +267,7 @@ main {
 .art-microworld {
   background: #898b82;
 }
+.art-gridworld { background: #151e18; }
 .art-terminal { background: #071013; }
 .art-pong {
   background: #141b1b;

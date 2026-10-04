@@ -130,6 +130,27 @@ try {
   assert.equal(workerRequests.length, 0, "the index must remain free of NARS Workers");
   await page.screenshot({ path: "test-results/demo-lab-home.png", fullPage: true });
 
+  await page.goto(new URL("gridworld.html", baseUrl).href);
+  await page.locator('#grid-runtime[data-state="ready"]').waitFor({ timeout: 30000 });
+  for (const topology of ["square", "triangle", "hexagon"]) {
+    await page.locator("#grid-topology").selectOption(topology);
+    await page.locator('#grid-runtime[data-state="ready"]').waitFor({ timeout: 30000 });
+    await page.waitForFunction(() => Number(document.querySelector("#grid-step-count")?.textContent) > 0, undefined, { timeout: 30000 });
+    const gridCanvasHasPixels = await page.locator("#grid-canvas").evaluate((canvas) => {
+      const context = canvas.getContext("2d");
+      if (!context) return false;
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      return pixels.some((value, index) => index % 4 !== 3 && value > 25);
+    });
+    assert.equal(gridCanvasHasPixels, true, `${topology} Grid Microworld canvas should contain the running scene`);
+  }
+  await page.locator("#grid-experience-panel > summary").evaluate((summary) => summary.click());
+  await page.waitForFunction(() => document.querySelectorAll("#grid-experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
+  assert.match(await page.locator("#grid-experience-list").innerText(), /NARS 内部/);
+  await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+    direction === "in" && message?.type === "step-complete" && (message.actionSource === "NARS" || message.actionSource === "babble")), undefined, { timeout: 30000 });
+  await page.screenshot({ path: "test-results/gridworld-topologies.png", fullPage: true });
+
   const operationFindings = [];
   for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"]) {
     await page.goto(new URL(`demo.html?game=${game}`, baseUrl).href);
@@ -258,7 +279,7 @@ try {
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
   assert.equal(errors.length, 0, `browser errors: ${errors.join("; ")}`);
-  console.log(JSON.stringify({ ok: true, games: 10, operationFindings, microworld: true,
+  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, operationFindings, microworld: true,
     microworldStarterOperation, microworldClassicPriorCount,
     indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {

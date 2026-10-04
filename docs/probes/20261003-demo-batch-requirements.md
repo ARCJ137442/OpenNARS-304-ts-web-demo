@@ -21,7 +21,7 @@ Core spec 050 的 Logo 已通过最小差异实现：以用户 Julia SVG 为底�
 | Microworld HUD 文案导致其他指标抖动 | 已提交，Chrome 几何回归通过 | 固定网格槽位与短状态，浏览器把状态文本换成长文案后相邻延迟/FPS/TPS/RPS 与速率条坐标完全一致 |
 | NARS 内部经验、预期、操作经验可视化 | Core spec 045 已完成 | 普通 Demo、Microworld、终端共用有界经验时间线；真实 NARS 事件标记 `NARS 内部`，预置/输入/babble 不计入自主经验；Chrome 与 `npm run check` 已通过 |
 | 经典 Microworld 左逆时针、右顺时针 | 已提交，直接测试与 Demo check/Chrome 通过 | 屏幕 y 向下，朝东左转朝上、右转朝下；与 Java 旧符号差异显式披露，最终发布门待复核 |
-| 离散 Grid Microworld | Core spec 046；主线未实现 | 独立 Demo；方/三角/六角类型与数量在内部调整。试验分支 `codex/gridworld-foundation-wip` 提供 9/9 直接合同通过的纯拓扑模型、未验收渲染器与非发布页草稿；主线无空壳入口 |
+| 离散 Grid Microworld | Core spec 046 已完成 | `gridworld.html` 独立 Demo；方/三角/六角类型与列行数量在内部调整。真实 Worker、六路感知、经验观察和速率 HUD 已通过 9/9 纯拓扑合同、47 项 Demo 检查与逐拓扑 Chrome smoke |
 | NARS × 2048 | Core spec 047 已写，尚未实现 | 借鉴用户 MIT `jev-2048`，纯规则、自动重开棋盘、默认保留同一 NARS 记忆，另有记忆重置与跨局学习对照；不复制 Jev API/密钥 |
 | Pong 玩法对照与增强 | Core spec 048 / 源码已调查，尚未实现模式 | NARust-o 共十类函数，含单 NARS、双控制者、对抗与双挡板；同一个 Pong 页面内切换，独立 Worker/HUD 证明多 NARS，见 `20261003-pong-playmodes.md` |
 | NARust-o Shot 完整移植 | Core spec 049 / 源码已调查，尚未实现 | 当前单玩家移动靶版只是简化实验；须覆盖源目录六入口、瞬时射线、玩家重生、绝对/相对感知、多 Worker、进化克隆/淘汰及统计；OpenNARS Narsese/FX 本土化，见 `20261003-shot-full-port.md` |
@@ -38,4 +38,4 @@ Core spec 050 的 Logo 已通过最小差异实现：以用户 Julia SVG 为底�
 
 ## 当前下一步
 
-044 入口/终端已提交推送，经典 Microworld 左右语义、HUD 固定槽位和 20 TPS **目标配置**也已通过本地直接/Chrome 门；045 内部经验已在 Demo 主线实现并通过 38 项检查与真实浏览器。046 Grid、047 2048、048 Pong 模式、049 Shot 仍交下一批。共享多 Worker/经验观察合同应统筹 Pong/Shot，Grid/2048 先有纯世界合同再接 Worker。最终在一个冻结版本上跑 Demo/核心发行门；所有未实现项持续标“尚未实现”。
+044 入口/终端已提交推送，经典 Microworld 左右语义、HUD 固定槽位和 20 TPS **目标配置**也已通过本地直接/Chrome 门；045 内部经验已在 Demo 主线实现并通过 38 项检查与真实浏览器；046 Grid 已在 Demo 主线实现并通过 9 项纯模型合同、47 项 Demo 检查与逐拓扑 Chrome smoke。047 2048、048 Pong 模式、049 Shot 仍交下一批。共享多 Worker/经验观察合同应统筹 Pong/Shot。最终在一个冻结版本上跑 Demo/核心发行门；所有未实现项持续标“尚未实现”。

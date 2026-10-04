@@ -3,19 +3,20 @@ import { EXPANSION_DEFINITIONS } from "../games/expansion-models.ts";
 import { isDemoId } from "../games/shared.ts";
 
 export type DemoCatalogEntry = {
-  id: "microworld" | "terminal" | DemoId;
+  id: "microworld" | "gridworld" | "terminal" | DemoId;
   title: string;
   summary: string;
   family: string;
   href: string;
-  preview: "microworld" | "terminal" | DemoId;
+  preview: "microworld" | "gridworld" | "terminal" | DemoId;
   artwork: string;
   sourceLabel: string;
   featured?: boolean;
 };
 
-const artworkClasses: Record<"microworld" | "terminal" | DemoId, string> = {
+const artworkClasses: Record<"microworld" | "gridworld" | "terminal" | DemoId, string> = {
   microworld: "art-microworld",
+  gridworld: "art-gridworld",
   terminal: "art-terminal",
   pong: "art-pong",
   alien: "art-alien",
@@ -123,6 +124,16 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
     preview: "terminal",
     artwork: artworkClasses.terminal,
     sourceLabel: "NARSESE / CYCLES / OUTPUT",
+  },
+  {
+    id: "gridworld",
+    title: "Grid Microworld 格中虫脑",
+    summary: "方格 · 三角格 · 六角格 · 环面感知运动",
+    family: "03 / DISCRETE TOPOLOGIES",
+    href: "./gridworld.html",
+    preview: "gridworld",
+    artwork: artworkClasses.gridworld,
+    sourceLabel: "GRID / SIX SENSORS / TORUS",
   },
   ...games,
 ]);

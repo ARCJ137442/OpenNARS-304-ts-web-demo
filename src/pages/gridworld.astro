@@ -1,0 +1,31 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import "../gridworld.css";
+---
+
+<SiteLayout title="Grid Microworld · OpenNARS 3.0.4 Lab" description="在方格、三角格和六角格环面中观察 OpenNARS 感知与操作" themeColor="#111713">
+  <header class="grid-topbar">
+    <a class="grid-wordmark" href="./" aria-label="返回 Demo Lab"><span class="grid-mark">N</span><span><small>OPENNARS / 3.0.4</small><strong>GRID MICROWORLD</strong></span></a>
+    <nav aria-label="Lab 导航"><a href="./">演示目录</a><a href="./terminal.html">NARS 终端</a></nav>
+    <span id="grid-runtime" class="grid-runtime" data-state="booting">启动中</span>
+  </header>
+
+  <main class="grid-main">
+    <header class="grid-intro"><div><p class="eyebrow">GRID MICROWORLD / SENSORIMOTOR</p><h1>格中虫脑</h1><p>同一感知—操作闭环，三种离散世界</p></div><span id="topology-mark" class="topology-mark" aria-hidden="true">□</span></header>
+
+    <div class="grid-workbench">
+      <section class="grid-stage" aria-label="网格微世界">
+        <div class="grid-canvas-frame"><canvas id="grid-canvas" width="960" height="600" aria-label="网格微世界场景"></canvas><div class="grid-rate" aria-label="运行速率"><span id="grid-status">运行中</span><output id="fps-hud">-- FPS</output><output id="tps-hud">-- TPS</output><output id="rps-hud">-- RPS</output><i id="fps-bar" aria-hidden="true"></i><i id="tps-bar" aria-hidden="true"></i><i id="rps-bar" aria-hidden="true"></i></div></div>
+        <div class="grid-control-row"><button id="grid-run" type="button" aria-label="暂停" title="暂停"><i data-lucide="pause"></i></button><button id="grid-step" type="button" aria-label="单步" title="单步"><i data-lucide="step-forward"></i></button><button id="grid-reset" type="button" aria-label="重置世界与 NARS" title="重置"><i data-lucide="rotate-ccw"></i></button><label>世界刻 <input id="grid-speed" type="range" min="20" max="50" value="20" /><output id="grid-speed-value">20 TPS</output></label><fieldset><legend>节奏</legend><label><input name="grid-mode" type="radio" value="sync" checked />同步</label><label><input name="grid-mode" type="radio" value="async" />异步</label></fieldset></div>
+        <div class="grid-config-row"><label>格形 <select id="grid-topology"><option value="square">正方形</option><option value="triangle">正三角形</option><option value="hexagon">正六边形</option></select></label><label>列 <input id="grid-cols" type="range" min="4" max="20" value="10" /><output id="grid-cols-value">10</output></label><label>行 <input id="grid-rows" type="range" min="4" max="20" value="8" /><output id="grid-rows-value">8</output></label><label>推理步/刻 <input id="grid-cycles" type="range" min="1" max="40" value="10" /><output id="grid-cycles-value">10</output></label><label>探索 <input id="grid-babble" type="range" min="0" max="30" value="10" /><output id="grid-babble-value">10%</output></label></div>
+        <div class="grid-manual" role="group" aria-label="直接控制虫体"><span>直接操作</span><button type="button" data-grid-action="2" aria-label="左转" title="逆时针左转"><i data-lucide="arrow-left"></i></button><button type="button" data-grid-action="3" aria-label="前进" title="前进一格"><i data-lucide="arrow-up"></i></button><button type="button" data-grid-action="1" aria-label="右转" title="顺时针右转"><i data-lucide="arrow-right"></i></button></div>
+      </section>
+
+      <aside class="grid-rail" aria-label="NARS 监视"><section id="grid-operation-card" class="grid-card"><div class="grid-card-head"><span>操作</span><output id="grid-source">WAITING</output></div><strong id="grid-operation">等待推理</strong><small id="grid-nar-time">NAR 0</small></section><section class="grid-card"><div class="grid-card-head"><span>世界</span><output id="grid-step-count">000000</output></div><div class="grid-world-metrics"><span><i class="food-good"></i>好食物 <strong id="grid-good">0</strong></span><span><i class="food-bad"></i>坏食物 <strong id="grid-bad">0</strong></span></div></section><section class="grid-card"><div class="grid-card-head"><span>六路感知</span><small>好 3 · 坏 3</small></div><div id="grid-sensors" class="grid-sensors" aria-label="六路感知强度"></div></section><details class="grid-card grid-diagnostics"><summary>性能追踪 <i data-lucide="chevron-down"></i></summary><div><span>目标</span><output id="tps-target">20.0 TPS</output></div><div><span>实际/目标</span><output id="tps-ratio">--%</output></div><div><span>页面内存</span><output id="page-memory">读取中</output></div><div><span>概念袋</span><output id="concept-count">等待 NARS</output></div><div><span>任务袋</span><output id="task-bags">等待 NARS</output></div></details><details id="grid-experience-panel" class="grid-card grid-experience"><summary><i data-lucide="brain"></i><span>经验观察</span><output id="grid-experience-status">尚未观察到</output></summary><p id="grid-experience-meta">窗口 96 · 仅收集真实事件</p><ol id="grid-experience-list" aria-live="polite"></ol></details><section class="grid-card grid-log-card"><div class="grid-card-head"><span>推理记录</span><button id="grid-clear-log" type="button" aria-label="清除日志" title="清除日志"><i data-lucide="trash-2"></i></button></div><ol id="grid-log" aria-live="polite"></ol></section></aside>
+    </div>
+  </main>
+
+  <footer class="lab-footer"><span>GRID MICROWORLD / OPENNARS 3.0.4 TS</span><span>新环境 · 非经典 Microworld 性能替代</span><a href="./">演示目录</a></footer>
+</SiteLayout>
+
+<script>import "../gridworld.ts";</script>
