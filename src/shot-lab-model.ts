@@ -1,0 +1,153 @@
+export type ShotModeId = "shot-test" | "shot-test2" | "shot-2p" | "shot-2p-2ai" | "shot-evolve" | "shot-evolve2";
+export type ShotDirection = "north" | "east" | "south" | "west";
+export type ShotAction = "up" | "down" | "left" | "right" | "forward" | "turn_left" | "turn_right" | "shoot" | "idle";
+export type ShotAiKind = "null" | "nar" | "nar2";
+export type ShotPlayer = {
+  id: string;
+  name: string;
+  ai: ShotAiKind;
+  x: number;
+  y: number;
+  direction: ShotDirection;
+  shootingTicks: number;
+  hits: number;
+  misses: number;
+  lastHitTick: number;
+  averageHitDelta: number;
+  alive: boolean;
+};
+export type ShotRay = { owner: string; x: number; y: number; direction: ShotDirection; ttl: number; hit: boolean };
+export type ShotMode = {
+  id: ShotModeId;
+  title: string;
+  subtitle: string;
+  movement: "absolute" | "relative";
+  players: number;
+  ai: readonly ShotAiKind[];
+  evolution: boolean;
+  maxPlayers: number;
+};
+export type ShotWorld = {
+  width: 50;
+  height: 20;
+  mode: ShotMode;
+  seed: number;
+  tick: number;
+  players: ShotPlayer[];
+  rays: ShotRay[];
+  notes: string[];
+  evolutionEvents: number;
+};
+
+export const SHOT_MODES: readonly ShotMode[] = [
+  { id: "shot-test", title: "静态靶 / 绝对移动", subtitle: "单 NARS · 上下左右 · 静态目标", movement: "absolute", players: 1, ai: ["nar"], evolution: false, maxPlayers: 1 },
+  { id: "shot-test2", title: "静态靶 / 相对移动", subtitle: "单 NARS · 转向前进 · 静态目标", movement: "relative", players: 1, ai: ["nar2"], evolution: false, maxPlayers: 1 },
+  { id: "shot-2p", title: "双玩家 / 同构 NARS", subtitle: "两个 NARS · 绝对移动 · 互相射击", movement: "absolute", players: 2, ai: ["nar", "nar"], evolution: false, maxPlayers: 2 },
+  { id: "shot-2p-2ai", title: "双玩家 / 两种接口", subtitle: "AiNar 与 AiNar2 · 相对控制", movement: "relative", players: 2, ai: ["nar", "nar2"], evolution: false, maxPlayers: 2 },
+  { id: "shot-evolve", title: "进化竞技场", subtitle: "命中率排名 · 克隆优秀玩家 · 淘汰落后者", movement: "absolute", players: 4, ai: ["nar", "nar", "nar", "nar"], evolution: true, maxPlayers: 6 },
+  { id: "shot-evolve2", title: "进化竞技场 / 混合接口", subtitle: "两种 NARS 接口 · 排名与重生", movement: "relative", players: 4, ai: ["nar", "nar2", "nar", "nar2"], evolution: true, maxPlayers: 6 },
+];
+
+const directions: ShotDirection[] = ["north", "east", "south", "west"];
+const delta: Record<ShotDirection, [number, number]> = { north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0] };
+const turn = (direction: ShotDirection, amount: number): ShotDirection => directions[(directions.indexOf(direction) + amount + directions.length) % directions.length];
+const actionName = (action: string | null): ShotAction => {
+  const normalized = String(action ?? "").replace(/^\^/, "").toLowerCase();
+  if (normalized === "forward") return "forward";
+  if (normalized === "turn_left") return "turn_left";
+  if (normalized === "turn_right") return "turn_right";
+  if (normalized === "shoot" || normalized === "shot") return "shoot";
+  if (normalized === "up" || normalized === "down" || normalized === "left" || normalized === "right") return normalized;
+  return "idle";
+};
+const nextRandom = (world: ShotWorld): number => {
+  world.seed ^= world.seed << 13;
+  world.seed ^= world.seed >>> 17;
+  world.seed ^= world.seed << 5;
+  return (world.seed >>> 0) / 0x1_0000_0000;
+};
+const occupied = (world: ShotWorld, x: number, y: number, except?: string): boolean => world.players.some((player) => player.alive && player.id !== except && player.x === x && player.y === y);
+const freePosition = (world: ShotWorld, except?: string): [number, number] => {
+  for (let attempt = 0; attempt < 500; attempt += 1) {
+    const x = 1 + Math.floor(nextRandom(world) * (world.width - 2));
+    const y = 1 + Math.floor(nextRandom(world) * (world.height - 2));
+    if (!occupied(world, x, y, except)) return [x, y];
+  }
+  return [1, 1];
+};
+
+export function modeById(id: ShotModeId): ShotMode { return SHOT_MODES.find((mode) => mode.id === id) ?? SHOT_MODES[0]; }
+
+export function createShotWorld(modeId: ShotModeId = "shot-test", seed = 3040304): ShotWorld {
+  const mode = modeById(modeId);
+  const world: ShotWorld = { width: 50, height: 20, mode, seed: seed >>> 0 || 1, tick: 0, players: [], rays: [], notes: [], evolutionEvents: 0 };
+  for (let index = 0; index < mode.players; index += 1) {
+    const [x, y] = freePosition(world);
+    world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", shootingTicks: 0, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
+  }
+  if (mode.players === 1) {
+    const [x, y] = freePosition(world);
+    world.players.push({ id: "target", name: "TARGET", ai: "null", x, y, direction: "west", shootingTicks: 0, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
+  }
+  return world;
+}
+
+export function playerFor(world: ShotWorld, id: string): ShotPlayer | undefined { return world.players.find((player) => player.id === id); }
+
+function targetInDirection(world: ShotWorld, owner: ShotPlayer): ShotPlayer | undefined {
+  const [vx, vy] = delta[owner.direction];
+  const targets = world.players.filter((player) => player.alive && player.id !== owner.id && (vx === 0 ? player.x === owner.x : player.y === owner.y) && ((player.x - owner.x) * vx + (player.y - owner.y) * vy) > 0);
+  return targets.sort((a, b) => Math.abs(a.x - owner.x) + Math.abs(a.y - owner.y) - (Math.abs(b.x - owner.x) + Math.abs(b.y - owner.y)))[0];
+}
+
+export function senseFor(world: ShotWorld, playerId: string): string[] {
+  const player = playerFor(world, playerId);
+  if (!player) return [];
+  const target = targetInDirection(world, player);
+  if (target) return ["target_ahead", `target_distance_${Math.abs(target.x - player.x) + Math.abs(target.y - player.y)}`];
+  const nearest = world.players.filter((item) => item.alive && item.id !== playerId).sort((a, b) => Math.abs(a.x - player.x) + Math.abs(a.y - player.y) - (Math.abs(b.x - player.x) + Math.abs(b.y - player.y)))[0];
+  if (!nearest) return ["alone"];
+  return [nearest.x < player.x ? "target_left" : nearest.x > player.x ? "target_right" : nearest.y < player.y ? "target_up" : "target_down"];
+}
+
+export function buildShotNarsStep(world: ShotWorld, playerId: string): { beliefs: string[]; goals: string[]; feedback: string[]; cycles: number } {
+  const player = playerFor(world, playerId);
+  const beliefs = senseFor(world, playerId).map((sense) => `<{SELF} --> [${sense}]>. :|:`);
+  const feedback = world.notes.splice(0).filter((note) => note.startsWith(`${playerId}:`)).map((note) => `<{SELF} --> [${note.includes("HIT") ? "hit" : "miss"}]>. :|:`);
+  return { beliefs, goals: ["<{SELF} --> [hit]>! :|:"], feedback, cycles: 10 };
+}
+
+export function applyShotAction(world: ShotWorld, playerId: string, rawAction: string | null): string[] {
+  const player = playerFor(world, playerId);
+  if (!player || !player.alive) return [];
+  const action = actionName(rawAction);
+  if (world.mode.movement === "absolute") {
+    const absolute: Partial<Record<ShotAction, ShotDirection>> = { up: "north", right: "east", down: "south", left: "west" };
+    if (absolute[action]) player.direction = absolute[action]!;
+    if (absolute[action]) {
+      const [vx, vy] = delta[player.direction];
+      const x = Math.max(0, Math.min(world.width - 1, player.x + vx));
+      const y = Math.max(0, Math.min(world.height - 1, player.y + vy));
+      if (!occupied(world, x, y, player.id)) { player.x = x; player.y = y; }
+    }
+  } else {
+    if (action === "turn_left") player.direction = turn(player.direction, -1);
+    if (action === "turn_right") player.direction = turn(player.direction, 1);
+    if (action === "forward") { const [vx, vy] = delta[player.direction]; const x = Math.max(0, Math.min(world.width - 1, player.x + vx)); const y = Math.max(0, Math.min(world.height - 1, player.y + vy)); if (!occupied(world, x, y, player.id)) { player.x = x; player.y = y; } }
+  }
+  if (action === "shoot") { player.shootingTicks = 3; const target = targetInDirection(world, player); if (!target) { player.misses += 1; world.notes.push(`${player.id}:MISS`); return ["MISS"]; } target.alive = false; player.hits += 1; const dt = Math.max(1, world.tick - player.lastHitTick); player.averageHitDelta += (dt - player.averageHitDelta) / player.hits; player.lastHitTick = world.tick; world.rays.push({ owner: player.id, x: player.x, y: player.y, direction: player.direction, ttl: 3, hit: true }); world.notes.push(`${player.id}:HIT:${target.id}`); const [x, y] = freePosition(world, target.id); target.x = x; target.y = y; target.alive = true; return ["HIT"]; }
+  return [];
+}
+
+export function stepShotWorld(world: ShotWorld): { notes: string[]; evolved: boolean } {
+  world.tick += 1;
+  for (const player of world.players) if (player.shootingTicks > 0) player.shootingTicks -= 1;
+  for (const ray of world.rays) ray.ttl -= 1;
+  world.rays = world.rays.filter((ray) => ray.ttl > 0);
+  let evolved = false;
+  if (world.mode.evolution && world.tick % 500 === 0 && world.players.length < world.mode.maxPlayers) {
+    const best = [...world.players].filter((player) => player.ai !== "null").sort((a, b) => (b.hits / Math.max(1, b.hits + b.misses)) - (a.hits / Math.max(1, a.hits + a.misses)))[0];
+    if (best) { const [x, y] = freePosition(world); world.players.push({ ...best, id: `clone-${world.evolutionEvents + 1}`, name: `CLONE ${world.evolutionEvents + 1}`, x, y, hits: 0, misses: 0, averageHitDelta: 0, lastHitTick: world.tick, shootingTicks: 0 }); world.evolutionEvents += 1; world.notes.push(`EVOLVE:CLONE:${best.id}`); evolved = true; }
+  }
+  return { notes: world.notes.splice(0), evolved };
+}

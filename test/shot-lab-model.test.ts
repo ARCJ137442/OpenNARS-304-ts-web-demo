@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { SHOT_MODES, applyShotAction, buildShotNarsStep, createShotWorld, senseFor, stepShotWorld } from "../src/shot-lab-model.ts";
+
+test("Shot exposes the six NARust-o source modes", () => {
+  assert.deepEqual(SHOT_MODES.map((mode) => mode.id), ["shot-test", "shot-test2", "shot-2p", "shot-2p-2ai", "shot-evolve", "shot-evolve2"]);
+  assert.equal(SHOT_MODES[0].players, 1);
+  assert.equal(SHOT_MODES[2].players, 2);
+  assert.equal(SHOT_MODES[4].evolution, true);
+});
+
+test("Shot uses a 50x20 bounded world and emits composite OpenNARS perception", () => {
+  const world = createShotWorld("shot-test", 304);
+  assert.equal(world.width, 50);
+  assert.equal(world.height, 20);
+  const input = buildShotNarsStep(world, "p1");
+  assert.ok(input.goals.every((goal) => goal.startsWith("<{SELF} --> [") && goal.endsWith(">! :|:")));
+  assert.ok(input.beliefs.every((belief) => belief.includes("<{SELF} --> [")));
+  assert.ok(senseFor(world, "p1").length > 0);
+});
+
+test("Shot resolves the first collinear target, records hit feedback, and respawns it", () => {
+  const world = createShotWorld("shot-test", 304);
+  const shooter = world.players.find((player) => player.id === "p1")!;
+  const target = world.players.find((player) => player.id === "target")!;
+  shooter.x = 5; shooter.y = 5; shooter.direction = "east";
+  target.x = 7; target.y = 5;
+  const notes = applyShotAction(world, "p1", "^Shoot");
+  assert.deepEqual(notes, ["HIT"]);
+  assert.equal(shooter.hits, 1);
+  assert.equal(target.alive, true);
+  assert.equal(world.rays.length, 1);
+  assert.ok(buildShotNarsStep(world, "p1").feedback.some((belief) => belief.includes("hit")));
+});
+
+test("Shot blocks occupied movement and evolves by cloning the best player at tick 500", () => {
+  const world = createShotWorld("shot-evolve", 304);
+  const first = world.players[0];
+  const second = world.players[1];
+  first.x = 5; first.y = 5; first.direction = "east";
+  second.x = 6; second.y = 5;
+  applyShotAction(world, first.id, "^Right");
+  assert.equal(first.x, 5, "occupied cell must block movement");
+  first.hits = 4;
+  second.misses = 4;
+  while (world.tick < 500) stepShotWorld(world);
+  assert.equal(world.players.length, 5);
+  assert.equal(world.evolutionEvents, 1);
+});
