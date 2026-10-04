@@ -16,6 +16,16 @@ for (const file of requiredFiles) {
   if (statSync(resolve(distRoot, file)).size === 0) throw new Error(`${file} is empty`);
 }
 
+function assertRgbaPng(file) {
+  const bytes = readFileSync(resolve(distRoot, file));
+  const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (!bytes.subarray(0, 8).equals(pngSignature) || bytes.length < 26 || bytes[25] !== 6) {
+    throw new Error(`${file} must be a true-color RGBA PNG with an alpha channel`);
+  }
+}
+
+for (const file of ["assets/agent.png", "assets/food.png", "assets/fire.png"]) assertRgbaPng(file);
+
 const index = readFileSync(resolve(distRoot, "index.html"), "utf8");
 for (const text of ["DEMO LAB", "NARS 终端", "Grid Microworld 格中虫脑", "NARS × 2048", "NARS Pong", "Shot", "BandRobot", "CartPole", "Hunt 追捕", "14 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\"", "pong.html", "shot.html", "gridworld.html", "nars2048.html"]) {
   if (!index.includes(text)) throw new Error(`index.html is missing ${text}`);
