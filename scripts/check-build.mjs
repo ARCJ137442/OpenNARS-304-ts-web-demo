@@ -8,7 +8,7 @@ const distRoot = resolve(projectRoot, "dist");
 const requiredFiles = [
   "index.html", "terminal.html", "demo.html", "pong.html", "shot.html", "gridworld.html", "nars2048.html", "demo-worker.js", "microworld.html", "microworld.css", "microworld.js",
   "microworld-worker.js", "build-meta.json", "README.md",
-  "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", "COPYING-JEV-2048-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "assets/opennars-ts-logo.svg", "assets/agent.png", "assets/food.png", "assets/fire.png",
+  "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", "COPYING-JEV-2048-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "reasoner-panel.css", "assets/opennars-ts-logo.svg", "assets/agent.png", "assets/food.png", "assets/fire.png",
   "assets/ball.png", "assets/bar.png",
 ];
 
@@ -27,7 +27,7 @@ function assertRgbaPng(file) {
 for (const file of ["assets/agent.png", "assets/food.png", "assets/fire.png"]) assertRgbaPng(file);
 
 const index = readFileSync(resolve(distRoot, "index.html"), "utf8");
-for (const text of ["DEMO LAB", "NARS 终端", "Grid Microworld 格中虫脑", "NARS × 2048", "NARS Pong", "Shot", "BandRobot", "CartPole", "Hunt 追捕", "14 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\"", "pong.html", "shot.html", "gridworld.html", "nars2048.html"]) {
+for (const text of ["DEMO LAB", "NARS 终端", "Grid Microworld 格中虫脑", "NARS × 2048", "NARS Pong", "Shot", "BandRobot", "CartPole", "Hunt 追捕", "13 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"echo-relay\"", "data-preview=\"microworld\"", "pong.html", "shot.html", "gridworld.html", "nars2048.html"]) {
   if (!index.includes(text)) throw new Error(`index.html is missing ${text}`);
 }
 if (!index.includes("/opennars-304-ts-lab/_astro/")) throw new Error("index.html is missing the Pages base path for Astro assets");

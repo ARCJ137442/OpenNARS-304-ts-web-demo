@@ -38,7 +38,11 @@ export function readReasonerSnapshot(reasoner: ReasonerSnapshotSource): Reasoner
 }
 
 type TruthLike = { getExpectation(): number; frequency: number; confidence: number };
-type SentenceLike = { getTruth(): TruthLike; toString(): string };
+type SentenceLike = {
+  getTruth(): TruthLike;
+  toString(): string;
+  projection?: (targetTime: unknown, currentTime: unknown, memory: unknown) => SentenceLike;
+};
 type TaskLike = { sentence: SentenceLike; getBudget(): { summary(): number } };
 type ConceptLike = { getBeliefs(): Iterable<TaskLike> };
 type BeliefSnapshotSource = { memory: { concepts: Iterable<ConceptLike> }; time(): unknown };
@@ -46,14 +50,22 @@ type BeliefSnapshotSource = { memory: { concepts: Iterable<ConceptLike> }; time(
 /** Read only the most promising retained beliefs when the user opens the observatory. */
 export function readTopBeliefs(reasoner: BeliefSnapshotSource, limit = 8): BeliefSnapshot[] {
   const beliefs: BeliefSnapshot[] = [];
+  const currentTime = reasoner.time();
   for (const concept of reasoner.memory.concepts) {
     for (const task of concept.getBeliefs()) {
       try {
-        const truth = task.sentence.getTruth();
+        // NAL temporal projection makes old and fresh beliefs comparable at
+        // the current NAR clock. The sentence API owns the exact confidence
+        // decay and eternalization rules, so the observatory does not copy
+        // those formulas or mutate the retained belief.
+        const sentence = typeof task.sentence.projection === "function"
+          ? task.sentence.projection(currentTime, currentTime, reasoner.memory)
+          : task.sentence;
+        const truth = sentence.getTruth();
         const expectation = Number(truth?.getExpectation());
         if (!Number.isFinite(expectation)) continue;
         beliefs.push({
-          text: String(task.sentence),
+          text: String(sentence),
           expectation,
           frequency: Number(truth.frequency),
           confidence: Number(truth.confidence),

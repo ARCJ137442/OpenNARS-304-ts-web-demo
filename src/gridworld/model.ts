@@ -1,6 +1,6 @@
 export type GridTopology = "square" | "triangle" | "hexagon";
 export type GridCell = { col: number; row: number; face: 0 | 1 };
-export type GridFood = { id: string; kind: "good" | "bad"; cell: GridCell };
+export type GridFood = { id: string; kind: "good" | "bad"; cell: GridCell; angle: number };
 export type GridAction = 0 | 1 | 2 | 3; // idle, right, left, forward — Microworld Worker protocol
 export type GridWorld = {
   topology: GridTopology;
@@ -131,6 +131,20 @@ export function collectGridSensors(world: GridWorld): number[] {
   return [...sensors];
 }
 
+export function moveGridObject(world: GridWorld, objectId: string, cell: GridCell): boolean {
+  const normalized = normalizeCell(world.topology, world.cols, world.rows, cell);
+  if (objectId === "agent") {
+    world.agent.cell = normalized;
+    collectGridSensors(world);
+    return true;
+  }
+  const food = world.foods.find((item) => item.id === objectId);
+  if (!food) return false;
+  food.cell = normalized;
+  collectGridSensors(world);
+  return true;
+}
+
 export function createGridWorld(topology: GridTopology, cols: number, rows: number, seed: number, foodPerKind = 5): GridWorld {
   if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 4 || rows < 4 || cols > 20 || rows > 20) {
     throw new RangeError("grid dimensions must be integers from 4 to 20");
@@ -143,7 +157,7 @@ export function createGridWorld(topology: GridTopology, cols: number, rows: numb
   const capacity = allCells(topology, cols, rows).length - 1;
   const count = Math.min(Math.max(0, Math.floor(foodPerKind)), Math.floor(capacity / 2));
   for (const kind of ["good", "bad"] as const) for (let index = 0; index < count; index += 1) {
-    const food: GridFood = { id: `${kind}-${index + 1}`, kind, cell: world.agent.cell };
+    const food: GridFood = { id: `${kind}-${index + 1}`, kind, cell: world.agent.cell, angle: random(world) * Math.PI * 2 };
     respawnFood(world, food);
     world.foods.push(food);
   }
@@ -157,6 +171,9 @@ export function advanceGridWorld(world: GridWorld, action: GridAction): { moved:
   if (action === 1) world.agent.heading = (world.agent.heading + 1) % count;
   if (action === 2) world.agent.heading = (world.agent.heading + count - 1) % count;
   if (action === 3) world.agent.cell = forwardCell(world.topology, world.cols, world.rows, previous, world.agent.heading);
+  for (const food of world.foods) {
+    if (food.kind === "bad") food.angle = (food.angle + 0.05) % (Math.PI * 2);
+  }
   const eaten = world.foods.find((food) => equalCell(food.cell, world.agent.cell));
   world.reward = eaten?.kind === "good" ? 1 : eaten?.kind === "bad" ? -1 : 0;
   if (eaten) {

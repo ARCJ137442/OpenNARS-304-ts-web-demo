@@ -65,7 +65,7 @@ button {
   display: block;
   width: 39px;
   height: 39px;
-  background: #fff;
+  background: transparent;
   object-fit: contain;
 }
 .lab-wordmark small,

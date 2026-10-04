@@ -36,11 +36,11 @@ function drawMicroworld(context: CanvasRenderingContext2D, width: number, height
   context.lineWidth = 1;
   for (let x = 25; x < width; x += 25) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, height); context.stroke(); }
   for (let y = 25; y < height; y += 25) { context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke(); }
-  context.strokeStyle = "rgba(236,239,221,.42)";
-  context.setLineDash([4, 5]);
-  context.beginPath(); context.arc(cx, cy, height * .34, -Math.PI / 3, Math.PI / 3); context.stroke();
-  context.setLineDash([]);
-  image(context, assets.agent, cx + Math.sin(time / 1200) * 8, cy, 28, 28, Math.PI + Math.sin(time / 900) * .2);
+  const angle = Math.sin(time / 900) * .2;
+  context.strokeStyle = "rgba(204,57,55,.9)";
+  context.lineWidth = 1.3;
+  for (const side of [-1, 1]) { context.beginPath(); context.moveTo(cx, cy); context.lineTo(cx + Math.cos(angle + side * Math.PI / 3) * height * .34, cy + Math.sin(angle + side * Math.PI / 3) * height * .34); context.stroke(); }
+  image(context, assets.agent, cx + Math.sin(time / 1200) * 8, cy, 28, 28, angle + Math.PI);
   image(context, assets.food, width * .7, height * .34, 24, 24, 0);
   image(context, assets.fire, width * .72, height * .75, 26, 26, time / 1000);
 }
@@ -87,11 +87,13 @@ function drawGridworld(context: CanvasRenderingContext2D, width: number, height:
     context.fillRect(col * cell + 1, row * cell + 1, cell - 2, cell - 2);
     context.strokeStyle = "#3b5541"; context.strokeRect(col * cell + 1, row * cell + 1, cell - 2, cell - 2);
   }
-  const x = width * (.5 + Math.sin(time / 1300) * .16), y = height * (.5 + Math.cos(time / 1100) * .18);
-  context.fillStyle = "#b7e66e"; context.beginPath(); context.arc(x, y, 12, 0, Math.PI * 2); context.fill();
-  context.strokeStyle = "#73d8c7"; context.beginPath(); context.arc(x, y, 34, -Math.PI / 3, Math.PI / 3); context.stroke();
-  context.fillStyle = "#ff7661"; context.fillRect(width * .72, height * .3, 11, 11);
-  context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(width * .27, height * .7, 7, 0, Math.PI * 2); context.fill();
+  const x = width * (.5 + Math.sin(time / 1300) * .16), y = height * (.5 + Math.cos(time / 1100) * .18), angle = Math.sin(time / 900) * .35;
+  image(context, assets.food, width * .27, height * .7, 16, 16, 0);
+  image(context, assets.fire, width * .72, height * .3, 18, 18, time / 1000);
+  image(context, assets.food, width * .82, height * .68, 16, 16, 0);
+  image(context, assets.agent, x, y, 24, 24, angle + Math.PI);
+  context.strokeStyle = "rgba(204,57,55,.9)"; context.lineWidth = 1.3;
+  for (const side of [-1, 1]) { context.beginPath(); context.moveTo(x, y); context.lineTo(x + Math.cos(angle + side * Math.PI / 3) * 38, y + Math.sin(angle + side * Math.PI / 3) * 38); context.stroke(); }
 }
 function drawNars2048(context: CanvasRenderingContext2D, width: number, height: number, _time: number): void { context.fillStyle = "#202820"; context.fillRect(0, 0, width, height); const size = Math.min(width, height) * .72, left = (width - size) / 2, top = (height - size) / 2, gap = size * .025, cell = (size - gap * 5) / 4; const values = [2, 4, 8, 0, 16, 32, 64, 0, 128, 256, 512, 0, 0, 1024, 2048, 0]; values.forEach((value, index) => { const x = left + (index % 4) * (cell + gap), y = top + Math.floor(index / 4) * (cell + gap); context.fillStyle = value === 0 ? "#344239" : value < 16 ? "#b7e66e" : value < 128 ? "#ffc56c" : "#73d8c7"; context.fillRect(x, y, cell, cell); if (value) { context.fillStyle = "#152018"; context.font = `bold ${Math.max(10, cell * .23)}px monospace`; context.textAlign = "center"; context.textBaseline = "middle"; context.fillText(String(value), x + cell / 2, y + cell / 2); } }); }
 
@@ -187,7 +189,21 @@ function drawExpansionPreview(context: CanvasRenderingContext2D, width: number, 
   }
   if (game === "tictactoe") { context.strokeStyle = "#84927f"; context.lineWidth = 2; for (let i = 1; i < 3; i++) { context.beginPath(); context.moveTo(width * i / 3, 18); context.lineTo(width * i / 3, height - 18); context.stroke(); context.beginPath(); context.moveTo(18, height * i / 3); context.lineTo(width - 18, height * i / 3); context.stroke(); } context.fillStyle = "#b7e66e"; context.font = "bold 36px system-ui"; context.fillText("X", width * .5 - 12, height * .5 + 12); context.fillStyle = "#ffc56c"; context.fillText("O", width * .75 - 12, height * .25 + 12); return; }
   if (game === "testchamber") { context.strokeStyle = "rgba(185,200,174,.2)"; for (let x = 0; x <= 8; x++) { context.beginPath(); context.moveTo(x * width / 8, 0); context.lineTo(x * width / 8, height); context.stroke(); } for (let y = 0; y <= 6; y++) { context.beginPath(); context.moveTo(0, y * height / 6); context.lineTo(width, y * height / 6); context.stroke(); } context.fillStyle = "#b7e66e"; context.fillRect(width * .2, height * .2, 9, 9); context.fillStyle = "#ffc56c"; context.fillRect(width * .38, height * .48, 9, 9); return; }
-  if (game === "shot") { context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(width * (.5 + Math.sin(time / 600) * .28), height * .3, 7, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b7e66e"; context.fillRect(width * .5 - 14, height * .78, 28, 7); return; }
+  if (game === "shot") {
+    const cols = 25, rows = 10, cell = Math.min(width / cols, height / rows), ox = (width - cols * cell) / 2, oy = (height - rows * cell) / 2;
+    context.strokeStyle = "rgba(185,200,174,.14)"; context.lineWidth = 1;
+    for (let x = 0; x <= cols; x += 1) { context.beginPath(); context.moveTo(ox + x * cell, oy); context.lineTo(ox + x * cell, oy + rows * cell); context.stroke(); }
+    for (let y = 0; y <= rows; y += 1) { context.beginPath(); context.moveTo(ox, oy + y * cell); context.lineTo(ox + cols * cell, oy + y * cell); context.stroke(); }
+    const players = [
+      { x: 5 + Math.sin(time / 700) * 2, y: 5, color: "#b7e66e", a: 0 },
+      { x: 12, y: 5 + Math.cos(time / 850) * 2, color: "#73d8c7", a: Math.PI / 2 },
+      { x: 19, y: 3 + Math.sin(time / 600) * 2, color: "#ffc56c", a: Math.PI },
+      { x: 19, y: 8 + Math.cos(time / 640) * 1.4, color: "#ff7661", a: -Math.PI / 2 },
+    ];
+    for (const player of players) { const px = ox + player.x * cell, py = oy + player.y * cell; context.fillStyle = player.color; context.fillRect(px - 4, py - 4, 8, 8); context.strokeStyle = player.color; context.lineWidth = 1.3; context.beginPath(); context.moveTo(px, py); context.lineTo(px + Math.cos(player.a) * cell * 3, py + Math.sin(player.a) * cell * 3); context.stroke(); }
+    context.fillStyle = "#e7f4c5"; context.fillRect(ox + 6 * cell, oy + 5 * cell - 1, cell * 6, 2);
+    return;
+  }
   context.fillStyle = "#ff7661"; context.beginPath(); context.arc(width * (.58 + Math.sin(time / 700) * .2), height * .3, 9, 0, Math.PI * 2); context.fill(); context.fillStyle = "#b7e66e"; context.beginPath(); context.moveTo(width * .48, height * .78); context.lineTo(width * .45, height * .89); context.lineTo(width * .51, height * .89); context.closePath(); context.fill();
 }
 

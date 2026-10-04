@@ -1,6 +1,8 @@
 import { allCells, cellCenter, headingAngle, type GridCell, type GridTopology, type GridWorld } from "./model.ts";
 
 type Point = { x: number; y: number };
+type RenderGeometry = { key: string; toScreen: (point: Point) => Point; cells: GridCell[]; polygons: Point[][] };
+let geometryCache: RenderGeometry | null = null;
 export type GridRenderAssets = {
   agent?: HTMLImageElement;
   food?: HTMLImageElement;
@@ -39,15 +41,30 @@ function fit(world: GridWorld, width: number, height: number): (point: Point) =>
   return (point) => ({ x: left + (point.x - minX) * scale, y: top + (point.y - minY) * scale });
 }
 
+export function gridCellAtPoint(world: GridWorld, width: number, height: number, x: number, y: number): GridCell {
+  const toScreen = fit(world, width, height);
+  return allCells(world.topology, world.cols, world.rows).reduce((closest, cell) => {
+    const point = toScreen(cellCenter(world.topology, cell));
+    const distance = Math.hypot(point.x - x, point.y - y);
+    return distance < closest.distance ? { cell, distance } : closest;
+  }, { cell: { col: 0, row: 0, face: 0 as 0 | 1 }, distance: Infinity }).cell;
+}
+
 export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorld, assets: GridRenderAssets = {}): void {
   const { width, height } = context.canvas;
   context.fillStyle = "#101713";
   context.fillRect(0, 0, width, height);
-  const toScreen = fit(world, width, height);
-  const cells = allCells(world.topology, world.cols, world.rows);
+  const key = `${world.topology}:${world.cols}:${world.rows}:${width}:${height}`;
+  if (geometryCache?.key !== key) {
+    const toScreen = fit(world, width, height);
+    const cells = allCells(world.topology, world.cols, world.rows);
+    geometryCache = { key, toScreen, cells, polygons: cells.map((cell) => polygon(world.topology, cell).map(toScreen)) };
+  }
+  const { toScreen, cells, polygons } = geometryCache;
 
-  for (const cell of cells) {
-    const vertices = polygon(world.topology, cell).map(toScreen);
+  for (let index = 0; index < cells.length; index += 1) {
+    const cell = cells[index];
+    const vertices = polygons[index];
     context.beginPath();
     context.moveTo(vertices[0].x, vertices[0].y);
     for (const point of vertices.slice(1)) context.lineTo(point.x, point.y);
@@ -69,7 +86,12 @@ export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorl
     const radius = unit * (food.kind === "good" ? .68 : .75);
     const sprite = food.kind === "good" ? assets.food : assets.fire;
     if (sprite?.complete && sprite.naturalWidth > 0) {
-      context.drawImage(sprite, point.x - radius, point.y - radius, radius * 2, radius * 2);
+      context.save();
+      context.translate(point.x, point.y);
+      context.rotate(food.angle);
+      context.imageSmoothingEnabled = false;
+      context.drawImage(sprite, -radius, -radius, radius * 2, radius * 2);
+      context.restore();
       continue;
     }
     context.fillStyle = food.kind === "good" ? "#b7e66e" : "#ff7661";
@@ -92,7 +114,9 @@ export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorl
   const angle = headingAngle(world.topology, world.agent.cell, world.agent.heading);
   context.save();
   context.translate(center.x, center.y);
-  context.rotate(angle);
+  // Classic Microworld sprites face the opposite direction of the world
+  // heading convention, so keep the same half-turn correction here.
+  context.rotate(angle + Math.PI);
   if (assets.agent?.complete && assets.agent.naturalWidth > 0) {
     const size = unit * 2.4;
     context.drawImage(assets.agent, -size / 2, -size / 2, size, size);
@@ -118,9 +142,18 @@ export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorl
   context.restore();
   }
 
-  const good = Math.max(...world.sensors.slice(0, 3));
-  const bad = Math.max(...world.sensors.slice(3, 6));
-  context.strokeStyle = good >= bad ? `rgba(183,230,110,${.15 + good * .5})` : `rgba(255,118,97,${.15 + bad * .5})`;
-  context.lineWidth = 2;
-  context.beginPath(); context.arc(center.x, center.y, unit * 2.1, angle - Math.PI / 3, angle + Math.PI / 3); context.stroke();
+  // Match the classic Microworld's visual-field boundary: two red rays with
+  // the same narrow stroke, while the grid topology controls their length.
+  context.save();
+  context.strokeStyle = "rgba(204, 57, 55, 0.9)";
+  context.lineWidth = Math.max(1, Math.min(1.6, unit * 0.12));
+  const viewDistance = unit * (world.topology === "triangle" ? 3 : world.topology === "hexagon" ? 3.8 : 3.4);
+  for (const side of [-1, 1]) {
+    const rayAngle = angle + side * Math.PI / 3;
+    context.beginPath();
+    context.moveTo(center.x, center.y);
+    context.lineTo(center.x + Math.cos(rayAngle) * viewDistance, center.y + Math.sin(rayAngle) * viewDistance);
+    context.stroke();
+  }
+  context.restore();
 }

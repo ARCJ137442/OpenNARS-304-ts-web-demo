@@ -49,3 +49,36 @@ test("top beliefs are sorted by expectation and expose their truth values", () =
   assert.equal(snapshot[0].expectation, 0.9);
   assert.equal(snapshot[0].narTime, "42");
 });
+
+test("top beliefs project temporal evidence to the current NAR clock before ranking", () => {
+  const projected = {
+    toString: () => "projected@42",
+    getTruth: () => ({ getExpectation: () => 0.95, frequency: 1, confidence: 0.95 }),
+  };
+  const stale = {
+    sentence: {
+      toString: () => "stale@10",
+      getTruth: () => ({ getExpectation: () => 0.99, frequency: 1, confidence: 0.99 }),
+      projection: (target: unknown, current: unknown, memory: unknown) => {
+        assert.equal(target, 42);
+        assert.equal(current, 42);
+        assert.ok(memory);
+        return projected;
+      },
+    },
+    getBudget: () => ({ summary: () => 1 }),
+  };
+  const fresh = {
+    sentence: {
+      toString: () => "fresh@42",
+      getTruth: () => ({ getExpectation: () => 0.9, frequency: 1, confidence: 0.8 }),
+      projection: () => ({
+        toString: () => "fresh@42",
+        getTruth: () => ({ getExpectation: () => 0.9, frequency: 1, confidence: 0.8 }),
+      }),
+    },
+    getBudget: () => ({ summary: () => 1 }),
+  };
+  const beliefs = readTopBeliefs({ memory: { concepts: [{ getBeliefs: () => [stale, fresh] }] }, time: () => 42 });
+  assert.deepEqual(beliefs.map((belief) => belief.text), ["projected@42", "fresh@42"]);
+});

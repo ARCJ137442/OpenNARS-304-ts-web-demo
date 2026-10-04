@@ -15,6 +15,7 @@ for (const staleFile of ["terminal.html", "styles.css", "app.js", "input-behavio
 for (const file of ["microworld.html", "microworld.css", "nars-controls.css"]) {
   copyFileSync(resolve(sourceRoot, file), resolve(publicRoot, file));
 }
+copyFileSync(resolve(sourceRoot, "ui", "reasoner-panel.css"), resolve(publicRoot, "reasoner-panel.css"));
 for (const file of ["COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", "COPYING-JEV-2048-MIT.txt"]) {
   copyFileSync(resolve(projectRoot, file), resolve(publicRoot, file));
 }

@@ -102,7 +102,7 @@ footer {
   display: block;
   width: 44px;
   height: 44px;
-  background: #fff;
+  background: transparent;
   object-fit: contain;
   clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
 }

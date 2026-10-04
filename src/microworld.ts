@@ -27,6 +27,7 @@ import { nextWorldStepDeadline } from "./world-clock.ts";
 import { initialDemoSeed } from "./demo-seed.ts";
 import { mountExperienceTimeline } from "./ui/experience-timeline.ts";
 import type { BeliefSnapshot, ExperienceEvent } from "./experience/contract.ts";
+import { renderReasonerObservatory } from "./ui/reasoner-observatory.ts";
 
 type MicroworldWorkerEvent = {
   type: string;
@@ -139,6 +140,14 @@ const experienceTimeline = mountExperienceTimeline({
 }, (open) => {
   if (state.worker && !elements.runtimePill.classList.contains("fault")) state.worker.postMessage({ type: "experience-snapshot", open });
 });
+let lastBeliefRefreshAt = 0;
+function refreshOpenExperience(): void {
+  if (!elements.experiencePanel.open || !state.worker) return;
+  const now = performance.now();
+  if (now - lastBeliefRefreshAt < 500) return;
+  lastBeliefRefreshAt = now;
+  state.worker.postMessage({ type: "experience-snapshot", open: true });
+}
 
 function requireCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const result = canvas.getContext("2d", { alpha: false });
@@ -287,28 +296,7 @@ function updateTelemetry(): void {
   elements.stepCount.value = String(world.tick).padStart(6, "0");
   elements.stepCount.textContent = elements.stepCount.value;
 
-  const maxSensor = Math.max(...world.sensors);
-  const focusIndex = maxSensor > 0 ? world.sensors.indexOf(maxSensor) : -1;
-  elements.sensorFocus.textContent = focusIndex < 0 ? "暂无目标" : `${SENSOR_LABELS[focusIndex]} · ${(maxSensor * 100).toFixed(0)}%`;
-  elements.sensorGrid.replaceChildren();
-  world.sensors.forEach((value, index) => {
-    const cell = document.createElement("span");
-    cell.className = `sensor-cell${index >= 3 ? " negative" : ""}${value > 0.1 ? " active" : ""}`;
-    cell.style.setProperty("--sensor-level", String(value));
-    cell.textContent = SENSOR_LABELS[index];
-    cell.title = `${index >= 3 ? "坏食物" : "好食物"} 感受点 ${index % 3 + 1}: ${(value * 100).toFixed(0)}%`;
-    elements.sensorGrid.append(cell);
-  });
-
-  const ratio = world.counters.good / Math.max(1, world.counters.bad);
-  elements.goodCount.textContent = String(world.counters.ateGood);
-  elements.badCount.textContent = String(world.counters.ateBad);
-  elements.foodRatio.textContent = ratio.toFixed(2);
-  elements.ratioFill.style.width = `${Math.max(6, Math.min(100, (ratio / (ratio + 1)) * 100))}%`;
-  if (world.lastRewardType === "good") elements.reward.textContent = "+1 满足";
-  else if (world.lastRewardType === "bad") elements.reward.textContent = "-1 满足 / 健康";
-  else if (world.tick > 0) elements.reward.textContent = "0 / 无碰撞";
-
+  renderReasonerObservatory({ operation: elements.operation, source: elements.sourceTag, detail: elements.operationDetail, narTime: undefined, sensorGrid: elements.sensorGrid, sensorFocus: elements.sensorFocus, rewardState: elements.reward, goodCount: elements.goodCount, badCount: elements.badCount, foodRatio: elements.foodRatio, ratioFill: elements.ratioFill, stepCount: elements.stepCount }, { operation: state.currentOperation, source: state.operationSource, detail: `${state.lastLatency.toFixed(0)} ms / ${state.narsCycles} cycles`, narTime: state.lastNarTime, sensors: world.sensors, rewardType: world.lastRewardType === "good" ? "good" : world.lastRewardType === "bad" ? "bad" : null, good: world.counters.ateGood, bad: world.counters.ateBad, step: world.tick });
   elements.latency.textContent = `NARS ${state.lastLatency.toFixed(0)} ms / ${state.narsCycles} cycles`;
   elements.operation.value = state.currentOperation;
   elements.sourceTag.textContent = state.operationSource;
@@ -406,6 +394,7 @@ function newWorker(seed: number): void {
       else state.queuedAction = (data.action ?? 0) as ActionCode;
       if (state.runtimeMode === "async" && state.running) elements.worldStatus.textContent = "推理完成";
       updateTelemetry();
+      refreshOpenExperience();
       if (state.running) {
         // Keep the world clock fixed like Processing's frameRate(50): inference
         // consumes the current period instead of being added to the next one.
@@ -559,19 +548,19 @@ function renderWorld(): void {
   context.strokeRect(1, 1, WORLD_WIDTH - 2, WORLD_HEIGHT - 2);
 
   const agent = state.world.agent;
-  if (agent.selected) {
-    context.save();
-    context.strokeStyle = "rgba(204, 57, 55, 0.9)";
-    context.lineWidth = 1.3 / state.camera.zoom;
-    for (const side of [-1, 1]) {
-      const angle = agent.angle + side * state.world.viewAngle;
-      context.beginPath();
-      context.moveTo(agent.x, agent.y);
-      context.lineTo(agent.x + Math.cos(angle) * state.world.viewDistance, agent.y + Math.sin(angle) * state.world.viewDistance);
-      context.stroke();
-    }
-    context.restore();
+  // The rays describe the agent's six-channel visual field, so they remain
+  // visible even when a food item is selected for dragging.
+  context.save();
+  context.strokeStyle = "rgba(204, 57, 55, 0.9)";
+  context.lineWidth = 1.3 / state.camera.zoom;
+  for (const side of [-1, 1]) {
+    const angle = agent.angle + side * state.world.viewAngle;
+    context.beginPath();
+    context.moveTo(agent.x, agent.y);
+    context.lineTo(agent.x + Math.cos(angle) * state.world.viewDistance, agent.y + Math.sin(angle) * state.world.viewDistance);
+    context.stroke();
   }
+  context.restore();
 
   for (const food of state.world.foods) {
     const isGood = food.type === GOOD_FOOD_TYPE;

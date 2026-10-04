@@ -13,6 +13,7 @@ export type DemoCatalogEntry = {
   sourceLabel: string;
   featured?: boolean;
 };
+type DemoCatalogDraft = Omit<DemoCatalogEntry, "family"> & { familyLabel: string };
 
 const artworkClasses: Record<"microworld" | "gridworld" | "nars2048" | "terminal" | DemoId, string> = {
   microworld: "art-microworld",
@@ -31,12 +32,12 @@ const artworkClasses: Record<"microworld" | "gridworld" | "nars2048" | "terminal
   "echo-relay": "art-echo-relay",
 };
 
-const games: readonly DemoCatalogEntry[] = [
+const games: readonly DemoCatalogDraft[] = [
   {
     id: "pong",
     title: DEMO_DEFINITIONS.pong.title,
     summary: "球的位置感知 · 左右操作 · 击球反馈",
-    family: "03 / CLASSIC",
+    familyLabel: "CLASSIC",
     href: "./pong.html",
     preview: "pong",
     artwork: artworkClasses.pong,
@@ -46,7 +47,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "alien",
     title: DEMO_DEFINITIONS.alien.title,
     summary: "左右移动 · 瞄准 · 射击命中",
-    family: "04 / DISCRETE CONTROL",
+    familyLabel: "DISCRETE CONTROL",
     href: "./demo.html?game=alien",
     preview: "alien",
     artwork: artworkClasses.alien,
@@ -56,7 +57,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "bandrobot",
     title: DEMO_DEFINITIONS.bandrobot.title,
     summary: "多步搬运实验 · 自主完整交付尚未验证",
-    family: "05 / MULTI-STEP TASK",
+    familyLabel: "MULTI-STEP TASK",
     href: "./demo.html?game=bandrobot",
     preview: "bandrobot",
     artwork: artworkClasses.bandrobot,
@@ -66,7 +67,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "cartpole",
     title: DEMO_DEFINITIONS.cartpole.title,
     summary: "离散方向输入 · 角度状态 · 稳定时间",
-    family: "06 / BALANCE",
+    familyLabel: "BALANCE",
     href: "./demo.html?game=cartpole",
     preview: "cartpole",
     artwork: artworkClasses.cartpole,
@@ -76,17 +77,17 @@ const games: readonly DemoCatalogEntry[] = [
     id: "hunt",
     title: DEMO_DEFINITIONS.hunt.title,
     summary: "四方向追逐 · 差分感知 · 捕获反馈",
-    family: "07 / PURSUIT",
+    familyLabel: "PURSUIT",
     href: "./demo.html?game=hunt",
     preview: "hunt",
     artwork: artworkClasses.hunt,
     sourceLabel: "GRID / FOUR DIRECTIONS / CAPTURE",
   },
-  ...(["tictactoe", "shot", "testchamber", "fighterplane"] as const).map((id, index): DemoCatalogEntry => ({
+  ...(["tictactoe", "shot", "testchamber", "fighterplane"] as const).map((id): DemoCatalogDraft => ({
     id,
     title: EXPANSION_DEFINITIONS[id].title,
     summary: EXPANSION_DEFINITIONS[id].subtitle,
-    family: `${String(index + 8).padStart(2, "0")} / EXPANSION`,
+    familyLabel: "EXPANSION",
     href: id === "shot" ? "./shot.html" : `./demo.html?game=${id}`,
     preview: id,
     artwork: artworkClasses[id],
@@ -96,7 +97,7 @@ const games: readonly DemoCatalogEntry[] = [
     id: "echo-relay",
     title: "Echo Relay",
     summary: "回声探测 · 部分可观测迷宫 · 信标导航",
-    family: "12 / PARTIAL OBSERVABILITY",
+    familyLabel: "PARTIAL OBSERVABILITY",
     href: "./demo.html?game=echo-relay",
     preview: "echo-relay",
     artwork: artworkClasses["echo-relay"],
@@ -104,12 +105,12 @@ const games: readonly DemoCatalogEntry[] = [
   },
 ];
 
-export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
+const catalogDrafts: readonly DemoCatalogDraft[] = [
   {
     id: "microworld",
     title: "虫脑 Microworld",
     summary: "六路离散视觉 · 好坏食物 · 感知—操作闭环",
-    family: "01 / PERCEPTION & FEEDBACK",
+    familyLabel: "PERCEPTION & FEEDBACK",
     href: "./microworld.html?seed=19&knowledge=starter",
     preview: "microworld",
     artwork: artworkClasses.microworld,
@@ -117,20 +118,10 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
     featured: true,
   },
   {
-    id: "terminal",
-    title: "NARS 终端",
-    summary: "输入 Narsese · 推进周期 · 观察推理输出",
-    family: "02 / REASONER INSTRUMENT",
-    href: "./terminal.html",
-    preview: "terminal",
-    artwork: artworkClasses.terminal,
-    sourceLabel: "NARSESE / CYCLES / OUTPUT",
-  },
-  {
     id: "gridworld",
     title: "Grid Microworld 格中虫脑",
     summary: "方格 · 三角格 · 六角格 · 环面感知运动",
-    family: "03 / DISCRETE TOPOLOGIES",
+    familyLabel: "DISCRETE TOPOLOGIES",
     href: "./gridworld.html",
     preview: "gridworld",
     artwork: artworkClasses.gridworld,
@@ -140,15 +131,22 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
     id: "nars2048",
     title: "NARS × 2048",
     summary: "自动重开棋盘 · 跨局保留推理记忆",
-    family: "04 / LEARNING LAB",
+    familyLabel: "LEARNING LAB",
     href: "./nars2048.html",
     preview: "nars2048",
     artwork: artworkClasses.nars2048,
     sourceLabel: "PERSISTENT MEMORY / TILE MERGE",
   },
   ...games,
-]);
+];
 
-export const GAME_DEMOS: readonly DemoCatalogEntry[] = Object.freeze(games);
+export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze(
+  catalogDrafts.map(({ familyLabel, ...entry }, index) => ({
+    ...entry,
+    family: `${String(index + 1).padStart(2, "0")} / ${familyLabel}`,
+  })),
+);
+
+export const GAME_DEMOS: readonly DemoCatalogEntry[] = Object.freeze(DEMO_CATALOG.filter((entry) => isDemoId(entry.id)));
 
 export { isDemoId };

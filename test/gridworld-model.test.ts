@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  advanceGridWorld, allCells, collectGridSensors, createGridWorld,
+  advanceGridWorld, allCells, collectGridSensors, createGridWorld, moveGridObject,
   forwardCell, headingAngle, headingCount, type GridTopology,
 } from "../src/gridworld/model.ts";
 
@@ -40,7 +40,7 @@ for (const topology of topologies) {
     const world = createGridWorld(topology, 8, 6, 304, 3);
     assert.deepEqual(world, createGridWorld(topology, 8, 6, 304, 3));
     const destination = forwardCell(topology, world.cols, world.rows, world.agent.cell, world.agent.heading);
-    world.foods = [{ id: "good", kind: "good", cell: destination }];
+    world.foods = [{ id: "good", kind: "good", cell: destination, angle: 0 }];
     const before = collectGridSensors(world);
     assert.equal(before.length, 6);
     assert.ok(before.slice(0, 3).some((value) => value > 0));
@@ -50,5 +50,15 @@ for (const topology of topologies) {
     assert.equal(world.reward, 1);
     assert.equal(world.eaten.good, 1);
     assert.notDeepEqual(world.foods[0].cell, world.agent.cell);
+  });
+
+  test(`${topology} supports dragging the agent and food onto topology cells`, () => {
+    const world = createGridWorld(topology, 8, 6, 55, 1);
+    const target = allCells(topology, 8, 6).at(-1)!;
+    assert.equal(moveGridObject(world, "agent", target), true);
+    assert.deepEqual(world.agent.cell, target);
+    assert.equal(moveGridObject(world, "good-1", target), true);
+    assert.deepEqual(world.foods.find((food) => food.id === "good-1")?.cell, target);
+    assert.equal(moveGridObject(world, "missing", target), false);
   });
 }
