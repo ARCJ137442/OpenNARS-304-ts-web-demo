@@ -1,8 +1,8 @@
 # Demo Lab 扩展批次计划
 
-状态：验收完成；本批次由 Git 提交追踪，Pages 发布尚未执行
+状态：历史计划快照（2026-10-03）；本批次随后已实现并部署，当前事实以 Demo README 与 Core `docs/current-status.md` 为准
 基线：现有五个感知运动 demo、Microworld、首页导航、NARS Worker、27 项模型测试和浏览器 smoke 已通过。
-当前 web-demo 历史基线提交：160513e5d110135e524de56e7f6492c88a84973d；本批次改动尚未提交
+当前 web-demo 历史基线提交：160513e5d110135e524de56e7f6492c88a84973d；本文件只保留规划时的职责与验收合同
 当前 OpenNARS-304-ts 源码基线：835202318fee68d34fb8c91ed27396cfd461c5b5
 
 ## 批次目标

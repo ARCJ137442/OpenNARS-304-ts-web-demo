@@ -1,5 +1,7 @@
 # Demo Runtime Modes
 
+> 历史探查与设计记录。当前实现、提交与公网状态以 Demo README 和 Core `docs/current-status.md` 为准；本文的旧 commit、TPS 样本和下一步只用于解释推导过程。
+
 ## Scope
 
 The Demo Lab exposes three separate rates: FPS is the canvas render rate, TPS is the environment tick rate, and RPS is the NARS inference rate. Each rate is computed from completed events and is shown with the same compact HUD treatment.
