@@ -23,6 +23,30 @@ test("Shot uses a 50x20 bounded world and emits composite OpenNARS perception", 
   assert.ok(senseFor(world, activeId).length > 0);
 });
 
+test("Shot follows NARust-o differential perception and relative nine-sector labels", () => {
+  const world = createShotWorld("shot-test2", 304);
+  const player = world.players.find((item) => item.ai !== "null")!;
+  const target = world.players.find((item) => item.ai === "null")!;
+  player.x = 10; player.y = 10; player.direction = "east";
+  target.x = 15; target.y = 8;
+  assert.deepEqual(senseFor(world, player.id), ["left_ahead"]);
+  const first = buildShotNarsStep(world, player.id);
+  assert.equal(first.beliefs.length, 1);
+  const forwardAction = applyShotAction(world, player.id, "^forward");
+  assert.deepEqual(forwardAction, []);
+  stepShotWorld(world);
+  const moving = buildShotNarsStep(world, player.id);
+  assert.equal(moving.beliefs.length, 0, "movement within the same sector must not resend perception");
+  stepShotWorld(world);
+  applyShotAction(world, player.id, "^turn_right");
+  const changed = buildShotNarsStep(world, player.id);
+  assert.ok(changed.beliefs.length > 0, "a changed heading must be sensed");
+  player.velocity = [0, 0];
+  const stationary = buildShotNarsStep(world, player.id);
+  assert.equal(stationary.beliefs.length, 1, "a stationary agent receives a maintenance perception");
+  assert.equal(stationary.cycles, 1);
+});
+
 test("Shot resolves the first collinear target, records hit feedback, and respawns it", () => {
   const world = createShotWorld("shot-test", 304);
   const shooter = world.players.find((player) => player.ai !== "null")!;
@@ -80,6 +104,7 @@ test("Shot evolution ranks by rounded hit ratio and recency, then preserves clon
   assert.equal(clone.hits, best.hits);
   assert.equal(clone.misses, best.misses);
   assert.equal(clone.lastHitTick, best.lastHitTick);
+  assert.notEqual(clone.velocity, best.velocity, "a cloned player must own its velocity state");
   assert.equal(result.rankings.at(-1)?.playerId, best.id);
   assert.ok(result.notes.some((note) => note.startsWith("EVOLVE:RANK:")));
 });

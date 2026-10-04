@@ -83,6 +83,6 @@ HUD 的 RPS 统计最近约一秒墙钟内**实际完成**的周期，推理无�
 
 ## 发布到 GitHub Pages
 
-    npm run deploy:pages -- "H:\A137442\Develop\WEB\ARCJ137442.github.io"
+    npm run deploy:pages -- "C:\path\to\ARCJ137442.github.io"
 
 发布命令会先构建并检查，然后把 dist/ 完整同步到 ARCJ137442.github.io/opennars-304-ts-lab/，包括 Astro 的 _astro/ 静态资源目录。检查站点仓库差异后，在站点仓库提交并推送即可部署。

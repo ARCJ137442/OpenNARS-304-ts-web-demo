@@ -4,8 +4,8 @@
 
 📌【2026-10-03 14:47:53】人类补充：
 ```
-E:\OpenNARS-304-ts-local-archive-20260930\pages-checkout\ARCJ137442.github.io-release-20260930\JuNarsese-demo\opennars-logo-with-julia.svg
-E:\OpenNARS-304-ts-local-archive-20260930\pages-checkout\ARCJ137442.github.io-release-20260930\Narsese-structure-illustrator+\opennars-logo-modified-with-rust.svg
+`$LOCAL_ASSET_ARCHIVE/JuNarsese-demo/opennars-logo-with-julia.svg`
+`$LOCAL_ASSET_ARCHIVE/Narsese-structure-illustrator+/opennars-logo-modified-with-rust.svg`
 后续我们可以参考这俩logo，把里边的Julia/Rust图标改成TypeScript图标（青色方块+TS，就是VSCode/官网的那种svg，大小与这里的Julia图标相同）作为我们的项目的正式logo，放在项目官网以及demo网站中，作为「一图胜千言」原则贯彻的一部分，加入到我们的路线图中
 ```
 

@@ -17,6 +17,10 @@ export type ShotPlayer = {
   lastHitTick: number;
   averageHitDelta: number;
   alive: boolean;
+  /** Last perception state sent to NARS; null forces the first observation. */
+  lastSenseKey: string | null;
+  lastObservedDirection: ShotDirection | null;
+  lastObservedPosition: [number, number] | null;
 };
 export type ShotRay = { owner: string; x: number; y: number; direction: ShotDirection; ttl: number; hit: boolean };
 export type ShotRanking = {
@@ -97,7 +101,7 @@ export function createShotWorld(modeId: ShotModeId = "shot-test", seed = 3040304
   const world: ShotWorld = { width: 50, height: 20, mode, seed: seed >>> 0 || 1, tick: 0, players: [], rays: [], notes: [], feedback: [], evolutionEvents: 0, nextPlayerSerial: 1 };
   for (let index = 0; index < mode.players; index += 1) {
     const [x, y] = freePosition(world);
-    world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", velocity: [0, 0], shootingTicks: 0, pendingShot: false, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
+    world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", velocity: [0, 0], shootingTicks: 0, pendingShot: false, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true, lastSenseKey: null, lastObservedDirection: null, lastObservedPosition: null });
   }
   // Stable opening geometry makes the first perception reproducible: P1 starts
   // facing a target so every mode has a meaningful NARS decision opportunity.
@@ -144,19 +148,43 @@ export function senseFor(world: ShotWorld, playerId: string): string[] {
   const player = playerFor(world, playerId);
   if (!player) return [];
   const target = targetInDirection(world, player);
-  if (target) return ["target_ahead", `target_distance_${Math.abs(target.x - player.x) + Math.abs(target.y - player.y)}`];
+  if (target && world.mode.movement === "absolute") return ["target_ahead", `target_distance_${Math.abs(target.x - player.x) + Math.abs(target.y - player.y)}`];
   const nearest = world.players.filter((item) => item.alive && item.id !== playerId).sort((a, b) => Math.abs(a.x - player.x) + Math.abs(a.y - player.y) - (Math.abs(b.x - player.x) + Math.abs(b.y - player.y)))[0];
   if (!nearest) return ["alone"];
-  return [nearest.x < player.x ? "target_left" : nearest.x > player.x ? "target_right" : nearest.y < player.y ? "target_up" : "target_down"];
+  if (world.mode.movement === "absolute") return [nearest.x < player.x ? "target_left" : nearest.x > player.x ? "target_right" : nearest.y < player.y ? "target_up" : "target_down"];
+  const horizontal = nearest.x < player.x ? -1 : nearest.x > player.x ? 1 : 0;
+  const vertical = nearest.y < player.y ? -1 : nearest.y > player.y ? 1 : 0;
+  const [forwardX, forwardY] = delta[player.direction];
+  const rightX = -forwardY;
+  const rightY = forwardX;
+  const forward = horizontal * forwardX + vertical * forwardY;
+  const right = horizontal * rightX + vertical * rightY;
+  return [forward > 0 ? (right < 0 ? "left_ahead" : right > 0 ? "right_ahead" : "mid_ahead")
+    : forward < 0 ? (right < 0 ? "left_back" : right > 0 ? "right_back" : "mid_back")
+      : right < 0 ? "left_mid" : right > 0 ? "right_mid" : "mid_mid"];
 }
 
 export function buildShotNarsStep(world: ShotWorld, playerId: string): { beliefs: string[]; goals: string[]; feedback: string[]; cycles: number } {
   const player = playerFor(world, playerId);
-  const beliefs = senseFor(world, playerId).map((sense) => `<{SELF} --> [${sense}]>. :|:`);
+  if (!player) return { beliefs: [], goals: [], feedback: [], cycles: 5 };
+  const senses = senseFor(world, playerId);
+  const senseKey = senses.join("|");
+  const position: [number, number] = [player.x, player.y];
+  const firstObservation = player.lastObservedPosition === null;
+  const senseChanged = player.lastSenseKey !== senseKey;
+  const directionChanged = player.lastObservedDirection !== player.direction;
+  const stationary = player.lastObservedPosition !== null
+    && player.lastObservedPosition[0] === position[0]
+    && player.lastObservedPosition[1] === position[1];
+  const shouldInput = firstObservation || senseChanged || directionChanged || stationary;
+  player.lastSenseKey = senseKey;
+  player.lastObservedDirection = player.direction;
+  player.lastObservedPosition = position;
+  const beliefs = shouldInput ? senses.map((sense) => `<{SELF} --> [${sense}]>. :|:`) : [];
   const feedbackNotes = world.feedback.filter((note) => note.startsWith(`${playerId}:`));
   world.feedback = world.feedback.filter((note) => !note.startsWith(`${playerId}:`));
   const feedback = feedbackNotes.map((note) => `<{SELF} --> [${note.includes("HIT") ? "hit" : "miss"}]>. :|:`);
-  return { beliefs, goals: ["<{SELF} --> [hit]>! :|:"], feedback, cycles: 10 };
+  return { beliefs, goals: shouldInput ? ["<{SELF} --> [hit]>! :|:"] : [], feedback, cycles: shouldInput ? 1 : 5 };
 }
 
 export function applyShotAction(world: ShotWorld, playerId: string, rawAction: string | null): string[] {
@@ -188,6 +216,18 @@ function respawnPlayer(world: ShotWorld, player: ShotPlayer): void {
   player.shootingTicks = 0;
   player.pendingShot = false;
   player.alive = true;
+}
+
+function clonePlayer(player: ShotPlayer, id: string, name: string): ShotPlayer {
+  return {
+    ...player,
+    id,
+    name,
+    velocity: [...player.velocity],
+    lastSenseKey: null,
+    lastObservedDirection: null,
+    lastObservedPosition: null,
+  };
 }
 
 function resolveShot(world: ShotWorld, player: ShotPlayer): void {
@@ -247,7 +287,7 @@ export function stepShotWorld(world: ShotWorld): { notes: string[]; evolved: boo
       world.notes.push(`EVOLVE:RANK:${rankings.map((entry) => `${entry.playerId}=${entry.score}`).join(",")}`);
       for (let index = 0; index < cloneCount; index += 1) {
         const serial = world.nextPlayerSerial++;
-        world.players.push({ ...best, id: `clone-${serial}`, name: `${best.name}-${serial}` });
+        world.players.push(clonePlayer(best, `clone-${serial}`, `${best.name}-${serial}`));
       }
       world.evolutionEvents += 1;
       world.notes.push(`EVOLVE:CLONE:${best.id}:${cloneCount}`);
