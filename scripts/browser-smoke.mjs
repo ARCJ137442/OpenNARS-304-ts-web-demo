@@ -238,6 +238,10 @@ try {
   await page.locator("#shot-speed").fill("60");
   await page.waitForFunction(() => Number(document.querySelector("#shot-evolutions")?.textContent) > 0, undefined, { timeout: 30000 });
   assert.ok((await page.locator("#shot-agents .shot-agent").count()) >= 5, "Shot evolution must add a new environment-role Worker");
+  assert.ok((await page.locator("#shot-agents .shot-agent").allTextContents()).every((text) => /RPS/.test(text)), "Shot must show an RPS reading for every Worker");
+  await page.locator("#shot-ranking-status").waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelectorAll("#shot-ranking-list .shot-ranking-row").length > 0, undefined, { timeout: 30000 });
+  assert.notEqual(await page.locator("#shot-ranking-status").textContent(), "尚未排名", "Shot must expose a real evolution ranking after tick 500");
   shotFindings.push({ mode: "shot-evolve-clone", evolution: true, agentCount: await page.locator("#shot-agents .shot-agent").count() });
   assert.equal(errors.length, 0, `page errors during Shot modes: ${errors.join("; ")}`);
 
@@ -313,6 +317,10 @@ try {
   await page.locator("#experience-panel[open]").waitFor({ state: "attached" });
   await assertBeliefObservatory(page, "#experience-list");
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
+  const operationBeforeIdle = await page.locator("#current-operation").textContent();
+  await page.waitForTimeout(500);
+  const operationAfterIdle = await page.locator("#current-operation").textContent();
+  if (operationBeforeIdle && !operationBeforeIdle.includes("等待第一步")) assert.equal(operationAfterIdle, operationBeforeIdle, "Microworld must keep the last real operation readable during idle steps");
   await page.locator("#toggle-rate-hud").click();
   await page.locator("#rate-hud").waitFor({ state: "hidden" });
   await page.locator("#toggle-rate-hud").click();
