@@ -11,6 +11,8 @@ const COLORS: Record<number, [string, string, boolean?]> = {
 };
 
 export class Nars2048Renderer {
+  public animations = true;
+  public particlesEnabled = true;
   private readonly context: CanvasRenderingContext2D;
   private visuals = new Map<number, Visual>();
   private previous: Board | null = null;
@@ -56,27 +58,29 @@ export class Nars2048Renderer {
       const previous = this.previous?.[index] ?? 0;
       const current = this.visuals.get(index);
       if (!current) {
-        this.visuals.set(index, { value, x, y, targetX: x, targetY: y, scale: value === 0 ? 1 : .42, alpha: value === 0 ? .75 : 0, targetScale: value === 0 ? 1 : 1 });
+        this.visuals.set(index, { value, x, y, targetX: x, targetY: y, scale: this.animations && value > 0 ? .42 : 1, alpha: this.animations && value > 0 ? 0 : 1, targetScale: 1 });
       } else {
         current.value = value;
         current.targetX = x;
         current.targetY = y;
-        if (value > 0 && value !== previous) { current.scale = .84; current.alpha = .7; current.targetScale = 1.12; }
+        if (value > 0 && value !== previous) { current.scale = this.animations ? .84 : 1; current.alpha = this.animations ? .7 : 1; current.targetScale = this.animations ? 1.12 : 1; }
       }
     }
     this.previous = [...board];
-    this.start();
+    if (this.animations) this.start(); else this.draw();
   }
 
   public trigger(direction: Direction, merged: boolean, gained: number): void {
     this.resize();
     const glyph = direction === "up" ? "↑" : direction === "down" ? "↓" : direction === "left" ? "←" : "→";
-    for (let i = 0; i < (merged ? 8 : 4); i += 1) this.particles.push({ x: 2 + (Math.random() - .5) * 2.8, y: 2 + (Math.random() - .5) * 2.8, vx: direction === "left" ? -1.5 : direction === "right" ? 1.5 : 0, vy: direction === "up" ? -1.5 : direction === "down" ? 1.5 : 0, age: 0, ttl: .45 + Math.random() * .22, glyph });
+    if (this.animations && this.particlesEnabled) for (let i = 0; i < (merged ? 8 : 4); i += 1) this.particles.push({ x: 2 + (Math.random() - .5) * 2.8, y: 2 + (Math.random() - .5) * 2.8, vx: direction === "left" ? -1.5 : direction === "right" ? 1.5 : 0, vy: direction === "up" ? -1.5 : direction === "down" ? 1.5 : 0, age: 0, ttl: .45 + Math.random() * .22, glyph });
     if (gained > 0) this.canvas.dataset.scoreFlash = `+${gained}`;
     this.start();
   }
 
   public invalid(direction: Direction): void { this.trigger(direction, false, 0); }
+
+  public setMotion(enabled: boolean): void { this.animations = enabled; if (!enabled) { for (const visual of this.visuals.values()) { visual.x = visual.targetX; visual.y = visual.targetY; visual.scale = 1; visual.alpha = 1; visual.targetScale = 1; } this.particles = []; if (this.raf) { cancelAnimationFrame(this.raf); this.raf = 0; } this.draw(); } }
 
   public clear(): void { this.visuals.clear(); this.previous = null; this.particles = []; this.draw(); }
 
