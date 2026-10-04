@@ -125,7 +125,8 @@ try {
   });
   await page.goto(baseUrl);
   await page.locator("#lab-preview").waitFor({ state: "visible" });
-  assert.equal(await page.locator('[data-experiment="terminal"] canvas[data-preview="terminal"]').count(), 1);
+  assert.equal(await page.locator('[data-experiment="terminal"] canvas[data-preview="terminal"]').count(), 0, "the terminal is a dedicated top-level entry, not a Demo card");
+  assert.equal(await page.getByRole("link", { name: "NARS 终端", exact: true }).count(), 1);
   assert.equal(await page.locator(".launch-link").getAttribute("href"), "./microworld.html");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#lab-preview");
@@ -237,7 +238,7 @@ try {
   await page.locator('input[name="shot-mode"][value="async"]').check();
   await page.locator("#shot-speed").fill("60");
   await page.waitForFunction(() => Number(document.querySelector("#shot-evolutions")?.textContent) > 0, undefined, { timeout: 30000 });
-  assert.ok((await page.locator("#shot-agents .shot-agent").count()) >= 5, "Shot evolution must add a new environment-role Worker");
+  assert.ok((await page.locator("#shot-agents .shot-agent").count()) >= 4, "Shot evolution must add environment-role Workers while retaining the static target");
   assert.ok((await page.locator("#shot-agents .shot-agent").allTextContents()).every((text) => /RPS/.test(text)), "Shot must show an RPS reading for every Worker");
   await page.locator("#shot-ranking-status").waitFor({ state: "visible" });
   await page.waitForFunction(() => document.querySelectorAll("#shot-ranking-list .shot-ranking-row").length > 0, undefined, { timeout: 30000 });

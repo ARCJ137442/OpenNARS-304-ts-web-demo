@@ -5,58 +5,58 @@ import { SHOT_MODES, applyShotAction, buildShotNarsStep, createShotWorld, rankSh
 
 test("Shot exposes the six NARust-o source modes", () => {
   assert.deepEqual(SHOT_MODES.map((mode) => mode.id), ["shot-test", "shot-test2", "shot-2p", "shot-2p-2ai", "shot-evolve", "shot-evolve2"]);
-  assert.equal(SHOT_MODES[0].players, 1);
+  assert.equal(SHOT_MODES[0].players, 2, "single-player modes retain the original static target");
   assert.equal(SHOT_MODES[2].players, 2);
+  assert.deepEqual(SHOT_MODES[4].ai, ["null", "nar", "nar"]);
+  assert.deepEqual(SHOT_MODES[5].ai, ["null", "nar", "nar2", "nar", "nar2"]);
   assert.equal(SHOT_MODES[4].evolution, true);
 });
 
 test("Shot uses a 50x20 bounded world and emits composite OpenNARS perception", () => {
   const world = createShotWorld("shot-test", 304);
+  const activeId = world.players.find((player) => player.ai !== "null")!.id;
   assert.equal(world.width, 50);
   assert.equal(world.height, 20);
-  const input = buildShotNarsStep(world, "p1");
+  const input = buildShotNarsStep(world, activeId);
   assert.ok(input.goals.every((goal) => goal.startsWith("<{SELF} --> [") && goal.endsWith(">! :|:")));
   assert.ok(input.beliefs.every((belief) => belief.includes("<{SELF} --> [")));
-  assert.ok(senseFor(world, "p1").length > 0);
+  assert.ok(senseFor(world, activeId).length > 0);
 });
 
 test("Shot resolves the first collinear target, records hit feedback, and respawns it", () => {
   const world = createShotWorld("shot-test", 304);
-  const shooter = world.players.find((player) => player.id === "p1")!;
-  const target = world.players.find((player) => player.id === "target")!;
+  const shooter = world.players.find((player) => player.ai !== "null")!;
+  const target = world.players.find((player) => player.ai === "null")!;
   shooter.x = 5; shooter.y = 5; shooter.direction = "east";
   target.x = 7; target.y = 5;
-  const notes = applyShotAction(world, "p1", "^Shoot");
+  const notes = applyShotAction(world, shooter.id, "^Shoot");
   assert.deepEqual(notes, ["HIT"]);
   assert.equal(shooter.hits, 1);
   assert.equal(target.alive, true);
   assert.equal(world.rays.length, 1);
-  assert.ok(buildShotNarsStep(world, "p1").feedback.some((belief) => belief.includes("hit")));
+  assert.ok(buildShotNarsStep(world, shooter.id).feedback.some((belief) => belief.includes("hit")));
 });
 
 test("Shot blocks occupied movement and evolves by cloning the best player at tick 500", () => {
   const world = createShotWorld("shot-evolve", 304);
-  const first = world.players[0];
-  const second = world.players[1];
+  const [first, second] = world.players.filter((player) => player.ai !== "null");
   first.x = 5; first.y = 5; first.direction = "east";
   second.x = 6; second.y = 5;
   applyShotAction(world, first.id, "^Right");
   assert.equal(first.x, 5, "occupied cell must block movement");
   first.hits = 4;
   second.misses = 4;
-  world.players[2].hits = 2;
-  world.players[3].misses = 2;
   let evolutionNotes: string[] = [];
   while (world.tick < 500) evolutionNotes = stepShotWorld(world).notes;
-  assert.equal(world.players.length, 5);
+  assert.equal(world.players.length, 5, "static target plus two original NARS and two clones");
   assert.equal(world.evolutionEvents, 1);
-  assert.ok(evolutionNotes.some((note) => note.startsWith("EVOLVE:EVICT:")));
+  assert.ok(evolutionNotes.some((note) => note.startsWith("EVOLVE:CLONE:")));
 });
 
 test("Shot evolution ranks by rounded hit ratio and recency, then preserves clone statistics", () => {
-  const world = createShotWorld("shot-evolve", 304);
+  const world = createShotWorld("shot-evolve2", 304);
   world.tick = 100;
-  const [best, slow, worst, untouched] = world.players;
+  const [best, slow, worst, untouched] = world.players.filter((player) => player.ai !== "null");
   best.hits = 4;
   best.lastHitTick = 99;
   slow.hits = 3;
@@ -108,4 +108,19 @@ test("Shot fixed-seed 1000-tick run keeps all modes bounded and evolves twice", 
       assert.equal(world.evolutionEvents, 0, `${mode.id} must not evolve`);
     }
   }
+});
+
+test("Shot chooses the first matching player in source order, like NARust-o", () => {
+  const world = createShotWorld("shot-2p", 304);
+  const shooter = world.players[0];
+  const firstTarget = world.players[1];
+  const laterTarget = { ...world.players[1], id: "p3", name: "P3" };
+  shooter.x = 5; shooter.y = 5; shooter.direction = "east";
+  firstTarget.x = 8; firstTarget.y = 5;
+  laterTarget.x = 6; laterTarget.y = 5;
+  world.players.push(laterTarget);
+  assert.deepEqual(applyShotAction(world, shooter.id, "^shoot"), ["HIT"]);
+  assert.equal(firstTarget.alive, true, "the first player is not necessarily the nearest one");
+  assert.equal(laterTarget.alive, true, "the target is respawned after the hit");
+  assert.equal(shooter.hits, 1);
 });

@@ -51,12 +51,12 @@ export type ShotWorld = {
 };
 
 export const SHOT_MODES: readonly ShotMode[] = [
-  { id: "shot-test", title: "静态靶 / 绝对移动", subtitle: "单 NARS · 上下左右 · 静态目标", movement: "absolute", players: 1, ai: ["nar"], evolution: false, maxPlayers: 1, cycles: 10 },
-  { id: "shot-test2", title: "静态靶 / 相对移动", subtitle: "单 NARS · 转向前进 · 静态目标", movement: "relative", players: 1, ai: ["nar2"], evolution: false, maxPlayers: 1, cycles: 10 },
+  { id: "shot-test", title: "静态靶 / 绝对移动", subtitle: "单 NARS · 上下左右 · 静态目标", movement: "absolute", players: 2, ai: ["null", "nar"], evolution: false, maxPlayers: 2, cycles: 10 },
+  { id: "shot-test2", title: "静态靶 / 相对移动", subtitle: "单 NARS · 转向前进 · 静态目标", movement: "relative", players: 2, ai: ["null", "nar2"], evolution: false, maxPlayers: 2, cycles: 10 },
   { id: "shot-2p", title: "双玩家 / 同构 NARS", subtitle: "两个 NARS · 绝对移动 · 互相射击", movement: "absolute", players: 2, ai: ["nar", "nar"], evolution: false, maxPlayers: 2, cycles: 10 },
   { id: "shot-2p-2ai", title: "双玩家 / 两种接口", subtitle: "AiNar 与 AiNar2 · 相对控制", movement: "relative", players: 2, ai: ["nar", "nar2"], evolution: false, maxPlayers: 2, cycles: 10 },
-  { id: "shot-evolve", title: "进化竞技场", subtitle: "命中率排名 · 克隆优秀玩家 · 淘汰落后者", movement: "absolute", players: 4, ai: ["nar", "nar", "nar", "nar"], evolution: true, maxPlayers: 6, cycles: 10 },
-  { id: "shot-evolve2", title: "进化竞技场 / 混合接口", subtitle: "两种 NARS 接口 · 排名与重生", movement: "relative", players: 4, ai: ["nar", "nar2", "nar", "nar2"], evolution: true, maxPlayers: 6, cycles: 10 },
+  { id: "shot-evolve", title: "进化竞技场", subtitle: "静态靶 + 双 NARS · 命中率排名 · 克隆优秀玩家", movement: "absolute", players: 3, ai: ["null", "nar", "nar"], evolution: true, maxPlayers: 5, cycles: 10 },
+  { id: "shot-evolve2", title: "进化竞技场 / 混合接口", subtitle: "静态靶 + 四 NARS · 两种接口 · 排名与重生", movement: "relative", players: 5, ai: ["null", "nar", "nar2", "nar", "nar2"], evolution: true, maxPlayers: 7, cycles: 10 },
 ];
 
 const directions: ShotDirection[] = ["north", "east", "south", "west"];
@@ -96,17 +96,13 @@ export function createShotWorld(modeId: ShotModeId = "shot-test", seed = 3040304
     const [x, y] = freePosition(world);
     world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", shootingTicks: 0, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
   }
-  if (mode.players === 1) {
-    const [x, y] = freePosition(world);
-    world.players.push({ id: "target", name: "TARGET", ai: "null", x, y, direction: "west", shootingTicks: 0, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
-  }
   // Stable opening geometry makes the first perception reproducible: P1 starts
   // facing a target so every mode has a meaningful NARS decision opportunity.
-  const first = world.players[0];
+  const first = world.players.find((player) => player.ai !== "null");
   if (first) { first.x = 10; first.y = 10; first.direction = "east"; }
   const target = world.players.find((player) => player.ai === "null");
   if (target) { target.x = 15; target.y = 10; }
-  world.players.filter((player) => player.ai !== "null" && player.id !== "p1").forEach((player, index) => { player.x = 30 + index * 5; player.y = 10; player.direction = "west"; });
+  world.players.filter((player) => player.ai !== "null" && player !== first).forEach((player, index) => { player.x = 30 + index * 5; player.y = 10; player.direction = "west"; });
   return world;
 }
 
@@ -136,7 +132,9 @@ export function rankShotPlayers(world: ShotWorld): ShotRanking[] {
 function targetInDirection(world: ShotWorld, owner: ShotPlayer): ShotPlayer | undefined {
   const [vx, vy] = delta[owner.direction];
   const targets = world.players.filter((player) => player.alive && player.id !== owner.id && (vx === 0 ? player.x === owner.x : player.y === owner.y) && ((player.x - owner.x) * vx + (player.y - owner.y) * vy) > 0);
-  return targets.sort((a, b) => Math.abs(a.x - owner.x) + Math.abs(a.y - owner.y) - (Math.abs(b.x - owner.x) + Math.abs(b.y - owner.y)))[0];
+  // NARust-o scans player IDs and takes the first matching target. Preserve
+  // that observable tie/order contract instead of choosing the nearest target.
+  return targets[0];
 }
 
 export function senseFor(world: ShotWorld, playerId: string): string[] {
