@@ -24,7 +24,7 @@ import { signalFeedback } from "./ui/semantic-feedback.ts";
 import { MICROWORLD_DEFAULT_TPS, MICROWORLD_MAX_TPS, MICROWORLD_MIN_SMOOTH_TPS } from "./microworld/runtime-config.ts";
 import { MICROWORLD_STARTER_PRIORS } from "./microworld/nars-priors.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
-import { initialDemoSeed } from "./demo-seed.ts";
+import { initialDemoSeed, startsWithStarterKnowledge } from "./demo-seed.ts";
 import { mountExperienceTimeline } from "./ui/experience-timeline.ts";
 import type { BeliefSnapshot, ExperienceEvent } from "./experience/contract.ts";
 import { renderReasonerObservatory } from "./ui/reasoner-observatory.ts";
@@ -165,7 +165,7 @@ const SENSOR_LABELS = ["G1", "G2", "G3", "B1", "B2", "B3"];
 const LOG_LIMIT = 180;
 const DRAW_INTERVAL_MS = 1000 / 30;
 const INITIAL_SEED = initialDemoSeed(location.search, randomSeed);
-const INITIAL_STARTER_KNOWLEDGE = new URLSearchParams(location.search).get("knowledge") === "starter";
+const INITIAL_STARTER_KNOWLEDGE = startsWithStarterKnowledge(location.search);
 const state: {
   seed: number;
   world: WorldState;

@@ -7,3 +7,8 @@ export function initialDemoSeed(search: string, randomSeed: () => number): numbe
   }
   return randomSeed();
 }
+
+/** Starter knowledge is opt-in so a plain demo entry opens as blank exploration. */
+export function startsWithStarterKnowledge(search: string): boolean {
+  return new URLSearchParams(search).get("knowledge") === "starter";
+}
