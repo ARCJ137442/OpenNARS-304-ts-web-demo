@@ -30,6 +30,7 @@ const SENSOR_LABELS = ["G1", "G2", "G3", "B1", "B2", "B3"];
 export function renderReasonerObservatory(elements: ReasonerObservatoryElements, state: ReasonerObservatoryState): void {
   elements.operation.textContent = state.operation;
   elements.source.textContent = state.source;
+  if ("value" in elements.source) (elements.source as HTMLOutputElement).value = state.source;
   if (elements.detail) elements.detail.textContent = state.detail;
   if (elements.narTime) elements.narTime.textContent = `NAR ${state.narTime}`;
   if (elements.stepCount) {

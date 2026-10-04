@@ -49,7 +49,7 @@ function handlePointerEnd(event: PointerEvent): void { if (ui.canvas.hasPointerC
 
 function appendLog(text: string): void { const row = document.createElement("li"); row.textContent = `${String(state.world.tick).padStart(5, "0")} ${text}`; ui.log.append(row); while (ui.log.children.length > 120) ui.log.firstElementChild?.remove(); ui.log.scrollTop = ui.log.scrollHeight; }
 function renderSensors(): void { ui.sensors.replaceChildren(); state.world.sensors.forEach((value, index) => { const cell = document.createElement("span"); cell.textContent = sensorLabels[index]; cell.classList.toggle("active", value > .1); cell.style.opacity = String(.35 + value * .65); ui.sensors.append(cell); }); }
-function renderMetrics(): void { ui.topologyMark.textContent = topologyMarks[state.world.topology]; ui.tpsTarget.value = `${state.speed.toFixed(1)} TPS`; ui.tpsTarget.textContent = ui.tpsTarget.value; const operationDetail = state.operationStep === null ? `每个环境步运行 ${state.cycles} 个推理周期` : state.operationStep === state.world.tick ? `本步 · NAR 时钟 ${state.operationNarTime}` : `上次操作 · ${state.world.tick - state.operationStep} 步前 · NAR ${state.operationNarTime}`; renderReasonerObservatory({ operation: ui.operation, source: ui.source, detail: ui.operationDetail, narTime: ui.narTime, sensorGrid: ui.sensors, sensorFocus: ui.sensorFocus, rewardState: ui.rewardState, goodCount: ui.good, badCount: ui.bad, foodRatio: ui.foodRatio, ratioFill: ui.ratioFill, stepCount: ui.stepCount }, { operation: state.operation, source: state.operationSource, detail: operationDetail, narTime: state.operationNarTime, sensors: state.world.sensors, rewardType: state.world.reward > 0 ? "good" : state.world.reward < 0 ? "bad" : null, good: state.world.eaten.good + 1, bad: state.world.eaten.bad + 1, step: state.world.tick }); }
+function renderMetrics(): void { ui.topologyMark.textContent = topologyMarks[state.world.topology]; ui.tpsTarget.value = `${state.speed.toFixed(1)} TPS`; ui.tpsTarget.textContent = ui.tpsTarget.value; if (state.world.tick > 0 && state.operationStep === null) { state.operationSource = "IDLE"; state.operation = "本步未发出操作"; } const operationDetail = state.operationStep === null ? `每个环境步运行 ${state.cycles} 个推理周期` : state.operationStep === state.world.tick ? `本步 · NAR 时钟 ${state.operationNarTime}` : `上次操作 · ${state.world.tick - state.operationStep} 步前 · NAR ${state.operationNarTime}`; renderReasonerObservatory({ operation: ui.operation, source: ui.source, detail: ui.operationDetail, narTime: ui.narTime, sensorGrid: ui.sensors, sensorFocus: ui.sensorFocus, rewardState: ui.rewardState, goodCount: ui.good, badCount: ui.bad, foodRatio: ui.foodRatio, ratioFill: ui.ratioFill, stepCount: ui.stepCount }, { operation: state.operation, source: state.operationSource, detail: operationDetail, narTime: state.operationNarTime, sensors: state.world.sensors, rewardType: state.world.reward > 0 ? "good" : state.world.reward < 0 ? "bad" : null, good: state.world.eaten.good + 1, bad: state.world.eaten.bad + 1, step: state.world.tick }); }
 let restoringOperation = false;
 const operationAuthority = new MutationObserver(() => {
   if (restoringOperation) return;
@@ -71,6 +71,22 @@ const operationAuthority = new MutationObserver(() => {
 });
 operationAuthority.observe(ui.operation, { childList: true, characterData: true, subtree: true });
 operationAuthority.observe(ui.source, { childList: true, characterData: true, subtree: true });
+let observedGridSource = "WAITING";
+window.setInterval(() => {
+  const source = (ui.source.value || ui.source.textContent || "WAITING").trim().toUpperCase();
+  const operation = ui.operation.textContent?.trim() ?? "";
+  if (source === observedGridSource && source !== "IDLE") return;
+  observedGridSource = source;
+  if (source === "NARS" || source === "BABBLE") {
+    if (operation.length > 0 && operation !== "等待第一步" && operation !== "等待推理") state.operation = operation;
+    state.operationSource = source;
+    state.operationStep = state.operationStep ?? state.world.tick;
+    renderMetrics();
+  } else if (source === "IDLE") {
+    state.operationSource = "IDLE";
+    renderMetrics();
+  }
+}, 100);
 let canvasDirty = true;
 function resizeCanvas(force = false): void { const rect = ui.canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const width = Math.max(1, Math.round(rect.width * ratio)); const height = Math.max(1, Math.round(rect.height * ratio)); const resized = ui.canvas.width !== width || ui.canvas.height !== height; if (resized) { ui.canvas.width = width; ui.canvas.height = height; } if (force || resized || canvasDirty) { drawGridWorld(gridContext, state.world, gridAssets); canvasDirty = false; } }
 function setRuntime(value: "booting" | "ready" | "fault", text: string): void { ui.runtime.dataset.state = value; ui.runtime.textContent = text; }

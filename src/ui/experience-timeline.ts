@@ -71,13 +71,14 @@ export function mountExperienceTimeline(
         meta.className = "experience-meta";
         meta.textContent = `${experienceKindLabel(event.kind)} · ${experienceSourceLabel(event.source)} · NAR ${event.narTime}`;
         item.append(marker, text, meta);
-        if (event.evidence.length > 0) {
+        const evidenceText = event.evidence ?? "";
+        if (evidenceText.length > 0) {
           const evidence = document.createElement("details");
           evidence.className = "experience-evidence";
           const evidenceSummary = document.createElement("summary");
           evidenceSummary.textContent = "事件依据";
           const raw = document.createElement("code");
-          raw.textContent = event.evidence;
+          raw.textContent = evidenceText;
           evidence.append(evidenceSummary, raw);
           item.append(evidence);
         }

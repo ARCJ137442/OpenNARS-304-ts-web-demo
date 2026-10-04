@@ -39,3 +39,19 @@
   font-size: 10px;
   line-height: 1.35;
 }
+.nars-panel.experience-panel { min-width: 0; }
+.nars-panel.experience-panel > summary { display: flex; min-height: 24px; align-items: center; gap: 7px; color: var(--muted, var(--grid-muted)); cursor: pointer; font-size: 10px; list-style: none; }
+.nars-panel.experience-panel > summary::-webkit-details-marker,
+.nars-panel.experience-panel > summary::marker { display: none; content: ""; }
+.nars-panel.experience-panel > summary::after { width: 7px; height: 7px; margin-left: auto; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; content: ""; transform: rotate(45deg) translateY(-2px); }
+.nars-panel.experience-panel[open] > summary::after { transform: rotate(225deg) translateY(-2px); }
+.nars-panel.experience-panel > summary output { margin-left: auto; color: var(--cyan, var(--grid-teal)); font: 9px var(--mono, var(--grid-mono)); }
+.nars-panel .experience-meta-note { margin: 0; padding: 0 0 8px; color: var(--quiet, var(--grid-muted)); font-size: 8px; }
+.nars-panel .experience-list { display: flex; max-height: 240px; flex-direction: column; gap: 4px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+.nars-panel .experience-entry { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 5px; padding: 5px 0; border-bottom: 1px solid var(--line, var(--grid-line)); font-size: 9px; }
+.nars-panel .experience-marker { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; background: var(--cyan, var(--grid-teal)); }
+.nars-panel .experience-belief .experience-marker { background: var(--green, var(--grid-lime)); }
+.nars-panel .experience-entry .experience-text { color: var(--ink, var(--grid-ink)); overflow-wrap: anywhere; }
+.nars-panel .experience-entry .experience-meta { grid-column: 2; color: var(--quiet, var(--grid-muted)); font: 8px var(--mono, var(--grid-mono)); }
+.nars-panel .experience-raw-events { border-bottom: 1px solid var(--line, var(--grid-line)); color: var(--muted, var(--grid-muted)); font-size: 9px; list-style: none; }
+.nars-panel .experience-raw-list { display: flex; max-height: 180px; flex-direction: column; gap: 4px; overflow: auto; margin: 0; padding: 0; list-style: none; }
