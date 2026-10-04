@@ -44,7 +44,11 @@ test("Shot blocks occupied movement and evolves by cloning the best player at ti
   assert.equal(first.x, 5, "occupied cell must block movement");
   first.hits = 4;
   second.misses = 4;
-  while (world.tick < 500) stepShotWorld(world);
+  world.players[2].hits = 2;
+  world.players[3].misses = 2;
+  let evolutionNotes: string[] = [];
+  while (world.tick < 500) evolutionNotes = stepShotWorld(world).notes;
   assert.equal(world.players.length, 5);
   assert.equal(world.evolutionEvents, 1);
+  assert.ok(evolutionNotes.some((note) => note.startsWith("EVOLVE:EVICT:")));
 });
