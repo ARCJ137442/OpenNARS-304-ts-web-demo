@@ -16,6 +16,20 @@ page.on("console", (message) => {
   if (message.type() === "error") consoleErrors.push(message.text());
 });
 
+async function assertBeliefObservatory(page, listSelector) {
+  await page.waitForFunction((selector) => document.querySelectorAll(`${selector} .experience-entry`).length > 0, listSelector, { timeout: 30000 });
+  const list = page.locator(listSelector);
+  if (await list.locator(".experience-belief").count() > 0) {
+    const text = await list.innerText();
+    assert.match(text, /信念/);
+    assert.match(text, /期望/);
+    return;
+  }
+  const rawSummary = list.locator(".experience-raw-events > details > summary");
+  if (await rawSummary.count() > 0) await rawSummary.click();
+  assert.match(await list.innerText(), /NARS 内部/);
+}
+
 try {
   const slashlessBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
   const entryPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -67,8 +81,7 @@ try {
   await entryPage.locator("#experience-panel > summary").evaluate((summary) => summary.click());
   await entryPage.locator("#terminal-input").fill("<bird --> animal>.\n:cycles 2");
   await entryPage.locator(".send-button").click();
-  await entryPage.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
-  assert.match(await entryPage.locator("#experience-list").innerText(), /NARS 内部/);
+  await assertBeliefObservatory(entryPage, "#experience-list");
   await entryPage.locator("details.telemetry-details:not(.experience-panel) > summary").click();
   await entryPage.locator("#source-commit").waitFor({ state: "visible" });
   await entryPage.close();
@@ -145,8 +158,7 @@ try {
     assert.equal(gridCanvasHasPixels, true, `${topology} Grid Microworld canvas should contain the running scene`);
   }
   await page.locator("#grid-experience-panel > summary").evaluate((summary) => summary.click());
-  await page.waitForFunction(() => document.querySelectorAll("#grid-experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
-  assert.match(await page.locator("#grid-experience-list").innerText(), /NARS 内部/);
+  await assertBeliefObservatory(page, "#grid-experience-list");
   await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
     direction === "in" && message?.type === "step-complete" && (message.actionSource === "NARS" || message.actionSource === "babble")), undefined, { timeout: 30000 });
   await page.screenshot({ path: "test-results/gridworld-topologies.png", fullPage: true });
@@ -159,8 +171,7 @@ try {
   await page.locator("#reset-memory").click();
   assert.equal(await page.locator("#round-count").textContent(), "1");
   await page.locator("#n2048-experience > summary").evaluate((summary) => summary.click());
-  await page.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
-  assert.match(await page.locator("#experience-list").innerText(), /NARS 内部/);
+  await assertBeliefObservatory(page, "#experience-list");
 
   const pongFindings = [];
   const pongModes = [
@@ -300,8 +311,7 @@ try {
   await page.locator("#experience-panel > summary").scrollIntoViewIfNeeded();
   await page.locator("#experience-panel > summary").evaluate((summary) => summary.click());
   await page.locator("#experience-panel[open]").waitFor({ state: "attached" });
-  await page.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
-  assert.match(await page.locator("#experience-list").innerText(), /NARS 内部/);
+  await assertBeliefObservatory(page, "#experience-list");
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
   await page.locator("#toggle-rate-hud").click();
   await page.locator("#rate-hud").waitFor({ state: "hidden" });
