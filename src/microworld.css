@@ -111,7 +111,7 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 .world-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .world-legend i { display: inline-block; width: 9px; height: 9px; }
 .legend-sprite { width: 16px !important; height: 16px !important; object-fit: contain; image-rendering: auto; }
-.legend-agent, .legend-good, .legend-bad { background: #fff; }
+.legend-agent, .legend-good, .legend-bad { background: transparent; }
 .legend-ray { position: relative; width: 18px !important; height: 14px !important; background: transparent !important; }
 .legend-ray::before, .legend-ray::after { position: absolute; top: 6px; left: 1px; width: 17px; height: 1px; background: #e96363; content: ""; transform-origin: left center; }
 .legend-ray::before { transform: rotate(-30deg); }
