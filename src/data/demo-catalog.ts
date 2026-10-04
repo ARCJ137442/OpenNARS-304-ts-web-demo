@@ -111,7 +111,7 @@ const catalogDrafts: readonly DemoCatalogDraft[] = [
     title: "虫脑 Microworld",
     summary: "六路离散视觉 · 好坏食物 · 感知—操作闭环",
     familyLabel: "PERCEPTION & FEEDBACK",
-    href: "./microworld.html?seed=19&knowledge=starter",
+    href: "./microworld.html",
     preview: "microworld",
     artwork: artworkClasses.microworld,
     sourceLabel: "SimNAR / OpenNARS Lab 3.0.4",

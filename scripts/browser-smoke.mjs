@@ -126,7 +126,7 @@ try {
   await page.goto(baseUrl);
   await page.locator("#lab-preview").waitFor({ state: "visible" });
   assert.equal(await page.locator('[data-experiment="terminal"] canvas[data-preview="terminal"]').count(), 1);
-  assert.match(await page.locator(".launch-link").getAttribute("href"), /microworld\.html\?seed=19&knowledge=starter/);
+  assert.equal(await page.locator(".launch-link").getAttribute("href"), "./microworld.html");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#lab-preview");
     if (!(canvas instanceof HTMLCanvasElement)) return false;

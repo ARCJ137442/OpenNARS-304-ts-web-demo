@@ -6,23 +6,13 @@ import type { BeliefSnapshot, ExperienceEvent } from "./experience/contract.ts";
 import { mountIcons, setIcon } from "./ui/icons.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
 import { MICROWORLD_STARTER_PRIORS } from "./microworld/nars-priors.ts";
-import { renderReasonerObservatory } from "./ui/reasoner-observatory.ts";
+import { ensureReasonerObservatoryElements, renderReasonerObservatory } from "./ui/reasoner-observatory.ts";
 
 type WorkerEvent = { type: string; cyclesPerStep?: number; action?: number; operator?: string | null; actionSource?: string; cycles?: number; narTime?: string; elapsedMs?: number; reasoner?: { concepts: number; conceptCapacity: number; novelTasks: number; sequenceTasks: number; recentOperations: number; narTime: string }; event?: ExperienceEvent; events?: ExperienceEvent[]; beliefs?: BeliefSnapshot[]; stats?: { retained: number; dropped: number }; kind?: string; text?: string; step?: number; message?: string };
 type RuntimeMode = "sync" | "async";
 
 function element<T extends Element>(selector: string): T { const found = document.querySelector(selector); if (!found) throw new Error(`Missing Grid Microworld element: ${selector}`); return found as T; }
-function ensureGridObservatoryFields(): void {
-  const operation = document.querySelector("#grid-operation");
-  if (operation && !document.querySelector("#grid-operation-detail")) { const detail = document.createElement("small"); detail.id = "grid-operation-detail"; detail.className = "nars-panel-detail"; detail.textContent = "每个环境步运行 10 个推理周期"; operation.after(detail); }
-  const rewardCard = document.querySelector(".reward-panel");
-  if (rewardCard && !document.querySelector("#grid-reward-state")) { const output = document.createElement("output"); output.id = "grid-reward-state"; output.textContent = "尚无反馈"; rewardCard.querySelector(".nars-panel-head")?.append(output); }
-  const perceptionCard = document.querySelector(".perception-panel");
-  if (perceptionCard && !document.querySelector("#grid-sensor-focus")) { const output = document.createElement("output"); output.id = "grid-sensor-focus"; output.textContent = "暂无目标"; perceptionCard.querySelector(".nars-panel-head")?.append(output); }
-  const worldMetrics = document.querySelector(".reward-panel .grid-world-metrics");
-  if (worldMetrics && !document.querySelector("#grid-food-ratio")) { const span = document.createElement("span"); span.textContent = "好 / 坏比 "; const strong = document.createElement("strong"); strong.id = "grid-food-ratio"; strong.textContent = "1.00"; span.append(strong); worldMetrics.append(span); const track = document.createElement("div"); track.className = "ratio-track"; const fill = document.createElement("span"); fill.id = "grid-ratio-fill"; track.append(fill); worldMetrics.after(track); }
-}
-ensureGridObservatoryFields();
+ensureReasonerObservatoryElements();
 const ui = {
   canvas: element<HTMLCanvasElement>("#grid-canvas"), runtime: element<HTMLElement>("#grid-runtime"), status: element<HTMLElement>("#grid-status"), topology: element<HTMLSelectElement>("#grid-topology"), topologyMark: element<HTMLElement>("#topology-mark"), cols: element<HTMLInputElement>("#grid-cols"), rows: element<HTMLInputElement>("#grid-rows"), cycles: element<HTMLInputElement>("#grid-cycles"), babble: element<HTMLInputElement>("#grid-babble"), speed: element<HTMLInputElement>("#grid-speed"), speedValue: element<HTMLOutputElement>("#grid-speed-value"), colsValue: element<HTMLOutputElement>("#grid-cols-value"), rowsValue: element<HTMLOutputElement>("#grid-rows-value"), cyclesValue: element<HTMLOutputElement>("#grid-cycles-value"), babbleValue: element<HTMLOutputElement>("#grid-babble-value"), run: element<HTMLButtonElement>("#grid-run"), step: element<HTMLButtonElement>("#grid-step"), reset: element<HTMLButtonElement>("#grid-reset"), operation: element<HTMLElement>("#grid-operation"), source: element<HTMLOutputElement>("#grid-source"), narTime: element<HTMLElement>("#grid-nar-time"), operationDetail: element<HTMLElement>("#grid-operation-detail"), stepCount: element<HTMLOutputElement>("#grid-step-count"), rewardState: element<HTMLOutputElement>("#grid-reward-state"), foodRatio: element<HTMLElement>("#grid-food-ratio"), ratioFill: element<HTMLElement>("#grid-ratio-fill"), sensorFocus: element<HTMLOutputElement>("#grid-sensor-focus"), good: element<HTMLElement>("#grid-good"), bad: element<HTMLElement>("#grid-bad"), sensors: element<HTMLElement>("#grid-sensors"), log: element<HTMLOListElement>("#grid-log"), clearLog: element<HTMLButtonElement>("#grid-clear-log"), fps: element<HTMLOutputElement>("#fps-hud"), tps: element<HTMLOutputElement>("#tps-hud"), rps: element<HTMLOutputElement>("#rps-hud"), fpsBar: element<HTMLElement>("#fps-bar"), tpsBar: element<HTMLElement>("#tps-bar"), rpsBar: element<HTMLElement>("#rps-bar"), tpsTarget: element<HTMLOutputElement>("#tps-target"), tpsRatio: element<HTMLOutputElement>("#tps-ratio"), pageMemory: element<HTMLOutputElement>("#page-memory"), concepts: element<HTMLOutputElement>("#concept-count"), taskBags: element<HTMLOutputElement>("#task-bags"), experiencePanel: element<HTMLDetailsElement>("#grid-experience-panel"), experienceList: element<HTMLOListElement>("#grid-experience-list"), experienceStatus: element<HTMLOutputElement>("#grid-experience-status"), experienceMeta: element<HTMLElement>("#grid-experience-meta"), modeInputs: [...document.querySelectorAll<HTMLInputElement>('input[name="grid-mode"]')], manual: [...document.querySelectorAll<HTMLButtonElement>("[data-grid-action]")], };
 const telemetry = new RuntimeTelemetryView({ fps: ui.fps, tps: ui.tps, rps: ui.rps, tpsTarget: ui.tpsTarget, tpsRatio: ui.tpsRatio, fpsBar: ui.fpsBar, tpsBar: ui.tpsBar, rpsBar: ui.rpsBar, pageMemory: ui.pageMemory, concepts: ui.concepts, taskBags: ui.taskBags });
@@ -49,44 +39,7 @@ function handlePointerEnd(event: PointerEvent): void { if (ui.canvas.hasPointerC
 
 function appendLog(text: string): void { const row = document.createElement("li"); row.textContent = `${String(state.world.tick).padStart(5, "0")} ${text}`; ui.log.append(row); while (ui.log.children.length > 120) ui.log.firstElementChild?.remove(); ui.log.scrollTop = ui.log.scrollHeight; }
 function renderSensors(): void { ui.sensors.replaceChildren(); state.world.sensors.forEach((value, index) => { const cell = document.createElement("span"); cell.textContent = sensorLabels[index]; cell.classList.toggle("active", value > .1); cell.style.opacity = String(.35 + value * .65); ui.sensors.append(cell); }); }
-function renderMetrics(): void { ui.topologyMark.textContent = topologyMarks[state.world.topology]; ui.tpsTarget.value = `${state.speed.toFixed(1)} TPS`; ui.tpsTarget.textContent = ui.tpsTarget.value; if (state.world.tick > 0 && state.operationStep === null) { state.operationSource = "IDLE"; state.operation = "本步未发出操作"; } const operationDetail = state.operationStep === null ? `每个环境步运行 ${state.cycles} 个推理周期` : state.operationStep === state.world.tick ? `本步 · NAR 时钟 ${state.operationNarTime}` : `上次操作 · ${state.world.tick - state.operationStep} 步前 · NAR ${state.operationNarTime}`; renderReasonerObservatory({ operation: ui.operation, source: ui.source, detail: ui.operationDetail, narTime: ui.narTime, sensorGrid: ui.sensors, sensorFocus: ui.sensorFocus, rewardState: ui.rewardState, goodCount: ui.good, badCount: ui.bad, foodRatio: ui.foodRatio, ratioFill: ui.ratioFill, stepCount: ui.stepCount }, { operation: state.operation, source: state.operationSource, detail: operationDetail, narTime: state.operationNarTime, sensors: state.world.sensors, rewardType: state.world.reward > 0 ? "good" : state.world.reward < 0 ? "bad" : null, good: state.world.eaten.good + 1, bad: state.world.eaten.bad + 1, step: state.world.tick }); }
-let restoringOperation = false;
-const operationAuthority = new MutationObserver(() => {
-  if (restoringOperation) return;
-  const source = ui.source.textContent?.trim().toUpperCase() ?? "WAITING";
-  const operation = ui.operation.textContent?.trim() ?? "";
-  if ((source === "NARS" || source === "BABBLE") && operation.length > 0) {
-    state.operation = operation;
-    state.operationSource = source;
-    state.operationStep = state.world.tick;
-    state.operationNarTime = ui.narTime.textContent?.replace(/^NAR\s*/, "") || state.operationNarTime;
-  } else if (source === "IDLE") {
-    state.operationSource = "IDLE";
-    if (state.operationStep !== null) {
-      restoringOperation = true;
-      renderMetrics();
-      restoringOperation = false;
-    }
-  }
-});
-operationAuthority.observe(ui.operation, { childList: true, characterData: true, subtree: true });
-operationAuthority.observe(ui.source, { childList: true, characterData: true, subtree: true });
-let observedGridSource = "WAITING";
-window.setInterval(() => {
-  const source = (ui.source.value || ui.source.textContent || "WAITING").trim().toUpperCase();
-  const operation = ui.operation.textContent?.trim() ?? "";
-  if (source === observedGridSource && source !== "IDLE") return;
-  observedGridSource = source;
-  if (source === "NARS" || source === "BABBLE") {
-    if (operation.length > 0 && operation !== "等待第一步" && operation !== "等待推理") state.operation = operation;
-    state.operationSource = source;
-    state.operationStep = state.operationStep ?? state.world.tick;
-    renderMetrics();
-  } else if (source === "IDLE") {
-    state.operationSource = "IDLE";
-    renderMetrics();
-  }
-}, 100);
+function renderMetrics(): void { ui.topologyMark.textContent = topologyMarks[state.world.topology]; ui.tpsTarget.value = `${state.speed.toFixed(1)} TPS`; ui.tpsTarget.textContent = ui.tpsTarget.value; if (state.world.tick > 0 && state.operationStep === null) state.operationSource = "IDLE"; const operationDetail = state.operationStep === null ? `每个环境步运行 ${state.cycles} 个推理周期` : state.operationStep === state.world.tick ? `本步 · NAR 时钟 ${state.operationNarTime}` : `上次操作 · ${state.world.tick - state.operationStep} 步前 · NAR ${state.operationNarTime}`; renderReasonerObservatory({ operation: ui.operation, source: ui.source, detail: ui.operationDetail, narTime: ui.narTime, sensorGrid: ui.sensors, sensorFocus: ui.sensorFocus, rewardState: ui.rewardState, goodCount: ui.good, badCount: ui.bad, foodRatio: ui.foodRatio, ratioFill: ui.ratioFill, stepCount: ui.stepCount }, { operation: state.operation, source: state.operationSource, detail: operationDetail, narTime: state.operationNarTime, sensors: state.world.sensors, rewardType: state.world.reward > 0 ? "good" : state.world.reward < 0 ? "bad" : null, good: state.world.eaten.good + 1, bad: state.world.eaten.bad + 1, step: state.world.tick }); }
 let canvasDirty = true;
 function resizeCanvas(force = false): void { const rect = ui.canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const width = Math.max(1, Math.round(rect.width * ratio)); const height = Math.max(1, Math.round(rect.height * ratio)); const resized = ui.canvas.width !== width || ui.canvas.height !== height; if (resized) { ui.canvas.width = width; ui.canvas.height = height; } if (force || resized || canvasDirty) { drawGridWorld(gridContext, state.world, gridAssets); canvasDirty = false; } }
 function setRuntime(value: "booting" | "ready" | "fault", text: string): void { ui.runtime.dataset.state = value; ui.runtime.textContent = text; }
