@@ -1,4 +1,4 @@
-type PreviewName = "microworld" | "gridworld" | "terminal" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
+type PreviewName = "microworld" | "gridworld" | "nars2048" | "terminal" | "pong" | "alien" | "bandrobot" | "cartpole" | "hunt" | "echo-relay" | "tictactoe" | "shot" | "testchamber" | "fighterplane";
 type PreviewRenderer = (context: CanvasRenderingContext2D, width: number, height: number, time: number) => void;
 
 const canvases = [...document.querySelectorAll<HTMLCanvasElement>("canvas[data-preview]")];
@@ -93,6 +93,7 @@ function drawGridworld(context: CanvasRenderingContext2D, width: number, height:
   context.fillStyle = "#ff7661"; context.fillRect(width * .72, height * .3, 11, 11);
   context.fillStyle = "#ffc56c"; context.beginPath(); context.arc(width * .27, height * .7, 7, 0, Math.PI * 2); context.fill();
 }
+function drawNars2048(context: CanvasRenderingContext2D, width: number, height: number, _time: number): void { context.fillStyle = "#202820"; context.fillRect(0, 0, width, height); const size = Math.min(width, height) * .72, left = (width - size) / 2, top = (height - size) / 2, gap = size * .025, cell = (size - gap * 5) / 4; const values = [2, 4, 8, 0, 16, 32, 64, 0, 128, 256, 512, 0, 0, 1024, 2048, 0]; values.forEach((value, index) => { const x = left + (index % 4) * (cell + gap), y = top + Math.floor(index / 4) * (cell + gap); context.fillStyle = value === 0 ? "#344239" : value < 16 ? "#b7e66e" : value < 128 ? "#ffc56c" : "#73d8c7"; context.fillRect(x, y, cell, cell); if (value) { context.fillStyle = "#152018"; context.font = `bold ${Math.max(10, cell * .23)}px monospace`; context.textAlign = "center"; context.textBaseline = "middle"; context.fillText(String(value), x + cell / 2, y + cell / 2); } }); }
 
 function drawPong(context: CanvasRenderingContext2D, width: number, height: number, time: number): void {
   context.fillStyle = "#131a18";
@@ -203,6 +204,7 @@ function drawAll(now: number): void {
     const draw: Record<PreviewName, PreviewRenderer> = {
       microworld: drawMicroworld,
       gridworld: drawGridworld,
+      nars2048: drawNars2048,
       terminal: drawTerminal,
       pong: drawPong,
       alien: drawAlien,

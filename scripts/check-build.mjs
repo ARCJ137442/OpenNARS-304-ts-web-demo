@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const distRoot = resolve(projectRoot, "dist");
 const requiredFiles = [
-  "index.html", "terminal.html", "demo.html", "demo-worker.js", "microworld.html", "microworld.css", "microworld.js",
+  "index.html", "terminal.html", "demo.html", "gridworld.html", "nars2048.html", "demo-worker.js", "microworld.html", "microworld.css", "microworld.js",
   "microworld-worker.js", "build-meta.json", "README.md",
-  "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "assets/opennars-ts-logo.svg", "assets/agent.png", "assets/food.png", "assets/fire.png",
+  "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", "COPYING-JEV-2048-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "assets/opennars-ts-logo.svg", "assets/agent.png", "assets/food.png", "assets/fire.png",
   "assets/ball.png", "assets/bar.png",
 ];
 
@@ -17,7 +17,7 @@ for (const file of requiredFiles) {
 }
 
 const index = readFileSync(resolve(distRoot, "index.html"), "utf8");
-for (const text of ["DEMO LAB", "NARS 终端", "Grid Microworld 格中虫脑", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "13 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\"", "gridworld.html"]) {
+for (const text of ["DEMO LAB", "NARS 终端", "Grid Microworld 格中虫脑", "NARS × 2048", "NARS Pong", "BandRobot", "CartPole", "Hunt 追捕", "14 DEMOS", "TicTacToe", "Grid2D TestChamber", "FighterPlane", "Echo Relay", "data-preview=\"terminal\"", "data-preview=\"echo-relay\"", "data-preview=\"microworld\"", "gridworld.html", "nars2048.html"]) {
   if (!index.includes(text)) throw new Error(`index.html is missing ${text}`);
 }
 if (!index.includes("/opennars-304-ts-lab/_astro/")) throw new Error("index.html is missing the Pages base path for Astro assets");

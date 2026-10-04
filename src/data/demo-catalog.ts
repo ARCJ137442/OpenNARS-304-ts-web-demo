@@ -3,20 +3,21 @@ import { EXPANSION_DEFINITIONS } from "../games/expansion-models.ts";
 import { isDemoId } from "../games/shared.ts";
 
 export type DemoCatalogEntry = {
-  id: "microworld" | "gridworld" | "terminal" | DemoId;
+  id: "microworld" | "gridworld" | "nars2048" | "terminal" | DemoId;
   title: string;
   summary: string;
   family: string;
   href: string;
-  preview: "microworld" | "gridworld" | "terminal" | DemoId;
+  preview: "microworld" | "gridworld" | "nars2048" | "terminal" | DemoId;
   artwork: string;
   sourceLabel: string;
   featured?: boolean;
 };
 
-const artworkClasses: Record<"microworld" | "gridworld" | "terminal" | DemoId, string> = {
+const artworkClasses: Record<"microworld" | "gridworld" | "nars2048" | "terminal" | DemoId, string> = {
   microworld: "art-microworld",
   gridworld: "art-gridworld",
+  nars2048: "art-nars2048",
   terminal: "art-terminal",
   pong: "art-pong",
   alien: "art-alien",
@@ -134,6 +135,16 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = Object.freeze([
     preview: "gridworld",
     artwork: artworkClasses.gridworld,
     sourceLabel: "GRID / SIX SENSORS / TORUS",
+  },
+  {
+    id: "nars2048",
+    title: "NARS × 2048",
+    summary: "自动重开棋盘 · 跨局保留推理记忆",
+    family: "04 / LEARNING LAB",
+    href: "./nars2048.html",
+    preview: "nars2048",
+    artwork: artworkClasses.nars2048,
+    sourceLabel: "PERSISTENT MEMORY / TILE MERGE",
   },
   ...games,
 ]);

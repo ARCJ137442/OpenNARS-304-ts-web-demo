@@ -151,6 +151,17 @@ try {
     direction === "in" && message?.type === "step-complete" && (message.actionSource === "NARS" || message.actionSource === "babble")), undefined, { timeout: 30000 });
   await page.screenshot({ path: "test-results/gridworld-topologies.png", fullPage: true });
 
+  await page.goto(new URL("nars2048.html", baseUrl).href);
+  await page.waitForFunction(() => document.querySelector("#n2048-runtime")?.textContent?.includes("NARS 在线"), undefined, { timeout: 30000 });
+  assert.equal(await page.locator("#board .tile").count(), 16);
+  await page.locator("#reset-board").click();
+  assert.equal(await page.locator("#round-count").textContent(), "2");
+  await page.locator("#reset-memory").click();
+  assert.equal(await page.locator("#round-count").textContent(), "1");
+  await page.locator("#n2048-experience > summary").evaluate((summary) => summary.click());
+  await page.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
+  assert.match(await page.locator("#experience-list").innerText(), /NARS 内部/);
+
   const operationFindings = [];
   for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"]) {
     await page.goto(new URL(`demo.html?game=${game}`, baseUrl).href);
@@ -279,7 +290,7 @@ try {
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
   assert.equal(errors.length, 0, `browser errors: ${errors.join("; ")}`);
-  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, operationFindings, microworld: true,
+  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, nars2048: true, operationFindings, microworld: true,
     microworldStarterOperation, microworldClassicPriorCount,
     indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {

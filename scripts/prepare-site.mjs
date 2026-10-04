@@ -15,7 +15,7 @@ for (const staleFile of ["terminal.html", "styles.css", "app.js", "input-behavio
 for (const file of ["microworld.html", "microworld.css", "nars-controls.css"]) {
   copyFileSync(resolve(sourceRoot, file), resolve(publicRoot, file));
 }
-for (const file of ["COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt"]) {
+for (const file of ["COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", "COPYING-JEV-2048-MIT.txt"]) {
   copyFileSync(resolve(projectRoot, file), resolve(publicRoot, file));
 }
 cpSync(resolve(sourceRoot, "microworld", "assets"), resolve(publicRoot, "assets"), { recursive: true, force: true });
