@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { SHOT_MODES, applyShotAction, buildShotNarsStep, createShotWorld, senseFor, stepShotWorld } from "../src/shot-lab-model.ts";
+import { SHOT_MODES, applyShotAction, buildShotNarsStep, createShotWorld, rankShotPlayers, senseFor, stepShotWorld } from "../src/shot-lab-model.ts";
 
 test("Shot exposes the six NARust-o source modes", () => {
   assert.deepEqual(SHOT_MODES.map((mode) => mode.id), ["shot-test", "shot-test2", "shot-2p", "shot-2p-2ai", "shot-evolve", "shot-evolve2"]);
@@ -51,4 +51,32 @@ test("Shot blocks occupied movement and evolves by cloning the best player at ti
   assert.equal(world.players.length, 5);
   assert.equal(world.evolutionEvents, 1);
   assert.ok(evolutionNotes.some((note) => note.startsWith("EVOLVE:EVICT:")));
+});
+
+test("Shot evolution ranks by rounded hit ratio and recency, then preserves clone statistics", () => {
+  const world = createShotWorld("shot-evolve", 304);
+  world.tick = 100;
+  const [best, slow, worst, untouched] = world.players;
+  best.hits = 4;
+  best.lastHitTick = 99;
+  slow.hits = 3;
+  slow.misses = 1;
+  slow.lastHitTick = 99;
+  worst.misses = 4;
+  untouched.hits = 1;
+  untouched.lastHitTick = 0;
+
+  const ranking = rankShotPlayers(world);
+  assert.deepEqual(ranking.map((entry) => entry.playerId), [worst.id, untouched.id, slow.id, best.id]);
+  assert.equal(ranking[2].score, 3750);
+
+  world.tick = 499;
+  const result = stepShotWorld(world);
+  const clone = world.players.find((player) => player.id.startsWith("clone-"));
+  assert.ok(clone);
+  assert.equal(clone.hits, best.hits);
+  assert.equal(clone.misses, best.misses);
+  assert.equal(clone.lastHitTick, best.lastHitTick);
+  assert.equal(result.rankings.at(-1)?.playerId, best.id);
+  assert.ok(result.notes.some((note) => note.startsWith("EVOLVE:RANK:")));
 });

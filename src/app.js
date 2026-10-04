@@ -191,6 +191,7 @@ function startWorker(reason = "initial boot") {
       for (const event of data.events ?? []) experienceTimeline.add(event);
       const stats = data.stats;
       if (stats) elements.experienceMeta.textContent = `窗口 ${stats.retained + stats.dropped} · 保留 ${stats.retained} · 丢弃 ${stats.dropped} · 仅收集真实事件`;
+      experienceTimeline.setBeliefs(data.beliefs ?? []);
       return;
     }
     if (data.type === "output") {

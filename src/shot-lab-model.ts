@@ -17,6 +17,15 @@ export type ShotPlayer = {
   alive: boolean;
 };
 export type ShotRay = { owner: string; x: number; y: number; direction: ShotDirection; ttl: number; hit: boolean };
+export type ShotRanking = {
+  playerId: string;
+  playerName: string;
+  score: number;
+  hitRatio: number;
+  sinceLastHit: number;
+  hits: number;
+  misses: number;
+};
 export type ShotMode = {
   id: ShotModeId;
   title: string;
@@ -38,6 +47,7 @@ export type ShotWorld = {
   rays: ShotRay[];
   notes: string[];
   evolutionEvents: number;
+  nextPlayerSerial: number;
 };
 
 export const SHOT_MODES: readonly ShotMode[] = [
@@ -81,7 +91,7 @@ export function modeById(id: ShotModeId): ShotMode { return SHOT_MODES.find((mod
 
 export function createShotWorld(modeId: ShotModeId = "shot-test", seed = 3040304): ShotWorld {
   const mode = modeById(modeId);
-  const world: ShotWorld = { width: 50, height: 20, mode, seed: seed >>> 0 || 1, tick: 0, players: [], rays: [], notes: [], evolutionEvents: 0 };
+  const world: ShotWorld = { width: 50, height: 20, mode, seed: seed >>> 0 || 1, tick: 0, players: [], rays: [], notes: [], evolutionEvents: 0, nextPlayerSerial: 1 };
   for (let index = 0; index < mode.players; index += 1) {
     const [x, y] = freePosition(world);
     world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", shootingTicks: 0, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
@@ -101,6 +111,27 @@ export function createShotWorld(modeId: ShotModeId = "shot-test", seed = 3040304
 }
 
 export function playerFor(world: ShotWorld, id: string): ShotPlayer | undefined { return world.players.find((player) => player.id === id); }
+
+/** Match NARust-o's integer fitness contract: hit ratio / (time since hit + 1), rounded to 4 decimals. */
+export function rankShotPlayers(world: ShotWorld): ShotRanking[] {
+  return world.players
+    .filter((player) => player.ai !== "null" && player.hits + player.misses > 0)
+    .map((player) => {
+      const shots = player.hits + player.misses;
+      const hitRatio = player.hits / shots;
+      const sinceLastHit = world.tick - player.lastHitTick;
+      return {
+        playerId: player.id,
+        playerName: player.name,
+        score: Math.round((hitRatio / (sinceLastHit + 1)) * 10_000),
+        hitRatio,
+        sinceLastHit,
+        hits: player.hits,
+        misses: player.misses,
+      };
+    })
+    .sort((left, right) => left.score - right.score);
+}
 
 function targetInDirection(world: ShotWorld, owner: ShotPlayer): ShotPlayer | undefined {
   const [vx, vy] = delta[owner.direction];
@@ -143,40 +174,45 @@ export function applyShotAction(world: ShotWorld, playerId: string, rawAction: s
     if (action === "turn_right") player.direction = turn(player.direction, 1);
     if (action === "forward") { const [vx, vy] = delta[player.direction]; const x = Math.max(0, Math.min(world.width - 1, player.x + vx)); const y = Math.max(0, Math.min(world.height - 1, player.y + vy)); if (!occupied(world, x, y, player.id)) { player.x = x; player.y = y; } }
   }
-  if (action === "shoot") { player.shootingTicks = 3; const target = targetInDirection(world, player); if (!target) { player.misses += 1; world.notes.push(`${player.id}:MISS`); return ["MISS"]; } target.alive = false; player.hits += 1; const dt = Math.max(1, world.tick - player.lastHitTick); player.averageHitDelta += (dt - player.averageHitDelta) / player.hits; player.lastHitTick = world.tick; world.rays.push({ owner: player.id, x: player.x, y: player.y, direction: player.direction, ttl: 3, hit: true }); world.notes.push(`${player.id}:HIT:${target.id}`); const [x, y] = freePosition(world, target.id); target.x = x; target.y = y; target.alive = true; return ["HIT"]; }
+  if (action === "shoot") { player.shootingTicks = 3; const target = targetInDirection(world, player); if (!target) { player.misses += 1; world.notes.push(`${player.id}:MISS`); return ["MISS"]; } target.alive = false; player.hits += 1; const dt = world.tick - player.lastHitTick; player.averageHitDelta += (dt - player.averageHitDelta) / player.hits; player.lastHitTick = world.tick; world.rays.push({ owner: player.id, x: player.x, y: player.y, direction: player.direction, ttl: 3, hit: true }); world.notes.push(`${player.id}:HIT:${target.id}`); respawnPlayer(world, target); return ["HIT"]; }
   return [];
 }
 
-export function stepShotWorld(world: ShotWorld): { notes: string[]; evolved: boolean } {
+function respawnPlayer(world: ShotWorld, player: ShotPlayer): void {
+  player.x = Math.floor(nextRandom(world) * world.width);
+  player.y = Math.floor(nextRandom(world) * world.height);
+  player.direction = directions[Math.floor(nextRandom(world) * directions.length)];
+  player.shootingTicks = 0;
+  player.alive = true;
+}
+
+export function stepShotWorld(world: ShotWorld): { notes: string[]; evolved: boolean; rankings: ShotRanking[] } {
   world.tick += 1;
   for (const player of world.players) if (player.shootingTicks > 0) player.shootingTicks -= 1;
   for (const ray of world.rays) ray.ttl -= 1;
   world.rays = world.rays.filter((ray) => ray.ttl > 0);
   let evolved = false;
+  let rankings: ShotRanking[] = [];
   if (world.mode.evolution && world.tick % 500 === 0) {
-    const ranked = world.players
-      .filter((player) => player.ai !== "null" && player.hits + player.misses > 0)
-      .map((player) => ({ player, score: (player.hits / (player.hits + player.misses)) / (player.lastHitTick === 0 ? world.tick + 1 : world.tick - player.lastHitTick + 1) }))
-      .sort((a, b) => b.score - a.score);
-    if (ranked.length > 0) {
-      const best = ranked[0].player;
-      const cloneCount = world.players.length >= world.mode.maxPlayers ? 1 : 2;
+    rankings = rankShotPlayers(world);
+    if (rankings.length > 0) {
+      const best = playerFor(world, rankings.at(-1)!.playerId)!;
+      const cloneCount = world.players.length === world.mode.maxPlayers ? 1 : world.players.length < world.mode.maxPlayers ? 2 : 0;
+      world.notes.push(`EVOLVE:RANK:${rankings.map((entry) => `${entry.playerId}=${entry.score}`).join(",")}`);
       for (let index = 0; index < cloneCount; index += 1) {
-        const [x, y] = freePosition(world);
-        world.players.push({ ...best, id: `clone-${world.evolutionEvents + index + 1}`, name: `CLONE ${world.evolutionEvents + index + 1}`, x, y, hits: 0, misses: 0, averageHitDelta: 0, lastHitTick: world.tick, shootingTicks: 0 });
+        const serial = world.nextPlayerSerial++;
+        world.players.push({ ...best, id: `clone-${serial}`, name: `${best.name}-${serial}` });
       }
       world.evolutionEvents += 1;
       world.notes.push(`EVOLVE:CLONE:${best.id}:${cloneCount}`);
-      if (ranked.length > world.mode.maxPlayers / 2) {
-        const worst = ranked.at(-1)?.player;
-        if (worst) {
-          world.players = world.players.filter((player) => player.id !== worst.id);
-          world.notes.push(`EVOLVE:EVICT:${worst.id}`);
-        }
+      if (rankings.length > world.mode.maxPlayers / 2) {
+        const worst = rankings[0];
+        world.players = world.players.filter((player) => player.id !== worst.playerId);
+        world.notes.push(`EVOLVE:EVICT:${worst.playerId}`);
       }
-      for (const player of world.players) { const [x, y] = freePosition(world, player.id); player.x = x; player.y = y; player.alive = true; }
+      for (const player of world.players) respawnPlayer(world, player);
       evolved = true;
     }
   }
-  return { notes: world.notes.splice(0), evolved };
+  return { notes: world.notes.splice(0), evolved, rankings };
 }

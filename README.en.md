@@ -1,5 +1,7 @@
 # OpenNARS 3.0.4 TypeScript Demo Lab
 
+<img src="public/assets/opennars-ts-logo.svg" width="260" alt="OpenNARS TypeScript logo" />
+
 [简体中文](README.md)
 
 This repository contains the standalone browser demo for <https://arcj137442.github.io/opennars-304-ts-lab/>. The GitHub Pages repository stores only generated files under `opennars-304-ts-lab/`.

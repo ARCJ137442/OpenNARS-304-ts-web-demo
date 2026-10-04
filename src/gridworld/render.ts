@@ -1,6 +1,11 @@
 import { allCells, cellCenter, headingAngle, type GridCell, type GridTopology, type GridWorld } from "./model.ts";
 
 type Point = { x: number; y: number };
+export type GridRenderAssets = {
+  agent?: HTMLImageElement;
+  food?: HTMLImageElement;
+  fire?: HTMLImageElement;
+};
 
 function polygon(topology: GridTopology, cell: GridCell): Point[] {
   if (topology === "square") {
@@ -34,7 +39,7 @@ function fit(world: GridWorld, width: number, height: number): (point: Point) =>
   return (point) => ({ x: left + (point.x - minX) * scale, y: top + (point.y - minY) * scale });
 }
 
-export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorld): void {
+export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorld, assets: GridRenderAssets = {}): void {
   const { width, height } = context.canvas;
   context.fillStyle = "#101713";
   context.fillRect(0, 0, width, height);
@@ -62,6 +67,11 @@ export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorl
   for (const food of world.foods) {
     const point = toScreen(cellCenter(world.topology, food.cell));
     const radius = unit * (food.kind === "good" ? .68 : .75);
+    const sprite = food.kind === "good" ? assets.food : assets.fire;
+    if (sprite?.complete && sprite.naturalWidth > 0) {
+      context.drawImage(sprite, point.x - radius, point.y - radius, radius * 2, radius * 2);
+      continue;
+    }
     context.fillStyle = food.kind === "good" ? "#b7e66e" : "#ff7661";
     context.beginPath();
     if (food.kind === "good") {
@@ -83,6 +93,11 @@ export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorl
   context.save();
   context.translate(center.x, center.y);
   context.rotate(angle);
+  if (assets.agent?.complete && assets.agent.naturalWidth > 0) {
+    const size = unit * 2.4;
+    context.drawImage(assets.agent, -size / 2, -size / 2, size, size);
+    context.restore();
+  } else {
   context.fillStyle = "#b7e66e";
   context.beginPath(); context.ellipse(-unit * .15, 0, unit * .72, unit * .5, 0, 0, Math.PI * 2); context.fill();
   context.fillStyle = "#73d8c7";
@@ -101,6 +116,7 @@ export function drawGridWorld(context: CanvasRenderingContext2D, world: GridWorl
   context.strokeStyle = "#73d8c7";
   context.beginPath(); context.moveTo(unit * .7, 0); context.lineTo(unit * 1.55, 0); context.stroke();
   context.restore();
+  }
 
   const good = Math.max(...world.sensors.slice(0, 3));
   const bad = Math.max(...world.sensors.slice(3, 6));

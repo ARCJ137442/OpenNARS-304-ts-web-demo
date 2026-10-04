@@ -16,7 +16,7 @@ import type { ExperienceEvent } from "./experience/contract.ts";
 type WorkerMessage =
   | { type: "init"; game: string; seed: number; actions: string[]; priorRules?: string[] }
   | { type: "step"; game: string; step: number; beliefs?: string[]; goals?: string[]; feedback?: string[]; cycles?: number; babble?: number }
-  | { type: "experience-snapshot" };
+  | { type: "experience-snapshot"; open?: boolean };
 
 const ACTIONS = ["^Left", "^Right", "^Idle", "^Forward", "^Shoot", "^Pick", "^Drop", "^Up", "^Down", "^left", "^right", "^up", "^down", "^shoot", "^pick", "^drop", "^fire", "^activate", "^cell0", "^cell1", "^cell2", "^cell3", "^cell4", "^cell5", "^cell6", "^cell7", "^cell8", "^move", "^turn_left", "^turn_right", "^ping", "^stop"] as const;
 let nar: Nar | null = null;
@@ -128,7 +128,7 @@ self.addEventListener("message", ({ data }: MessageEvent<WorkerMessage>) => {
   try {
     if (data?.type === "init") initialize(data.game, data.seed, data.actions, data.priorRules ?? []);
     else if (data?.type === "step") runStep(data);
-    else if (data?.type === "experience-snapshot") post("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats() });
+    else if (data?.type === "experience-snapshot") post("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats(), beliefs: data.open && nar ? experienceRecorder.topBeliefs(nar) : [] });
   } catch (error) {
     post("fault", { game: data && "game" in data ? data.game : "unknown", message: error instanceof Error ? error.message : String(error) });
   }

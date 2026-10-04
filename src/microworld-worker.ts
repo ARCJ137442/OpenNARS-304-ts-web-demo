@@ -29,7 +29,7 @@ type StepMessage = {
   priorRules?: readonly string[];
 };
 type ResetMessage = { type: "reset"; seed: number; priorRules?: readonly string[] };
-type SnapshotMessage = { type: "experience-snapshot" };
+type SnapshotMessage = { type: "experience-snapshot"; open?: boolean };
 
 const DEFAULT_STEP_CYCLES = 10;
 const DEFAULT_BABBLE_PROBABILITY = 0.1;
@@ -202,7 +202,7 @@ self.addEventListener("message", ({ data }: MessageEvent<StepMessage | ResetMess
     } else if (data?.type === "step") {
       runStep(data);
     } else if (data?.type === "experience-snapshot") {
-      post("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats() });
+      post("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats(), beliefs: data.open && nar ? experienceRecorder.topBeliefs(nar) : [] });
     }
   } catch (error) {
     post("fault", {

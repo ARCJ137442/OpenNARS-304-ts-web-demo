@@ -16,7 +16,7 @@
   <body>
     <header class="lab-header">
       <a class="lab-brand" href="./" aria-label="返回演示目录">
-        <span class="brand-mark" aria-hidden="true">N</span>
+        <img class="brand-logo" src="./assets/opennars-ts-logo.svg" alt="OpenNARS TypeScript" />
         <span><small>OPENNARS 3.0.4 / FIELD STUDY</small><strong>MICROWORLD</strong></span>
       </a>
       <div class="runtime-pill"><span id="runtime-light"></span><span id="runtime-state">启动推理器</span></div>
@@ -44,10 +44,10 @@
             <div id="rate-hud" class="canvas-hud"><span id="world-status">运行中</span><span id="step-latency">NARS 0 ms / 10 cycles</span><output id="fps-hud">FPS --</output><output id="tps-hud">TPS --</output><output id="rps-hud">RPS --</output><i id="fps-bar" aria-hidden="true"></i><i id="tps-bar" aria-hidden="true"></i><i id="rps-bar" aria-hidden="true"></i></div>
           </div>
           <div class="world-legend" aria-label="场景图例">
-            <span><i class="legend-agent"></i>虫脑智能体</span>
-            <span><i class="legend-good"></i>好食物 / 满足</span>
-            <span><i class="legend-bad"></i>坏食物 / 健康受损</span>
-            <span><i class="legend-ray"></i>视觉范围</span>
+            <span><img class="legend-sprite legend-agent" src="./assets/agent.png" alt="" />虫脑智能体</span>
+            <span><img class="legend-sprite legend-good" src="./assets/food.png" alt="" />好食物 / 满足</span>
+            <span><img class="legend-sprite legend-bad" src="./assets/fire.png" alt="" />坏食物 / 健康受损</span>
+            <span><i class="legend-ray"></i>六路视觉范围</span>
             <span class="gesture-help" title="拖动选择 · 右键平移 · 滚轮缩放">操作提示</span>
           </div>
           <div class="transport" role="group" aria-label="微世界控制">

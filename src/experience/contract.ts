@@ -28,6 +28,16 @@ export type ExperienceEvent = {
   step?: number;
 };
 
+/** A bounded, on-demand view of the beliefs currently retained by the concept bag. */
+export type BeliefSnapshot = {
+  text: string;
+  expectation: number;
+  frequency: number;
+  confidence: number;
+  budget: number;
+  narTime: string;
+};
+
 export const EXPERIENCE_LIMIT = 96;
 export const EXPERIENCE_PER_TIME_LIMIT = 8;
 

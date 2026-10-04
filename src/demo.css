@@ -443,6 +443,9 @@ a {
 .experience-disappointment .experience-marker { background: var(--coral); }
 .experience-entry .experience-text { color: var(--ink); overflow-wrap: anywhere; }
 .experience-entry .experience-meta { grid-column: 2; color: var(--quiet); font: 8px var(--mono); }
+.experience-raw-events { border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+.experience-raw-events > details > summary { padding: 5px 0; cursor: pointer; }
+.experience-raw-list { display: flex; max-height: 180px; flex-direction: column; gap: 4px; overflow: auto; margin: 0; padding: 0; list-style: none; }
 .experience-evidence { grid-column: 2; color: var(--muted); font-size: 8px; }
 .experience-evidence code { display: block; margin-top: 3px; color: var(--teal); white-space: pre-wrap; overflow-wrap: anywhere; }
 .demo-footer {

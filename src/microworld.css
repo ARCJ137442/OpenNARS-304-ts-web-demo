@@ -45,7 +45,7 @@ button { color: inherit; }
 }
 
 .lab-brand { display: flex; align-items: center; gap: 13px; color: inherit; text-decoration: none; }
-.brand-mark { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--green-deep); color: var(--green); font-family: var(--mono); font-size: 21px; }
+.brand-logo { display: block; width: 40px; height: 40px; background: #fff; object-fit: contain; }
 .lab-brand small, .lab-brand strong { display: block; }
 .lab-brand small { color: var(--muted); font: 10px var(--mono); }
 .lab-brand strong { margin-top: 3px; font-size: 14px; font-weight: 800; letter-spacing: 1.2px; }
@@ -110,10 +110,12 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 .world-legend { display: flex; min-height: 42px; padding: 7px 13px; align-items: center; flex-wrap: wrap; gap: 9px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
 .world-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .world-legend i { display: inline-block; width: 9px; height: 9px; }
-.legend-agent { border-radius: 50%; background: #78c544; }
-.legend-good { border-radius: 50%; background: #c0ef4d; }
-.legend-bad { background: #ff684e; transform: rotate(45deg) scale(.8); }
-.legend-ray { height: 2px !important; background: #e96363; }
+.legend-sprite { width: 16px !important; height: 16px !important; object-fit: contain; image-rendering: auto; }
+.legend-agent, .legend-good, .legend-bad { background: #fff; }
+.legend-ray { position: relative; width: 18px !important; height: 14px !important; background: transparent !important; }
+.legend-ray::before, .legend-ray::after { position: absolute; top: 6px; left: 1px; width: 17px; height: 1px; background: #e96363; content: ""; transform-origin: left center; }
+.legend-ray::before { transform: rotate(-30deg); }
+.legend-ray::after { transform: rotate(30deg); }
 .world-legend .gesture-help { margin-left: auto; color: var(--quiet); font-family: var(--mono); }
 
 .transport { display: flex; min-height: 58px; padding: 9px 11px; align-items: center; flex-wrap: wrap; gap: 7px; border-top: 1px solid var(--line); }
@@ -222,7 +224,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 @media (max-width: 520px) {
   .lab-header, .lab-main, .lab-footer { width: calc(100% - 20px); }
   .lab-header { min-height: 64px; }
-  .brand-mark { width: 34px; height: 34px; }
+  .brand-logo { width: 34px; height: 34px; }
   .lab-brand small { font-size: 8px; }
   .lab-brand strong { font-size: 12px; }
   .runtime-pill { font-size: 9px; }
@@ -325,6 +327,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .experience-disappointment .experience-marker { background: var(--red); }
 .experience-entry .experience-text { color: var(--ink); overflow-wrap: anywhere; }
 .experience-entry .experience-meta { grid-column: 2; color: var(--quiet); font: 8px var(--mono); }
+.experience-raw-events { border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; list-style: none; }
+.experience-raw-events > details > summary { padding: 5px 0; cursor: pointer; }
+.experience-raw-list { display: flex; max-height: 180px; flex-direction: column; gap: 4px; overflow: auto; margin: 0; padding: 0; list-style: none; }
 .experience-evidence { grid-column: 2; color: var(--muted); font-size: 8px; }
 .experience-evidence code { display: block; margin-top: 3px; color: var(--cyan); white-space: pre-wrap; overflow-wrap: anywhere; }
 .diagnostic-grid {

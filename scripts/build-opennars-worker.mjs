@@ -213,7 +213,7 @@ const workerSource = `
       return;
     }
     if (data?.type === "experience-snapshot") {
-      send("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats() });
+      send("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats(), beliefs: data.open ? experienceRecorder.topBeliefs(nar) : [] });
       return;
     }
     if (data?.type !== "command" || nar === null) return;

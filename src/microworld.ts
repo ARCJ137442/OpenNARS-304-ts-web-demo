@@ -26,7 +26,7 @@ import { MICROWORLD_STARTER_PRIORS } from "./microworld/nars-priors.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
 import { initialDemoSeed } from "./demo-seed.ts";
 import { mountExperienceTimeline } from "./ui/experience-timeline.ts";
-import type { ExperienceEvent } from "./experience/contract.ts";
+import type { BeliefSnapshot, ExperienceEvent } from "./experience/contract.ts";
 
 type MicroworldWorkerEvent = {
   type: string;
@@ -46,6 +46,7 @@ type MicroworldWorkerEvent = {
   reasoner?: ReasonerSnapshot;
   event?: ExperienceEvent;
   events?: ExperienceEvent[];
+  beliefs?: BeliefSnapshot[];
   stats?: { retained: number; dropped: number };
 };
 type Scale = { x: number; y: number; bounds: DOMRect };
@@ -351,6 +352,7 @@ function newWorker(seed: number): void {
       for (const event of data.events ?? []) experienceTimeline.add(event);
       const stats = data.stats;
       if (stats) elements.experienceMeta.textContent = `窗口 ${stats.retained + stats.dropped} · 保留 ${stats.retained} · 丢弃 ${stats.dropped} · 仅收集真实事件`;
+      experienceTimeline.setBeliefs(data.beliefs ?? []);
       return;
     }
     if (data.type === "log") {

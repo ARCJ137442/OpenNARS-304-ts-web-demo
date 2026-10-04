@@ -1,5 +1,7 @@
 # OpenNARS 3.0.4 TypeScript Demo Lab
 
+<img src="public/assets/opennars-ts-logo.svg" width="260" alt="OpenNARS TypeScript logo" />
+
 [English](README.en.md)
 
 这是 https://arcj137442.github.io/opennars-304-ts-lab/ 的独立源码项目。GitHub Pages 仓库中的 opennars-304-ts-lab/ 只保存本项目生成的部署产物。

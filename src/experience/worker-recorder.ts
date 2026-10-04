@@ -7,6 +7,7 @@ import {
   type ExperienceKind,
   type ExperienceSource,
 } from "./contract.ts";
+import { readTopBeliefs } from "../diagnostics/reasoner-snapshot.ts";
 
 type ExperiencePost = (event: ExperienceEvent) => void;
 
@@ -40,8 +41,8 @@ function classKey(value: unknown): unknown {
 
 /**
  * Bridges raw NARS events into the shared observatory contract. The recorder
- * never walks concepts or bags; it only formats the payload of an event that
- * the reasoner has already emitted.
+ * records emitted events cheaply; the optional Top-N belief read is performed
+ * only when the user opens the observatory.
  */
 export class ExperienceRecorder {
   private readonly buffer = new BoundedExperienceBuffer();
@@ -80,6 +81,10 @@ export class ExperienceRecorder {
   public snapshot(): readonly ExperienceEvent[] { return this.buffer.snapshot(); }
 
   public stats(): { retained: number; dropped: number } { return this.buffer.stats(); }
+
+  public topBeliefs(reasoner: Nar, limit = 8) {
+    return readTopBeliefs(reasoner as unknown as Parameters<typeof readTopBeliefs>[0], limit);
+  }
 
   public reset(): void { this.buffer.clear(); }
 
