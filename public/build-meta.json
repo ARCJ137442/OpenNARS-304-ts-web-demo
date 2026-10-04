@@ -2,8 +2,8 @@
   "application": "OpenNARS 3.0.4 TypeScript Demo Lab",
   "packageVersion": "1.0.5",
   "coreVersion": "v3.0.4",
-  "sourceCommit": "f2b500532c33c233ab3bb95a89db39420840cf0b",
-  "sourceCommitShort": "f2b50053",
-  "builtAt": "2026-10-04T10:11:18.674Z",
+  "sourceCommit": "4ed71659a4bace490dc7f6f514ad3f936ab91618",
+  "sourceCommitShort": "4ed71659",
+  "builtAt": "2026-10-04T11:15:51.188Z",
   "buildTimeZone": "Asia/Shanghai"
 }

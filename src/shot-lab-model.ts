@@ -153,9 +153,30 @@ export function stepShotWorld(world: ShotWorld): { notes: string[]; evolved: boo
   for (const ray of world.rays) ray.ttl -= 1;
   world.rays = world.rays.filter((ray) => ray.ttl > 0);
   let evolved = false;
-  if (world.mode.evolution && world.tick % 500 === 0 && world.players.length < world.mode.maxPlayers) {
-    const best = [...world.players].filter((player) => player.ai !== "null").sort((a, b) => (b.hits / Math.max(1, b.hits + b.misses)) - (a.hits / Math.max(1, a.hits + a.misses)))[0];
-    if (best) { const [x, y] = freePosition(world); world.players.push({ ...best, id: `clone-${world.evolutionEvents + 1}`, name: `CLONE ${world.evolutionEvents + 1}`, x, y, hits: 0, misses: 0, averageHitDelta: 0, lastHitTick: world.tick, shootingTicks: 0 }); world.evolutionEvents += 1; world.notes.push(`EVOLVE:CLONE:${best.id}`); evolved = true; }
+  if (world.mode.evolution && world.tick % 500 === 0) {
+    const ranked = world.players
+      .filter((player) => player.ai !== "null" && player.hits + player.misses > 0)
+      .map((player) => ({ player, score: (player.hits / (player.hits + player.misses)) / (player.lastHitTick === 0 ? world.tick + 1 : world.tick - player.lastHitTick + 1) }))
+      .sort((a, b) => b.score - a.score);
+    if (ranked.length > 0) {
+      const best = ranked[0].player;
+      const cloneCount = world.players.length >= world.mode.maxPlayers ? 1 : 2;
+      for (let index = 0; index < cloneCount; index += 1) {
+        const [x, y] = freePosition(world);
+        world.players.push({ ...best, id: `clone-${world.evolutionEvents + index + 1}`, name: `CLONE ${world.evolutionEvents + index + 1}`, x, y, hits: 0, misses: 0, averageHitDelta: 0, lastHitTick: world.tick, shootingTicks: 0 });
+      }
+      world.evolutionEvents += 1;
+      world.notes.push(`EVOLVE:CLONE:${best.id}:${cloneCount}`);
+      if (ranked.length > world.mode.maxPlayers / 2) {
+        const worst = ranked.at(-1)?.player;
+        if (worst) {
+          world.players = world.players.filter((player) => player.id !== worst.id);
+          world.notes.push(`EVOLVE:EVICT:${worst.id}`);
+        }
+      }
+      for (const player of world.players) { const [x, y] = freePosition(world, player.id); player.x = x; player.y = y; player.alive = true; }
+      evolved = true;
+    }
   }
   return { notes: world.notes.splice(0), evolved };
 }
