@@ -9,6 +9,8 @@ E:\OpenNARS-304-ts-local-archive-20260930\pages-checkout\ARCJ137442.github.io-re
 
 本文件只跟踪用户新需求与真实实施状态，随每个批次更新。压缩上下文后先读 Core `docs/active-goal-20261002.md`、本文件和相应 spec/probe，并把记忆中更新的事实落盘。**目标值、已实现、已测通过分开写。** 不删除历史未跟踪证据，不因 Demo UI 改动重复跑核心 M1′；各测试保持串行。
 
+Core spec 050 的 Logo 已通过最小差异实现：以用户 Julia SVG 为底稿，保留天平主体，仅用右托盘同范围圆角青色 `TS` 方块替换 Julia 三圆。Core `ed71f77` 是唯一源；Demo 构建复制同一文件。Core release test、Demo check、Chrome smoke 均通过；Demo 侧改动待本次提交推送，Pages 未更新。
+
 | 需求 | 状态 | 具体出口 |
 | --- | --- | --- |
 | 停止重复低收益核心性能试探 | 已执行并推送 Core `9aef817` | 三条失败候选反证、源码撤销，Microworld 20 TPS 仍未达，不称收敛 |
@@ -25,6 +27,7 @@ E:\OpenNARS-304-ts-local-archive-20260930\pages-checkout\ARCJ137442.github.io-re
 | NARust-o Shot 完整移植 | Core spec 049 / 源码已调查，尚未实现 | 当前单玩家移动靶版只是简化实验；须覆盖源目录六入口、瞬时射线、玩家重生、绝对/相对感知、多 Worker、进化克隆/淘汰及统计；OpenNARS Narsese/FX 本土化，见 `20261003-shot-full-port.md` |
 | 所有 Demo 目标 TPS 至少 20 | 已提交默认/最小20，Chrome 功能门通过，持续实际速率未验证 | 普通 Demo 滑块目标20–60，Microworld 原已目标20；新目标值不代表硬件能持续达到。记录实际/目标比、RPS、概念增长与有效操作；保持早先“低收益后停止”的事实 |
 | 发布 v1.0.5、Pages、公开评估 | 中期暂缓，尚未发布 | 当前只收尾性能与 044/经典 Microworld/HUD 已完成部分；045–049 功能范围交下一位 Agent，之后在最终版本上重新验收、部署和发行 |
+| OpenNARS TypeScript 正式 Logo | Core spec 050 本地验收完成；Demo 变更待提交推送 | Core `ed71f77` 是唯一 SVG 源；Demo 复制同一字节，Core 包测试、Demo check、Chrome smoke 通过；Pages 待最终发行 |
 
 ## 已知工具/测试分类
 

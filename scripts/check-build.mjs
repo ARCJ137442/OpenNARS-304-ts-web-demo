@@ -8,7 +8,7 @@ const distRoot = resolve(projectRoot, "dist");
 const requiredFiles = [
   "index.html", "terminal.html", "demo.html", "demo-worker.js", "microworld.html", "microworld.css", "microworld.js",
   "microworld-worker.js", "build-meta.json", "README.md",
-  "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "assets/agent.png", "assets/food.png", "assets/fire.png",
+  "COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt", ".nojekyll", "favicon.svg", "nars-controls.css", "assets/opennars-ts-logo.svg", "assets/agent.png", "assets/food.png", "assets/fire.png",
   "assets/ball.png", "assets/bar.png",
 ];
 
@@ -22,6 +22,7 @@ for (const text of ["DEMO LAB", "NARS 终端", "NARS Pong", "BandRobot", "CartPo
 }
 if (!index.includes("/opennars-304-ts-lab/_astro/")) throw new Error("index.html is missing the Pages base path for Astro assets");
 if (!index.includes("favicon.svg")) throw new Error("index.html is missing its favicon");
+if (!index.includes("assets/opennars-ts-logo.svg")) throw new Error("index.html is missing the TypeScript logo");
 if (!index.includes('<base href="/opennars-304-ts-lab/">')) throw new Error("index.html is missing its canonical asset base");
 const terminal = readFileSync(resolve(distRoot, "terminal.html"), "utf8");
 for (const text of ["terminal-form", "terminal-output", "cycle-clock", "runtime-state", "/opennars-304-ts-lab/_astro/"]) {
@@ -64,6 +65,13 @@ const coreRoot = resolve(process.env.OPENNARS_TS_ROOT ?? resolve(projectRoot, ".
 const currentCoreCommit = execFileSync("git", ["-C", coreRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 if (metadata.sourceCommit !== currentCoreCommit) {
   throw new Error(`Worker bundle is stale: built from ${metadata.sourceCommit}, current core is ${currentCoreCommit}`);
+}
+const packagedLogo = readFileSync(resolve(distRoot, "assets", "opennars-ts-logo.svg"));
+const sourceLogo = readFileSync(resolve(coreRoot, "brand", "opennars-ts-logo.svg"));
+if (!packagedLogo.equals(sourceLogo)) throw new Error("Demo logo differs from the canonical Core brand asset");
+const logoText = packagedLogo.toString("utf8");
+for (const text of ['viewBox="0 0 720.79 608.59"', 'id="typescript"', ">TS</text>"]) {
+  if (!logoText.includes(text)) throw new Error(`TypeScript logo is missing ${text}`);
 }
 
 console.log(JSON.stringify({ ok: true, files: requiredFiles.length, astroAssets: astroAssets.length, ...metadata }, null, 2));

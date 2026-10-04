@@ -61,6 +61,13 @@ button {
   color: var(--lime);
   font: 20px var(--mono);
 }
+.wordmark-logo {
+  display: block;
+  width: 39px;
+  height: 39px;
+  background: #fff;
+  object-fit: contain;
+}
 .lab-wordmark small,
 .lab-wordmark strong {
   display: block;

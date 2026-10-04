@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="8" fill="#111713"/>
-  <path d="M18 47V17h6l16 19V17h6v30h-6L24 28v19z" fill="#b7e66e"/>
-  <circle cx="51" cy="13" r="4" fill="#71d9c8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">OpenNARS TypeScript</title>
+  <rect width="64" height="64" rx="8" fill="#101a1b"/>
+  <rect x="12" y="10" width="40" height="40" rx="6" fill="#62ffe3"/>
+  <text x="32" y="38" fill="#071013" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">TS</text>
 </svg>

@@ -21,7 +21,7 @@ try {
   const entryPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const spriteResponses = new Map();
   entryPage.on("response", (response) => {
-    if (response.url().includes("/assets/") && response.url().endsWith(".png")) {
+    if (response.url().includes("/assets/") && (response.url().endsWith(".png") || response.url().endsWith("opennars-ts-logo.svg"))) {
       spriteResponses.set(new URL(response.url()).pathname.split("/").at(-1), response.status());
     }
   });
@@ -38,9 +38,13 @@ try {
     }
     return false;
   }, undefined, { timeout: 10000 });
-  for (const name of ["agent.png", "food.png", "fire.png", "ball.png", "bar.png"]) {
+  for (const name of ["agent.png", "food.png", "fire.png", "ball.png", "bar.png", "opennars-ts-logo.svg"]) {
     assert.equal(spriteResponses.get(name), 200, `the slashless Lab URL must load ${name}`);
   }
+  const logoGeometry = await entryPage.locator(".wordmark-logo").evaluate((image) => ({ complete: image.complete, width: image.naturalWidth, height: image.naturalHeight }));
+  assert.equal(logoGeometry.complete, true, "the TS wordmark SVG must load");
+  assert.ok(logoGeometry.width > 0 && logoGeometry.height > 0, "the TS wordmark SVG must have intrinsic dimensions");
+  assert.ok(Math.abs(logoGeometry.width / logoGeometry.height - 720.79 / 608.59) < 0.02, "the TS wordmark must preserve the reference aspect ratio");
   await entryPage.getByRole("link", { name: "NARS 终端", exact: true }).click();
   assert.match(entryPage.url(), /\/opennars-304-ts-lab\/terminal\.html$/);
   await entryPage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE"), undefined, { timeout: 30000 });

@@ -6,6 +6,7 @@ import * as esbuild from "esbuild";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = resolve(projectRoot, "src");
 const publicRoot = resolve(projectRoot, "public");
+const coreRoot = resolve(process.env.OPENNARS_TS_ROOT ?? resolve(projectRoot, "..", "OpenNARS-304-ts"));
 
 mkdirSync(publicRoot, { recursive: true });
 for (const staleFile of ["terminal.html", "styles.css", "app.js", "input-behavior.js"]) {
@@ -18,6 +19,7 @@ for (const file of ["COPYING-GPL-3.0.txt", "COPYING-ONA-MIT.txt"]) {
   copyFileSync(resolve(projectRoot, file), resolve(publicRoot, file));
 }
 cpSync(resolve(sourceRoot, "microworld", "assets"), resolve(publicRoot, "assets"), { recursive: true, force: true });
+copyFileSync(resolve(coreRoot, "brand", "opennars-ts-logo.svg"), resolve(publicRoot, "assets", "opennars-ts-logo.svg"));
 
 await esbuild.build({
   entryPoints: [resolve(sourceRoot, "microworld.ts")],
