@@ -319,9 +319,11 @@ try {
   await assertBeliefObservatory(page, "#experience-list");
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
   const operationBeforeIdle = await page.locator("#current-operation").textContent();
+  const realOperationsBeforeIdle = await page.evaluate(() => (window.__demoWorkerEvents ?? []).filter(({ direction, message }) => direction === "in" && message?.type === "step-complete" && message.actionSource !== "idle" && message.actionSource !== "babble").length);
   await page.waitForTimeout(500);
   const operationAfterIdle = await page.locator("#current-operation").textContent();
-  if (operationBeforeIdle && !operationBeforeIdle.includes("等待第一步")) assert.equal(operationAfterIdle, operationBeforeIdle, "Microworld must keep the last real operation readable during idle steps");
+  const realOperationsAfterIdle = await page.evaluate(() => (window.__demoWorkerEvents ?? []).filter(({ direction, message }) => direction === "in" && message?.type === "step-complete" && message.actionSource !== "idle" && message.actionSource !== "babble").length);
+  if (operationBeforeIdle && !operationBeforeIdle.includes("等待第一步") && realOperationsAfterIdle === realOperationsBeforeIdle) assert.equal(operationAfterIdle, operationBeforeIdle, "Microworld must keep the last real operation readable during idle steps");
   await page.locator("#toggle-rate-hud").click();
   await page.locator("#rate-hud").waitFor({ state: "hidden" });
   await page.locator("#toggle-rate-hud").click();

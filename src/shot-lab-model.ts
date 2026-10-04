@@ -9,7 +9,9 @@ export type ShotPlayer = {
   x: number;
   y: number;
   direction: ShotDirection;
+  velocity: [number, number];
   shootingTicks: number;
+  pendingShot: boolean;
   hits: number;
   misses: number;
   lastHitTick: number;
@@ -46,6 +48,7 @@ export type ShotWorld = {
   players: ShotPlayer[];
   rays: ShotRay[];
   notes: string[];
+  feedback: string[];
   evolutionEvents: number;
   nextPlayerSerial: number;
 };
@@ -91,10 +94,10 @@ export function modeById(id: ShotModeId): ShotMode { return SHOT_MODES.find((mod
 
 export function createShotWorld(modeId: ShotModeId = "shot-test", seed = 3040304): ShotWorld {
   const mode = modeById(modeId);
-  const world: ShotWorld = { width: 50, height: 20, mode, seed: seed >>> 0 || 1, tick: 0, players: [], rays: [], notes: [], evolutionEvents: 0, nextPlayerSerial: 1 };
+  const world: ShotWorld = { width: 50, height: 20, mode, seed: seed >>> 0 || 1, tick: 0, players: [], rays: [], notes: [], feedback: [], evolutionEvents: 0, nextPlayerSerial: 1 };
   for (let index = 0; index < mode.players; index += 1) {
     const [x, y] = freePosition(world);
-    world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", shootingTicks: 0, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
+    world.players.push({ id: `p${index + 1}`, name: `P${index + 1}`, ai: mode.ai[index] ?? "nar", x, y, direction: index % 2 === 0 ? "east" : "west", velocity: [0, 0], shootingTicks: 0, pendingShot: false, hits: 0, misses: 0, lastHitTick: 0, averageHitDelta: 0, alive: true });
   }
   // Stable opening geometry makes the first perception reproducible: P1 starts
   // facing a target so every mode has a meaningful NARS decision opportunity.
@@ -150,7 +153,9 @@ export function senseFor(world: ShotWorld, playerId: string): string[] {
 export function buildShotNarsStep(world: ShotWorld, playerId: string): { beliefs: string[]; goals: string[]; feedback: string[]; cycles: number } {
   const player = playerFor(world, playerId);
   const beliefs = senseFor(world, playerId).map((sense) => `<{SELF} --> [${sense}]>. :|:`);
-  const feedback = world.notes.splice(0).filter((note) => note.startsWith(`${playerId}:`)).map((note) => `<{SELF} --> [${note.includes("HIT") ? "hit" : "miss"}]>. :|:`);
+  const feedbackNotes = world.feedback.filter((note) => note.startsWith(`${playerId}:`));
+  world.feedback = world.feedback.filter((note) => !note.startsWith(`${playerId}:`));
+  const feedback = feedbackNotes.map((note) => `<{SELF} --> [${note.includes("HIT") ? "hit" : "miss"}]>. :|:`);
   return { beliefs, goals: ["<{SELF} --> [hit]>! :|:"], feedback, cycles: 10 };
 }
 
@@ -161,18 +166,17 @@ export function applyShotAction(world: ShotWorld, playerId: string, rawAction: s
   if (world.mode.movement === "absolute") {
     const absolute: Partial<Record<ShotAction, ShotDirection>> = { up: "north", right: "east", down: "south", left: "west" };
     if (absolute[action]) player.direction = absolute[action]!;
-    if (absolute[action]) {
-      const [vx, vy] = delta[player.direction];
-      const x = Math.max(0, Math.min(world.width - 1, player.x + vx));
-      const y = Math.max(0, Math.min(world.height - 1, player.y + vy));
-      if (!occupied(world, x, y, player.id)) { player.x = x; player.y = y; }
-    }
+    if (absolute[action]) player.velocity = [...delta[player.direction]];
   } else {
-    if (action === "turn_left") player.direction = turn(player.direction, -1);
-    if (action === "turn_right") player.direction = turn(player.direction, 1);
-    if (action === "forward") { const [vx, vy] = delta[player.direction]; const x = Math.max(0, Math.min(world.width - 1, player.x + vx)); const y = Math.max(0, Math.min(world.height - 1, player.y + vy)); if (!occupied(world, x, y, player.id)) { player.x = x; player.y = y; } }
+    if (action === "turn_left") { player.direction = turn(player.direction, -1); player.velocity = [0, 0]; }
+    if (action === "turn_right") { player.direction = turn(player.direction, 1); player.velocity = [0, 0]; }
+    if (action === "forward") player.velocity = [...delta[player.direction]];
   }
-  if (action === "shoot") { player.shootingTicks = 3; const target = targetInDirection(world, player); if (!target) { player.misses += 1; world.notes.push(`${player.id}:MISS`); return ["MISS"]; } target.alive = false; player.hits += 1; const dt = world.tick - player.lastHitTick; player.averageHitDelta += (dt - player.averageHitDelta) / player.hits; player.lastHitTick = world.tick; world.rays.push({ owner: player.id, x: player.x, y: player.y, direction: player.direction, ttl: 3, hit: true }); world.notes.push(`${player.id}:HIT:${target.id}`); respawnPlayer(world, target); return ["HIT"]; }
+  if (action === "shoot") {
+    player.shootingTicks = 3;
+    player.pendingShot = true;
+    world.rays.push({ owner: player.id, x: player.x, y: player.y, direction: player.direction, ttl: 3, hit: false });
+  }
   return [];
 }
 
@@ -180,13 +184,57 @@ function respawnPlayer(world: ShotWorld, player: ShotPlayer): void {
   player.x = Math.floor(nextRandom(world) * world.width);
   player.y = Math.floor(nextRandom(world) * world.height);
   player.direction = directions[Math.floor(nextRandom(world) * directions.length)];
+  player.velocity = [0, 0];
   player.shootingTicks = 0;
+  player.pendingShot = false;
   player.alive = true;
+}
+
+function resolveShot(world: ShotWorld, player: ShotPlayer): void {
+  const target = targetInDirection(world, player);
+  let ray: ShotRay | undefined;
+  for (let index = world.rays.length - 1; index >= 0; index -= 1) {
+    if (world.rays[index].owner === player.id) { ray = world.rays[index]; break; }
+  }
+  player.pendingShot = false;
+  if (!target) {
+    player.misses += 1;
+    world.notes.push(`${player.id}:MISS`);
+    world.feedback.push(`${player.id}:MISS`);
+    return;
+  }
+  target.alive = false;
+  player.hits += 1;
+  const dt = world.tick - player.lastHitTick;
+  player.averageHitDelta += (dt - player.averageHitDelta) / player.hits;
+  player.lastHitTick = world.tick;
+  if (ray) ray.hit = true;
+  world.notes.push(`${player.id}:HIT:${target.id}`);
+  world.feedback.push(`${player.id}:HIT`);
+  respawnPlayer(world, target);
+}
+
+function movePlayers(world: ShotWorld): void {
+  for (const player of world.players) {
+    if (!player.alive) continue;
+    const [vx, vy] = player.velocity;
+    const nextX = Math.max(0, Math.min(world.width - 1, player.x + vx));
+    const nextY = Math.max(0, Math.min(world.height - 1, player.y + vy));
+    if (occupied(world, nextX, nextY, player.id)) continue;
+    if (nextX !== player.x + vx) player.velocity[0] = 0;
+    if (nextY !== player.y + vy) player.velocity[1] = 0;
+    player.x = nextX;
+    player.y = nextY;
+  }
 }
 
 export function stepShotWorld(world: ShotWorld): { notes: string[]; evolved: boolean; rankings: ShotRanking[] } {
   world.tick += 1;
-  for (const player of world.players) if (player.shootingTicks > 0) player.shootingTicks -= 1;
+  for (const player of world.players) {
+    if (player.shootingTicks > 0) player.shootingTicks -= 1;
+    if (player.shootingTicks === 2 && player.pendingShot) resolveShot(world, player);
+  }
+  movePlayers(world);
   for (const ray of world.rays) ray.ttl -= 1;
   world.rays = world.rays.filter((ray) => ray.ttl > 0);
   let evolved = false;

@@ -30,7 +30,10 @@ test("Shot resolves the first collinear target, records hit feedback, and respaw
   shooter.x = 5; shooter.y = 5; shooter.direction = "east";
   target.x = 7; target.y = 5;
   const notes = applyShotAction(world, shooter.id, "^Shoot");
-  assert.deepEqual(notes, ["HIT"]);
+  assert.deepEqual(notes, []);
+  assert.equal(shooter.hits, 0, "shooting resolves on the following world tick");
+  const resolved = stepShotWorld(world).notes;
+  assert.ok(resolved.includes(`${shooter.id}:HIT:${target.id}`));
   assert.equal(shooter.hits, 1);
   assert.equal(target.alive, true);
   assert.equal(world.rays.length, 1);
@@ -119,8 +122,21 @@ test("Shot chooses the first matching player in source order, like NARust-o", ()
   firstTarget.x = 8; firstTarget.y = 5;
   laterTarget.x = 6; laterTarget.y = 5;
   world.players.push(laterTarget);
-  assert.deepEqual(applyShotAction(world, shooter.id, "^shoot"), ["HIT"]);
+  assert.deepEqual(applyShotAction(world, shooter.id, "^shoot"), []);
+  stepShotWorld(world);
   assert.equal(firstTarget.alive, true, "the first player is not necessarily the nearest one");
   assert.equal(laterTarget.alive, true, "the target is respawned after the hit");
   assert.equal(shooter.hits, 1);
+});
+
+test("Shot movement applies on the following world tick, after the operation sets velocity", () => {
+  const world = createShotWorld("shot-test", 304);
+  const shooter = world.players.find((player) => player.ai !== "null")!;
+  shooter.x = 10;
+  shooter.y = 10;
+  shooter.direction = "east";
+  assert.deepEqual(applyShotAction(world, shooter.id, "^right"), []);
+  assert.equal(shooter.x, 10);
+  stepShotWorld(world);
+  assert.equal(shooter.x, 11);
 });
