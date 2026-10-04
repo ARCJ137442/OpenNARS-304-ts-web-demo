@@ -24,6 +24,7 @@ import {
   StepForward,
   Sparkles,
   Trash2,
+  Trophy,
   createIcons,
 } from "lucide";
 
@@ -53,6 +54,7 @@ const ICONS = {
   StepForward,
   Sparkles,
   Trash2,
+  Trophy,
 };
 const DYNAMIC_ICONS = { pause: Pause, play: Play };
 
