@@ -24,6 +24,7 @@ type Particle = {
 
 const BOARD_SIZE = 4;
 const GUTTER_RATIO = 0.0905;
+const TILE_INSET_RATIO = 0.06;
 const PARTICLE_TTL = 0.62;
 const PARTICLE_SIZE = { min: 0.32, max: 0.56 };
 
@@ -40,6 +41,7 @@ export type BoardGeometry = {
   cell: number;
   pad: number;
   gap: number;
+  tileInset: number;
   dpr: number;
 };
 
@@ -56,8 +58,17 @@ export function calculateBoardGeometry(width: number, height: number, devicePixe
     cell,
     pad: gutter,
     gap: gutter,
+    tileInset: Math.max(2, cell * TILE_INSET_RATIO),
     dpr: Math.min(Math.max(devicePixelRatio, 1), 2.5),
   };
+}
+
+/** Keep animated tiles inside their slot, including during future overshoot animations. */
+export function tileSizeFor(geometry: BoardGeometry, scale = 1): number {
+  return Math.min(
+    geometry.cell - geometry.tileInset * 2,
+    geometry.cell * Math.max(0, scale),
+  );
 }
 
 /** Fractional coordinates move through the cell interior without scaling offsets by the gap. */
@@ -281,7 +292,7 @@ export class Nars2048Renderer {
       const point = gridPoint(geometry, visual.x, visual.y);
       const centerX = point.x + geometry.cell / 2;
       const centerY = point.y + geometry.cell / 2;
-      const size = geometry.cell * visual.scale;
+      const size = tileSizeFor(geometry, visual.scale);
       context.save();
       context.globalAlpha = Math.min(1, visual.alpha);
       if (color[2]) {
@@ -295,7 +306,7 @@ export class Nars2048Renderer {
 
       const digits = String(visual.value).length;
       const fontRatio = digits <= 2 ? 0.42 : digits === 3 ? 0.32 : 0.24;
-      const fontSize = Math.max(8, geometry.cell * fontRatio * visual.scale);
+      const fontSize = Math.max(8, size * fontRatio);
       context.save();
       context.globalAlpha = Math.min(1, visual.alpha);
       context.fillStyle = color[1];

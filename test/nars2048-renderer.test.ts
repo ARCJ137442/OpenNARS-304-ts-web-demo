@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateBoardGeometry, gridPoint } from "../src/nars2048-renderer.ts";
+import { calculateBoardGeometry, gridPoint, tileSizeFor } from "../src/nars2048-renderer.ts";
 
 test("2048 board geometry fits the smaller available dimension", () => {
   const geometry = calculateBoardGeometry(500, 300, 2);
@@ -10,6 +10,14 @@ test("2048 board geometry fits the smaller available dimension", () => {
   assert.ok(geometry.height <= 300);
   assert.equal(geometry.dpr, 2);
   assert.equal(geometry.pad, geometry.gap);
+});
+
+test("2048 tiles keep a visible inset from their slots", () => {
+  const geometry = calculateBoardGeometry(600, 600);
+  assert.ok(geometry);
+  assert.ok(geometry.tileInset > 0);
+  assert.equal(tileSizeFor(geometry, 1), geometry.cell - geometry.tileInset * 2);
+  assert.ok(tileSizeFor(geometry, 1.2) < geometry.cell);
 });
 
 test("2048 particle coordinates preserve cell-space offsets and align to grid centers", () => {
