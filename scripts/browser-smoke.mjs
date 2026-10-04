@@ -222,6 +222,12 @@ try {
     assert.equal(canvasHasPixels, true, `${mode} Shot canvas should contain the running scene`);
     shotFindings.push({ mode, agentCount, nonBabbleOperation: true });
   }
+  await page.locator("#shot-mode").selectOption("shot-evolve");
+  await page.locator('input[name="shot-mode"][value="async"]').check();
+  await page.locator("#shot-speed").fill("60");
+  await page.waitForFunction(() => Number(document.querySelector("#shot-evolutions")?.textContent) > 0, undefined, { timeout: 30000 });
+  assert.ok((await page.locator("#shot-agents .shot-agent").count()) >= 5, "Shot evolution must add a new environment-role Worker");
+  shotFindings.push({ mode: "shot-evolve-clone", evolution: true, agentCount: await page.locator("#shot-agents .shot-agent").count() });
   assert.equal(errors.length, 0, `page errors during Shot modes: ${errors.join("; ")}`);
 
   const operationFindings = [];
