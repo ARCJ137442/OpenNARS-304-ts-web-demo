@@ -75,7 +75,7 @@
         <aside class="instrument-rail" aria-label="NARS 状态监视">
           <section class="instrument decision-panel">
             <header><span class="eyebrow">NARS EXECUTION</span><span id="decision-source" class="source-tag">WAITING</span></header>
-            <output id="current-operation" class="current-operation">等待第一步</output>
+            <output id="current-operation" class="current-operation" aria-live="polite" aria-atomic="true">等待第一步</output>
             <p id="operation-detail" class="operation-detail">每个环境步运行 10 个推理周期</p>
           </section>
 

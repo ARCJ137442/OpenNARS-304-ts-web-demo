@@ -157,8 +157,8 @@ h1 { margin: 7px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; }
 .decision-panel[data-feedback="exploratory"] { border-color: var(--amber); }
 .reward-panel[data-feedback="reward"] { border-color: var(--green); }
 .reward-panel[data-feedback="cost"] { border-color: var(--red); }
-.current-operation { display: block; min-height: 31px; margin-top: 7px; color: var(--green); font: 15px var(--mono); }
-.operation-detail { min-height: 16px; margin: 0; color: var(--quiet); font-size: 10px; }
+.current-operation { display: block; min-height: 2.5em; margin-top: 7px; color: var(--green); font: 15px/1.25 var(--mono); overflow-wrap: anywhere; }
+.operation-detail { min-height: 2.4em; margin: 0; color: var(--quiet); font-size: 10px; line-height: 1.35; }
 .perception-panel header output, .reward-panel header output { color: var(--muted); font: 10px var(--mono); }
 .sensor-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
 .sensor-cell { position: relative; display: grid; height: 40px; min-width: 0; place-items: center; border: 1px solid #465047; color: var(--muted); background: #242c25; font: 9px var(--mono); }

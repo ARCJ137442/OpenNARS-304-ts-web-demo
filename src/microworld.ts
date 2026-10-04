@@ -179,6 +179,8 @@ const state: {
   logFilter: string;
   currentOperation: string;
   operationSource: string;
+  operationStep: number | null;
+  operationNarTime: string;
   lastLatency: number;
   lastNarTime: string;
   totalStepMs: number;
@@ -208,6 +210,8 @@ const state: {
   logFilter: "all",
   currentOperation: "等待第一步",
   operationSource: "WAITING",
+  operationStep: null,
+  operationNarTime: "0",
   lastLatency: 0,
   totalStepMs: 0,
   measuredSteps: 0,
@@ -309,7 +313,10 @@ function updateTelemetry(): void {
   elements.operation.value = state.currentOperation;
   elements.sourceTag.textContent = state.operationSource;
   elements.sourceTag.dataset.source = state.operationSource;
-  elements.operationDetail.textContent = `步骤 ${world.tick} · NAR 时钟 ${state.lastNarTime ?? "0"}`
+  const operationAge = state.operationStep === null ? "尚未执行操作" : state.operationStep === world.tick
+    ? `本步 · NAR 时钟 ${state.operationNarTime}`
+    : `上次操作 · ${world.tick - state.operationStep} 步前 · NAR ${state.operationNarTime}`;
+  elements.operationDetail.textContent = `${operationAge} · 当前步骤 ${world.tick}`
     + (state.runtimeMode === "async" && state.pending ? " · NARS 滞后 / 推理待完成" : "");
   elements.runtimeModeValue.value = state.runtimeMode === "async" ? "异步" : "同步";
   elements.runtimeModeValue.textContent = elements.runtimeModeValue.value;
@@ -366,6 +373,8 @@ function newWorker(seed: number): void {
       const source = data.source === "NARS" ? "NARS" : (data.source ?? "unknown").toUpperCase();
       state.currentOperation = `${data.operator ?? "?"}({SELF})`;
       state.operationSource = source;
+      state.operationStep = state.world.tick;
+      state.operationNarTime = state.lastNarTime;
       appendLog("operation", `[EXE] ${data.operator ?? "?"}({SELF}) · ${source} / 已执行`, data.step);
       signalFeedback(elements.operation.closest<HTMLElement>(".decision-panel"), "reasoned");
       updateTelemetry();
@@ -379,8 +388,15 @@ function newWorker(seed: number): void {
       telemetry.updateReasoner(data.reasoner);
       state.totalStepMs += state.lastLatency;
       state.measuredSteps += 1;
-      state.currentOperation = data.operator ? `${data.operator}({SELF})` : "本步未发出操作";
-      state.operationSource = (data.actionSource ?? "idle") === "idle" ? "IDLE" : (data.actionSource ?? "NARS").toUpperCase();
+      if (data.operator) {
+        state.currentOperation = `${data.operator}({SELF})`;
+        state.operationSource = (data.actionSource ?? "NARS").toUpperCase();
+        state.operationStep = state.world.tick;
+        state.operationNarTime = state.lastNarTime;
+      } else {
+        // Keep the last real operation readable; IDLE describes this step only.
+        state.operationSource = "IDLE";
+      }
       if (data.actionSource === "babble") signalFeedback(elements.operation.closest<HTMLElement>(".decision-panel"), "exploratory");
       if (data.reward) signalFeedback(elements.reward.closest<HTMLElement>(".reward-panel"), data.reward > 0 ? "reward" : "cost");
       if (state.runtimeMode === "sync") {
@@ -461,6 +477,8 @@ function resetRun(seed = state.seed): void {
   state.camera = { zoom: 1, x: 0, y: 0 };
   state.currentOperation = "等待第一步";
   state.operationSource = "WAITING";
+  state.operationStep = null;
+  state.operationNarTime = "0";
   state.lastLatency = 0;
   state.lastNarTime = "0";
   state.totalStepMs = 0;
@@ -654,6 +672,8 @@ function directControl(key: string): boolean {
   telemetry.environmentTick(performance.now());
   state.currentOperation = "手动运动控制";
   state.operationSource = "MANUAL";
+  state.operationStep = state.world.tick;
+  state.operationNarTime = state.lastNarTime;
   elements.operationDetail.textContent = "直接调整虫体；NARS 决策保持独立";
   appendLog("system", `[MANUAL] ${key} · 物理状态已调整`);
   updateTelemetry();
