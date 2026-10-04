@@ -153,7 +153,7 @@ try {
 
   await page.goto(new URL("nars2048.html", baseUrl).href);
   await page.waitForFunction(() => document.querySelector("#n2048-runtime")?.textContent?.includes("NARS 在线"), undefined, { timeout: 30000 });
-  assert.equal(await page.locator("#board .tile").count(), 16);
+  assert.ok(await page.locator("#board").evaluate((canvas) => canvas instanceof HTMLCanvasElement && canvas.width > 0 && canvas.height > 0));
   await page.locator("#reset-board").click();
   assert.equal(await page.locator("#round-count").textContent(), "2");
   await page.locator("#reset-memory").click();
