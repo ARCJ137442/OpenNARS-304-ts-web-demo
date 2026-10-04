@@ -197,6 +197,33 @@ try {
   }
   assert.equal(errors.length, 0, `page errors during Pong modes: ${errors.join("; ")}`);
 
+  const shotFindings = [];
+  const shotModes = ["shot-test", "shot-test2", "shot-2p", "shot-2p-2ai", "shot-evolve", "shot-evolve2"];
+  await page.goto(new URL("shot.html", baseUrl).href);
+  await page.locator("#shot-runtime").waitFor({ state: "visible", timeout: 30000 });
+  for (const mode of shotModes) {
+    await page.locator("#shot-mode").selectOption(mode);
+    await page.evaluate(() => { window.__demoWorkerEvents = []; });
+    await page.waitForFunction(() => document.querySelector("#shot-runtime")?.textContent?.includes("NARS 在线"), undefined, { timeout: 30000 });
+    await page.waitForFunction(() => Number(document.querySelector("#shot-world-tick")?.textContent) > 0, undefined, { timeout: 30000 });
+    const beforeAsync = Number(await page.locator("#shot-world-tick").textContent());
+    await page.locator('input[name="shot-mode"][value="async"]').check();
+    await page.waitForTimeout(300);
+    assert.ok(Number(await page.locator("#shot-world-tick").textContent()) > beforeAsync, `${mode} async Shot should advance world ticks`);
+    await page.locator('input[name="shot-mode"][value="sync"]').check();
+    await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+      direction === "in" && message?.type === "step-complete" && message?.source === "NARS" && typeof message?.action === "string"), undefined, { timeout: 15000 });
+    const agentCount = await page.locator("#shot-agents .shot-agent").count();
+    const canvasHasPixels = await page.locator("#shot-canvas").evaluate((canvas) => {
+      const context = canvas.getContext("2d");
+      if (!context) return false;
+      return [...context.getImageData(0, 0, canvas.width, canvas.height).data].some((value, index) => index % 4 !== 3 && value > 32);
+    });
+    assert.equal(canvasHasPixels, true, `${mode} Shot canvas should contain the running scene`);
+    shotFindings.push({ mode, agentCount, nonBabbleOperation: true });
+  }
+  assert.equal(errors.length, 0, `page errors during Shot modes: ${errors.join("; ")}`);
+
   const operationFindings = [];
   for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"]) {
     await page.goto(new URL(`demo.html?game=${game}`, baseUrl).href);
@@ -325,7 +352,7 @@ try {
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
   assert.equal(errors.length, 0, `browser errors: ${errors.join("; ")}`);
-  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, nars2048: true, pongModes: pongFindings, operationFindings, microworld: true,
+  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, nars2048: true, pongModes: pongFindings, shotModes: shotFindings, operationFindings, microworld: true,
     microworldStarterOperation, microworldClassicPriorCount,
     indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {

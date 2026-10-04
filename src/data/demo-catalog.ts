@@ -87,7 +87,7 @@ const games: readonly DemoCatalogEntry[] = [
     title: EXPANSION_DEFINITIONS[id].title,
     summary: EXPANSION_DEFINITIONS[id].subtitle,
     family: `${String(index + 8).padStart(2, "0")} / EXPANSION`,
-    href: `./demo.html?game=${id}`,
+    href: id === "shot" ? "./shot.html" : `./demo.html?game=${id}`,
     preview: id,
     artwork: artworkClasses[id],
     sourceLabel: "OPENNARS ADAPTATION / COMPOSITE NARSESE",
