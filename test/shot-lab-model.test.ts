@@ -80,3 +80,32 @@ test("Shot evolution ranks by rounded hit ratio and recency, then preserves clon
   assert.equal(result.rankings.at(-1)?.playerId, best.id);
   assert.ok(result.notes.some((note) => note.startsWith("EVOLVE:RANK:")));
 });
+
+test("Shot fixed-seed 1000-tick run keeps all modes bounded and evolves twice", () => {
+  for (const mode of SHOT_MODES) {
+    const world = createShotWorld(mode.id, 3040304);
+    const evolutionNotes: string[] = [];
+    for (let tick = 0; tick < 1000; tick += 1) {
+      const active = world.players.filter((player) => player.ai !== "null");
+      if (tick % 10 === 0) {
+        active.forEach((player, index) => {
+          player.x = 4 + index * 5;
+          player.y = 10;
+          player.direction = index % 2 === 0 ? "east" : "west";
+          applyShotAction(world, player.id, "^Shoot");
+        });
+      }
+      const result = stepShotWorld(world);
+      evolutionNotes.push(...result.notes.filter((note) => note.startsWith("EVOLVE:")));
+    }
+    assert.ok(world.players.length >= mode.players, `${mode.id} must retain its initial player population`);
+    assert.ok(world.players.length <= mode.maxPlayers + 1, `${mode.id} must remain bounded`);
+    if (mode.evolution) {
+      assert.equal(world.evolutionEvents, 2, `${mode.id} must evolve at ticks 500 and 1000`);
+      assert.ok(evolutionNotes.filter((note) => note.startsWith("EVOLVE:RANK:")).length >= 2);
+      assert.ok(evolutionNotes.some((note) => note.startsWith("EVOLVE:EVICT:")));
+    } else {
+      assert.equal(world.evolutionEvents, 0, `${mode.id} must not evolve`);
+    }
+  }
+});
