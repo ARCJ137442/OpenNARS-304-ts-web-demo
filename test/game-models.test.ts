@@ -37,7 +37,7 @@ test("the static Lab catalog provides one reachable route for every registered g
   assert.equal(DEMO_CATALOG.find((entry) => entry.id === "nars2048")?.href, "./nars2048.html");
   for (const entry of GAME_DEMOS) {
     assert.equal(isDemoId(entry.id), true);
-    assert.equal(entry.href, "./demo.html?game=" + entry.id);
+    assert.equal(entry.href, entry.id === "pong" ? "./pong.html" : "./demo.html?game=" + entry.id);
     assert.equal(entry.preview, entry.id);
   }
   assert.equal(isDemoId("unknown"), false);

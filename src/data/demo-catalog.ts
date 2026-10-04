@@ -37,7 +37,7 @@ const games: readonly DemoCatalogEntry[] = [
     title: DEMO_DEFINITIONS.pong.title,
     summary: "球的位置感知 · 左右操作 · 击球反馈",
     family: "03 / CLASSIC",
-    href: "./demo.html?game=pong",
+    href: "./pong.html",
     preview: "pong",
     artwork: artworkClasses.pong,
     sourceLabel: "SENSORIMOTOR / 2 ACTIONS",

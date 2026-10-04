@@ -18,7 +18,7 @@ type WorkerMessage =
   | { type: "step"; game: string; step: number; beliefs?: string[]; goals?: string[]; feedback?: string[]; cycles?: number; babble?: number }
   | { type: "experience-snapshot" };
 
-const ACTIONS = ["^Left", "^Right", "^Forward", "^Shoot", "^Pick", "^Drop", "^Up", "^Down", "^left", "^right", "^up", "^down", "^shoot", "^pick", "^drop", "^fire", "^activate", "^cell0", "^cell1", "^cell2", "^cell3", "^cell4", "^cell5", "^cell6", "^cell7", "^cell8", "^move", "^turn_left", "^turn_right", "^ping"] as const;
+const ACTIONS = ["^Left", "^Right", "^Idle", "^Forward", "^Shoot", "^Pick", "^Drop", "^Up", "^Down", "^left", "^right", "^up", "^down", "^shoot", "^pick", "^drop", "^fire", "^activate", "^cell0", "^cell1", "^cell2", "^cell3", "^cell4", "^cell5", "^cell6", "^cell7", "^cell8", "^move", "^turn_left", "^turn_right", "^ping", "^stop"] as const;
 let nar: Nar | null = null;
 let enabledActions = new Set<string>();
 let operationThisStep: string | null = null;

@@ -162,6 +162,41 @@ try {
   await page.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
   assert.match(await page.locator("#experience-list").innerText(), /NARS 内部/);
 
+  const pongFindings = [];
+  const pongModes = [
+    "classic", "center-stop", "difference", "two-controller", "adversarial",
+    "two-player", "two-player-single", "two-player-no-diff", "two-player-diff",
+  ];
+  await page.goto(new URL("pong.html", baseUrl).href);
+  await page.locator("#pong-runtime").waitFor({ state: "visible", timeout: 30000 });
+  for (const mode of pongModes) {
+    await page.locator("#pong-mode").selectOption(mode);
+    await page.evaluate(() => { window.__demoWorkerEvents = []; });
+    await page.waitForFunction(() => document.querySelector("#pong-runtime")?.textContent?.includes("NARS 在线"), undefined, { timeout: 30000 });
+    await page.waitForFunction(() => Number(document.querySelector("#pong-world-tick")?.textContent) > 0, undefined, { timeout: 30000 });
+    const agentCount = await page.locator("#pong-agents .pong-agent").count();
+    const worldTick = Number(await page.locator("#pong-world-tick").textContent());
+    const canvasHasPixels = await page.locator("#pong-canvas").evaluate((canvas) => {
+      const context = canvas.getContext("2d");
+      if (!context) return false;
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      return pixels.some((value, index) => index % 4 !== 3 && value > 32);
+    });
+    assert.equal(canvasHasPixels, true, `${mode} Pong canvas should contain the running scene`);
+    const beforeAsync = worldTick;
+    await page.locator('input[name="pong-mode"][value="async"]').check();
+    await page.waitForTimeout(300);
+    assert.ok(Number(await page.locator("#pong-world-tick").textContent()) > beforeAsync, `${mode} async Pong should advance world ticks`);
+    await page.locator('input[name="pong-mode"][value="sync"]').check();
+    await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+      direction === "in" && message?.type === "step-complete" && message?.source === "NARS" && typeof message?.action === "string"), undefined, { timeout: 30000 });
+    const observedNars = await page.evaluate(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
+      direction === "in" && message?.type === "step-complete" && message?.source === "NARS" && typeof message?.action === "string"));
+    assert.equal(observedNars, true, `${mode} Pong should observe a non-babble NARS operation`);
+    pongFindings.push({ mode, agentCount, worldTick, nonBabbleOperation: observedNars });
+  }
+  assert.equal(errors.length, 0, `page errors during Pong modes: ${errors.join("; ")}`);
+
   const operationFindings = [];
   for (const game of ["pong", "alien", "bandrobot", "cartpole", "hunt", "tictactoe", "shot", "testchamber", "fighterplane", "echo-relay"]) {
     await page.goto(new URL(`demo.html?game=${game}`, baseUrl).href);
@@ -290,7 +325,7 @@ try {
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   assert.equal(horizontalOverflow, false, "game workspace should fit a narrow mobile viewport");
   assert.equal(errors.length, 0, `browser errors: ${errors.join("; ")}`);
-  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, nars2048: true, operationFindings, microworld: true,
+  console.log(JSON.stringify({ ok: true, games: 10, gridworld: true, nars2048: true, pongModes: pongFindings, operationFindings, microworld: true,
     microworldStarterOperation, microworldClassicPriorCount,
     indexCanvas: true, homeWorkers: 0, pageErrors: errors.length }, null, 2));
 } catch (error) {
