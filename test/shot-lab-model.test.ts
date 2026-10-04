@@ -113,6 +113,27 @@ test("Shot fixed-seed 1000-tick run keeps all modes bounded and evolves twice", 
   }
 });
 
+test("Shot fixed-seed 10000-tick world run keeps evolution bounded over a long horizon", () => {
+  for (const mode of SHOT_MODES) {
+    const world = createShotWorld(mode.id, 3040304);
+    for (let tick = 0; tick < 10_000; tick += 1) {
+      const active = world.players.filter((player) => player.ai !== "null");
+      if (tick % 10 === 0) {
+        active.forEach((player, index) => {
+          player.x = 4 + index * 5;
+          player.y = 10;
+          player.direction = index % 2 === 0 ? "east" : "west";
+          applyShotAction(world, player.id, "^Shoot");
+        });
+      }
+      stepShotWorld(world);
+      assert.ok(world.players.length >= mode.players, `${mode.id} lost its initial role population at tick ${world.tick}`);
+      assert.ok(world.players.length <= mode.maxPlayers + 1, `${mode.id} exceeded its bounded role population at tick ${world.tick}`);
+    }
+    assert.equal(world.evolutionEvents, mode.evolution ? 20 : 0, `${mode.id} evolution cadence must remain one event per 500 ticks`);
+  }
+});
+
 test("Shot chooses the first matching player in source order, like NARust-o", () => {
   const world = createShotWorld("shot-2p", 304);
   const shooter = world.players[0];
