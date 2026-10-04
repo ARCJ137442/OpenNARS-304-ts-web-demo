@@ -407,6 +407,44 @@ a {
 .log-line[data-kind="fault"] span {
   color: var(--coral);
 }
+.experience-panel {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+}
+.experience-panel > summary {
+  display: flex;
+  min-height: 39px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 10px;
+  list-style: none;
+}
+.experience-panel > summary::-webkit-details-marker { display: none; }
+.experience-panel > summary::after {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  content: "";
+  transform: rotate(45deg) translateY(-2px);
+}
+.experience-panel[open] > summary::after { transform: rotate(225deg) translateY(-2px); }
+.experience-panel > summary:hover { color: var(--lime); }
+.experience-panel > summary output { margin-left: auto; color: var(--teal); font: 9px var(--mono); }
+.experience-meta-note { margin: 0 11px 8px; color: var(--quiet); font-size: 8px; }
+.experience-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow: auto; margin: 0; padding: 0 11px 11px; list-style: none; }
+.experience-entry { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 5px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 9px; }
+.experience-marker { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; background: var(--teal); }
+.experience-confirmation .experience-marker, .experience-belief .experience-marker { background: var(--lime); }
+.experience-disappointment .experience-marker { background: var(--coral); }
+.experience-entry .experience-text { color: var(--ink); overflow-wrap: anywhere; }
+.experience-entry .experience-meta { grid-column: 2; color: var(--quiet); font: 8px var(--mono); }
+.experience-evidence { grid-column: 2; color: var(--muted); font-size: 8px; }
+.experience-evidence code { display: block; margin-top: 3px; color: var(--teal); white-space: pre-wrap; overflow-wrap: anywhere; }
 .demo-footer {
   border-top: 1px solid var(--line);
   width: min(1500px, 100% - 48px);

@@ -25,6 +25,8 @@ import { MICROWORLD_DEFAULT_TPS, MICROWORLD_MAX_TPS, MICROWORLD_MIN_SMOOTH_TPS }
 import { MICROWORLD_STARTER_PRIORS } from "./microworld/nars-priors.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
 import { initialDemoSeed } from "./demo-seed.ts";
+import { mountExperienceTimeline } from "./ui/experience-timeline.ts";
+import type { ExperienceEvent } from "./experience/contract.ts";
 
 type MicroworldWorkerEvent = {
   type: string;
@@ -42,6 +44,9 @@ type MicroworldWorkerEvent = {
   narTime?: string;
   message?: string;
   reasoner?: ReasonerSnapshot;
+  event?: ExperienceEvent;
+  events?: ExperienceEvent[];
+  stats?: { retained: number; dropped: number };
 };
 type Scale = { x: number; y: number; bounds: DOMRect };
 type ActionCode = 0 | 1 | 2 | 3;
@@ -107,6 +112,10 @@ const elements = {
   pageMemory: element<HTMLOutputElement>("#page-memory"),
   concepts: element<HTMLOutputElement>("#concept-count"),
   taskBags: element<HTMLOutputElement>("#task-bags"),
+  experiencePanel: element<HTMLDetailsElement>("#experience-panel"),
+  experienceList: element<HTMLOListElement>("#experience-list"),
+  experienceStatus: element<HTMLOutputElement>("#experience-status"),
+  experienceMeta: element<HTMLElement>("#experience-meta"),
 };
 const telemetry = new RuntimeTelemetryView({
   fps: elements.fps,
@@ -120,6 +129,14 @@ const telemetry = new RuntimeTelemetryView({
   pageMemory: elements.pageMemory,
   concepts: elements.concepts,
   taskBags: elements.taskBags,
+});
+const experienceTimeline = mountExperienceTimeline({
+  details: elements.experiencePanel,
+  list: elements.experienceList,
+  status: elements.experienceStatus,
+  meta: elements.experienceMeta,
+}, (open) => {
+  if (state.worker && !elements.runtimePill.classList.contains("fault")) state.worker.postMessage({ type: "experience-snapshot", open });
 });
 
 function requireCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -317,8 +334,23 @@ function newWorker(seed: number): void {
     }
     if (data.type === "ready") {
       setRuntime("ready", "推理器在线");
+      experienceTimeline.reset();
       appendLog("system", `NARS 已就绪；每环境步 ${data.cyclesPerStep} 个推理周期。`, 0);
       if (state.requested) requestStep();
+      return;
+    }
+    if (data.type === "experience-reset") {
+      experienceTimeline.reset();
+      return;
+    }
+    if (data.type === "experience") {
+      if (data.event) experienceTimeline.add(data.event);
+      return;
+    }
+    if (data.type === "experience-snapshot") {
+      for (const event of data.events ?? []) experienceTimeline.add(event);
+      const stats = data.stats;
+      if (stats) elements.experienceMeta.textContent = `窗口 ${stats.retained + stats.dropped} · 保留 ${stats.retained} · 丢弃 ${stats.dropped} · 仅收集真实事件`;
       return;
     }
     if (data.type === "log") {
@@ -733,4 +765,4 @@ function boot() {
 }
 
 boot();
-window.addEventListener("pagehide", () => telemetry.dispose(), { once: true });
+window.addEventListener("pagehide", () => { telemetry.dispose(); experienceTimeline.dispose(); }, { once: true });

@@ -1,22 +1,27 @@
-# Demo 内部经验观察：工作记忆（2026-10-03）
+# Demo 内部经验观察：已验收记录（2026-10-04）
 
-这是 spec 045 的短期探查文件。当前核心生产 `src` 树与受保护 `083d7b8` 一致；Demo 主线 `7612d9b` 已包含 Astro 终端、首页路径、设计规范、目录卡片、首批语义 FX 与 Microworld HUD 固定槽位，并已通过本地构建/Chrome。**045 的真实内部经验视图尚未实现**；历史未跟踪数据不得混入提交。
+这是 Core spec 045 的 Demo 侧短期记忆。经验观察已在 Demo 主线实现；本文件只记录真实数据来源、边界和验收证据，不把概念数增长或预置规则包装成“学会”。
 
-## 当前代码事实
+## 已实现
 
-- Demo `readReasonerSnapshot` 只返回概念袋容量/数量、三类任务袋数量和 NAR 时间；它**不**证明学到某条知识。
-- Core `Concept` 保存 `beliefs`、`desires` 和操作相关的 `executable_preconditions`；`Memory.concepts` 最大可达 10000，逐刻全量扫描不符合当前 TPS 预算。
-- Core `DerivationContext` 发出 `Events.TaskDerive`；`ConceptBeliefAdd` 事件带概念与任务；`Anticipate` 使用 `OutputHandler.ANTICIPATE`、`CONFIRM`、`DISAPPOINT` 事件。`Task.inputTask` 并不足以表示“外部输入”：`Anticipate.anticipationFeedback` 会把内部经验也构造为 `INPUT`。因此不能用这个布尔值独自判定是否学习。
-- Demo Worker 现已通过 `nar.on` 监听 EXE/Answer 等事件。可复用同一订阅机制形成有界经验流；原始先验输入已有 `PRIOR` 日志，外部 babble 有 `BABBLE` 标识，不能计入自主推导。更高频的 `TaskDerive` 订阅应只在经验视图打开时捕获，并限制字符串化与消息量。
-- Microworld `#rate-hud` 原用 `display:flex; justify-content:space-between`，长短状态文本挤动延迟与 FPS/TPS/RPS。已改固定网格槽位、短状态文案和窄屏双行排列；Chrome 在同帧替换长文案后，相邻指标与速率条坐标逐项相等。
+- `src/experience/contract.ts` 定义共享经验事件合同与有界缓冲：最多保留 96 条，单个 NARS 时间最多 8 条；超出条目计入丢弃数。
+- `src/experience/worker-recorder.ts` 订阅真实 NARS 原始事件：预期、确认、失望、派生任务、信念/目标加入、答案和操作。事件附带 NAR 时间、环境步、原始文本和来源。
+- Worker 阶段明确区分 `prior`、`input`、`babble` 与 `nars`。只有推理阶段的 `nars` 事件标记为 `autonomous=true`；先验、实验输入和 babble 不进入自主经验流。
+- 普通 Demo、经典 Microworld、Astro 终端使用同一折叠式经验时间线。默认关闭时不遍历概念袋；展开后只请求有界快照，原始事件可逐条展开。
+- 事件颜色和圆点表达事件类别，来源与 NAR 时间保留文字；无事件时显示“尚未观察到”，不生成示例数据。
+- 已补齐 `Brain`、`Eye`、`Lightbulb` Lucide 图标注册，经验面板不再产生缺失图标警告。
 
-## 下一步可证伪实验
+## 验收证据
 
-1. 已有 044 当前功能门通过；下一 Agent 在加入经验视图后重新跑 Demo `npm run check` 和 Chrome，并检查首页 12 个卡片、Astro 终端、五张 sprite、Microworld HUD。
-2. 在 Worker 增加**按需**经验观察消息，先只接低频 `ANTICIPATE/CONFIRM/DISAPPOINT` 和操作事件，记录 NAR 时间、原始词项和来源；UI 默认折叠，仅展示实际接收到的事件与空状态。
-3. 固定 seed 与 prior/babble 参数实测普通 Demo 和 Microworld，比较观察开/关的实际 TPS、RSS 和事件数。若没有预期事件，不得填入演示数据；若影响吞吐，缩小订阅或撤销。
-4. 后续再决定是否以有限窗口显示 `TaskDerive`、`ConceptBeliefAdd` 和操作条件信念；验证从“预置”到“内部经验”的可解释边界，避免把所有输入任务视作外部或把所有概念数增长视为学习。
+- `npm run check`：TypeScript、Astro、38 项单测、Worker 构建、静态构建和产物检查均通过。
+- `npm run test:browser`：终端和 Microworld 的经验面板显示 `NARS 内部` 事件；普通 10 个 Demo 在 babble=0 时仍观察到 NARS 操作；页面错误为 0。
+- `test/experience-contract.test.ts`：验证缓冲总量、单 NAR 时间突发上限和 reset 清空合同。
+- Worker 浏览器事件实测包含 `goal`、`belief`、`derived` 等真实事件，并保留原始 Narsese/预算文本；先验和 babble 仍只出现在普通日志或操作来源中。
 
-## 设计约束
+## 解释边界
 
-终端与控制面板可使用游戏级 FX，但每个色彩/运动必须映射真实事件。已提交的终端输入/输出、普通 Demo 操作与 Microworld 操作/奖励首批语义反馈在 `prefers-reduced-motion` 下仍保留颜色、图标、文本。禁止用永动粒子暗示推理进展。文档规范见 `docs/design-principle-one-image.md`。
+经验时间线证明“推理器发出了内部事件”，不单独证明某条知识已在跨局任务中稳定泛化。要声称学习效果，仍需结合固定 seed、行为结果、跨局对照和 NARS 操作后果。概念袋快照仍是计数指标，不是知识内容全量扫描。
+
+## 后续
+
+045 已完成；Grid、2048、Pong 多模式和 Shot 完整移植仍由相邻规格跟踪。若后续增加更重的经验字段，必须继续使用有界事件、按需快照，并重新比较观察开关对 TPS/RSS 的影响。

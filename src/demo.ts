@@ -23,6 +23,8 @@ import { signalFeedback } from "./ui/semantic-feedback.ts";
 import { nextWorldStepDeadline } from "./world-clock.ts";
 import { initialDemoSeed } from "./demo-seed.ts";
 import type { ReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
+import { mountExperienceTimeline } from "./ui/experience-timeline.ts";
+import type { ExperienceEvent } from "./experience/contract.ts";
 
 type LogKind = "operation" | "input" | "feedback" | "system" | "fault";
 type WorkerEvent = {
@@ -39,6 +41,9 @@ type WorkerEvent = {
   step?: number;
   message?: string;
   reasoner?: ReasonerSnapshot;
+  event?: ExperienceEvent;
+  events?: ExperienceEvent[];
+  stats?: { retained: number; dropped: number };
 };
 type ManualAction = [label: string, command: string];
 const ACTION_ICONS: Record<string, string> = {
@@ -118,6 +123,10 @@ const ui = {
   pageMemory: element<HTMLOutputElement>("#page-memory"),
   concepts: element<HTMLOutputElement>("#concept-count"),
   taskBags: element<HTMLOutputElement>("#task-bags"),
+  experiencePanel: element<HTMLDetailsElement>("#experience-panel"),
+  experienceList: element<HTMLOListElement>("#experience-list"),
+  experienceStatus: element<HTMLOutputElement>("#experience-status"),
+  experienceMeta: element<HTMLElement>("#experience-meta"),
   modeSync: element<HTMLInputElement>("#mode-sync"),
   modeAsync: element<HTMLInputElement>("#mode-async"),
   runtimeMode: element<HTMLOutputElement>("#runtime-mode"),
@@ -139,6 +148,14 @@ const telemetry = new RuntimeTelemetryView({
   pageMemory: ui.pageMemory,
   concepts: ui.concepts,
   taskBags: ui.taskBags,
+});
+const experienceTimeline = mountExperienceTimeline({
+  details: ui.experiencePanel,
+  list: ui.experienceList,
+  status: ui.experienceStatus,
+  meta: ui.experienceMeta,
+}, (open) => {
+  if (state.worker && state.ready) state.worker.postMessage({ type: "experience-snapshot", open });
 });
 
 function requireCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -210,8 +227,23 @@ function initializeWorker(): void {
       state.ready = true;
       ui.runtime.classList.add("ready");
       ui.runtimeLabel.textContent = "NARS 在线";
+      experienceTimeline.reset();
       addLog("system", `已注册 ${data.actions?.length ?? 0} 个操作`, 0);
       if (state.waitingForWorker) requestStep();
+      return;
+    }
+    if (data.type === "experience-reset") {
+      experienceTimeline.reset();
+      return;
+    }
+    if (data.type === "experience") {
+      if (data.event) experienceTimeline.add(data.event);
+      return;
+    }
+    if (data.type === "experience-snapshot") {
+      for (const event of data.events ?? []) experienceTimeline.add(event);
+      const stats = data.stats;
+      if (stats) ui.experienceMeta.textContent = `窗口 ${stats.retained + stats.dropped} · 保留 ${stats.retained} · 丢弃 ${stats.dropped} · 仅收集真实事件`;
       return;
     }
     if (data.type === "log") {
@@ -599,4 +631,4 @@ function boot(): void {
 }
 
 boot();
-window.addEventListener("pagehide", () => telemetry.dispose(), { once: true });
+window.addEventListener("pagehide", () => { telemetry.dispose(); experienceTimeline.dispose(); }, { once: true });

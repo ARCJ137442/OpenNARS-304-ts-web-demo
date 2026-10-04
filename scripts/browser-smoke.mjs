@@ -49,7 +49,8 @@ try {
   assert.match(entryPage.url(), /\/opennars-304-ts-lab\/terminal\.html$/);
   await entryPage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE"), undefined, { timeout: 30000 });
   assert.equal(await entryPage.locator(".send-button svg").count(), 1, "terminal action icons must render");
-  assert.equal(await entryPage.locator(".telemetry-details").getAttribute("open"), null, "advanced runtime details stay collapsed initially");
+  assert.equal(await entryPage.locator("#experience-panel").getAttribute("open"), null, "experience observatory stays collapsed initially");
+  assert.equal(await entryPage.locator("details.telemetry-details:not(.experience-panel)").getAttribute("open"), null, "advanced runtime details stay collapsed initially");
   await entryPage.locator("#terminal-input").fill("<bird --> animal>.\n:cycles 2");
   await entryPage.locator(".send-button").click();
   await entryPage.waitForFunction(() => Number(document.querySelector("#cycle-clock")?.textContent) >= 2, undefined, { timeout: 30000 });
@@ -62,7 +63,13 @@ try {
   await entryPage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE")
     && Number(document.querySelector("#cycle-clock")?.textContent) === 0, undefined, { timeout: 30000 });
   await entryPage.screenshot({ path: "test-results/demo-lab-terminal.png", fullPage: true });
-  await entryPage.locator(".telemetry-details > summary").click();
+  await entryPage.locator("#experience-panel > summary").scrollIntoViewIfNeeded();
+  await entryPage.locator("#experience-panel > summary").evaluate((summary) => summary.click());
+  await entryPage.locator("#terminal-input").fill("<bird --> animal>.\n:cycles 2");
+  await entryPage.locator(".send-button").click();
+  await entryPage.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
+  assert.match(await entryPage.locator("#experience-list").innerText(), /NARS 内部/);
+  await entryPage.locator("details.telemetry-details:not(.experience-panel) > summary").click();
   await entryPage.locator("#source-commit").waitFor({ state: "visible" });
   await entryPage.close();
 
@@ -189,6 +196,12 @@ try {
 
   await page.goto(new URL("microworld.html", baseUrl).href);
   await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
+  assert.equal(await page.locator("#experience-panel").getAttribute("open"), null, "Microworld experience observatory stays collapsed initially");
+  await page.locator("#experience-panel > summary").scrollIntoViewIfNeeded();
+  await page.locator("#experience-panel > summary").evaluate((summary) => summary.click());
+  await page.locator("#experience-panel[open]").waitFor({ state: "attached" });
+  await page.waitForFunction(() => document.querySelectorAll("#experience-list .experience-entry").length > 0, undefined, { timeout: 30000 });
+  assert.match(await page.locator("#experience-list").innerText(), /NARS 内部/);
   await page.waitForFunction(() => !document.querySelector("#fps-hud")?.textContent?.includes("--"), undefined, { timeout: 5000 });
   await page.locator("#toggle-rate-hud").click();
   await page.locator("#rate-hud").waitFor({ state: "hidden" });

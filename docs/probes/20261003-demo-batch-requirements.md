@@ -19,7 +19,7 @@ Core spec 050 的 Logo 已通过最小差异实现：以用户 Julia SVG 为底�
 | 「一图胜千言」设计原则 | 已落盘，实施中 | `docs/design-principle-one-image.md`；图标、折叠、情境色、真实事件 FX、移动/减少动效审核 |
 | 终端和其他 NARS 面板的游戏级语义 FX | 首批已提交，浏览器功能门已过 | Worker 忙碌才有扫描；输入/输出短动效；普通 Demo/Microworld 的自主操作、babble、奖励、代价按真实事件闪现，减少动效下保留颜色边框；逐事件视觉验收仍可完善 |
 | Microworld HUD 文案导致其他指标抖动 | 已提交，Chrome 几何回归通过 | 固定网格槽位与短状态，浏览器把状态文本换成长文案后相邻延迟/FPS/TPS/RPS 与速率条坐标完全一致 |
-| NARS 内部经验、预期、操作经验可视化 | Core spec 045 计划/调查中 | 真实事件与信念、区分预置/自主/babble；按需、有界、不拖垮 TPS；暂无已验收视图 |
+| NARS 内部经验、预期、操作经验可视化 | Core spec 045 已完成 | 普通 Demo、Microworld、终端共用有界经验时间线；真实 NARS 事件标记 `NARS 内部`，预置/输入/babble 不计入自主经验；Chrome 与 `npm run check` 已通过 |
 | 经典 Microworld 左逆时针、右顺时针 | 已提交，直接测试与 Demo check/Chrome 通过 | 屏幕 y 向下，朝东左转朝上、右转朝下；与 Java 旧符号差异显式披露，最终发布门待复核 |
 | 离散 Grid Microworld | Core spec 046；主线未实现 | 独立 Demo；方/三角/六角类型与数量在内部调整。试验分支 `codex/gridworld-foundation-wip` 提供 9/9 直接合同通过的纯拓扑模型、未验收渲染器与非发布页草稿；主线无空壳入口 |
 | NARS × 2048 | Core spec 047 已写，尚未实现 | 借鉴用户 MIT `jev-2048`，纯规则、自动重开棋盘、默认保留同一 NARS 记忆，另有记忆重置与跨局学习对照；不复制 Jev API/密钥 |
@@ -38,4 +38,4 @@ Core spec 050 的 Logo 已通过最小差异实现：以用户 Julia SVG 为底�
 
 ## 当前下一步
 
-044 入口/终端已提交推送，经典 Microworld 左右语义、HUD 固定槽位和 20 TPS **目标配置**也已通过本地直接/Chrome 门；045 内部经验、046 Grid、047 2048、048 Pong 模式、049 Shot 交下一位 Agent。共享多 Worker/经验观察合同应统筹 Pong/Shot，Grid/2048 先有纯世界合同再接 Worker。最终在一个冻结版本上跑 Demo/核心发行门；所有未实现项持续标“尚未实现”。
+044 入口/终端已提交推送，经典 Microworld 左右语义、HUD 固定槽位和 20 TPS **目标配置**也已通过本地直接/Chrome 门；045 内部经验已在 Demo 主线实现并通过 38 项检查与真实浏览器。046 Grid、047 2048、048 Pong 模式、049 Shot 仍交下一批。共享多 Worker/经验观察合同应统筹 Pong/Shot，Grid/2048 先有纯世界合同再接 Worker。最终在一个冻结版本上跑 Demo/核心发行门；所有未实现项持续标“尚未实现”。

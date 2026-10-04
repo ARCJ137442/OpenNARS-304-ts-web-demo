@@ -14,6 +14,8 @@ import { type Memory } from "@opennars/storage/Memory.ts";
 import { type Timable } from "@opennars/interfaces/Timable.ts";
 import { type Task } from "@opennars/entity/Task.ts";
 import { readReasonerSnapshot } from "./diagnostics/reasoner-snapshot.ts";
+import { ExperienceRecorder } from "./experience/worker-recorder.ts";
+import type { ExperienceEvent } from "./experience/contract.ts";
 
 type ActionCode = 0 | 1 | 2 | 3;
 type OperationName = "^Right" | "^Left" | "^Forward";
@@ -27,6 +29,7 @@ type StepMessage = {
   priorRules?: readonly string[];
 };
 type ResetMessage = { type: "reset"; seed: number; priorRules?: readonly string[] };
+type SnapshotMessage = { type: "experience-snapshot" };
 
 const DEFAULT_STEP_CYCLES = 10;
 const DEFAULT_BABBLE_PROBABILITY = 0.1;
@@ -41,6 +44,7 @@ let stepNumber = 0;
 let lastSensorInputs = new Set<string>();
 let pendingAction: { name: OperationName; code: ActionCode } | null = null;
 let randomState = 0x6d2b79f5;
+const experienceRecorder = new ExperienceRecorder((event: ExperienceEvent) => post("experience", { event }));
 
 const post = (type: string, payload: Record<string, unknown> = {}): void => {
   self.postMessage({ type, ...payload });
@@ -70,6 +74,7 @@ class MicroworldOperator extends Operator {
   protected execute(_operation: Operation, _args: Term[], memory: Memory, _time: Timable): Task[] | null {
     pendingAction = { name: this.actionName, code: this.actionCode };
     memory.allowExecution = false;
+    experienceRecorder.record("operation", this.actionName, `EXE: ${this.actionName}`);
     post("operation", {
       operator: this.actionName,
       action: this.actionCode,
@@ -86,8 +91,10 @@ function createNar(seed: number, priorRules: readonly string[] = []): void {
   stepNumber = 0;
   lastSensorInputs = new Set<string>();
   pendingAction = null;
+  experienceRecorder.reset();
   Debug.TEST = true;
   nar = new Nar();
+  experienceRecorder.attach(nar);
   nar.narParameters.VOLUME = 0;
 
   for (const action of ACTIONS) nar.addPlugin(new MicroworldOperator(action));
@@ -105,7 +112,9 @@ function createNar(seed: number, priorRules: readonly string[] = []): void {
   nar.on(OutputHandler.EXE.class, eventLog("EXE"));
   nar.on(Events.UnexecutableOperation.class, eventLog("UNEXECUTABLE"));
   nar.on(Events.Answer.class, eventLog("ANSWER"));
-  for (const rule of priorRules) submit(rule, "PRIOR");
+  for (const rule of priorRules) experienceRecorder.withPhase("prior", () => submit(rule, "PRIOR"));
+  experienceRecorder.setContext("input", String(nar.time()), 0);
+  post("experience-reset");
 }
 
 function submit(text: string, kind: string): void {
@@ -120,6 +129,7 @@ function runStep(message: StepMessage): void {
 
   const start = performance.now();
   pendingAction = null;
+  experienceRecorder.setContext("input", String(nar.time()), stepNumber);
   const sensorValues = Array.from({ length: 6 }, (_, index) => {
     const value = Number(message.sensors?.[index] ?? 0);
     return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
@@ -153,7 +163,9 @@ function runStep(message: StepMessage): void {
 
   const cycles = Math.max(1, Math.min(1000, Math.floor(message.cycles ?? DEFAULT_STEP_CYCLES)));
   const babbleProbability = Math.max(0, Math.min(0.5, message.babble ?? DEFAULT_BABBLE_PROBABILITY));
-  nar.cycles(cycles);
+  experienceRecorder.setContext("nars", String(nar.time()), stepNumber);
+  experienceRecorder.withPhase("nars", () => nar?.cycles(cycles));
+  experienceRecorder.setNarTime(String(nar.time()));
 
   let action: { name: OperationName; code: ActionCode } | null = pendingAction;
   let actionSource = action ? "NARS" : "idle";
@@ -162,7 +174,8 @@ function runStep(message: StepMessage): void {
     if (sampled !== 0) {
       action = ACTIONS.find((candidate) => candidate.code === sampled) ?? null;
       actionSource = "babble";
-      if (action) submit(`${action.name.slice(1)}({SELF}). :|:`, "BABBLE");
+      const babbleAction = action;
+      if (babbleAction) experienceRecorder.withPhase("babble", () => submit(`${babbleAction.name.slice(1)}({SELF}). :|:`, "BABBLE"));
     }
   }
   const result = {
@@ -181,13 +194,15 @@ function runStep(message: StepMessage): void {
   post("step-complete", result);
 }
 
-self.addEventListener("message", ({ data }: MessageEvent<StepMessage | ResetMessage>) => {
+self.addEventListener("message", ({ data }: MessageEvent<StepMessage | ResetMessage | SnapshotMessage>) => {
   try {
     if (data?.type === "reset") {
       createNar(data.seed, data.priorRules);
       post("ready", { step: 0, cyclesPerStep: DEFAULT_STEP_CYCLES });
     } else if (data?.type === "step") {
       runStep(data);
+    } else if (data?.type === "experience-snapshot") {
+      post("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats() });
     }
   } catch (error) {
     post("fault", {

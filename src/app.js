@@ -6,6 +6,7 @@ import {
   shouldSubmitFromKeydown,
 } from "./input-behavior.js";
 import { mountIcons } from "./ui/icons.ts";
+import { mountExperienceTimeline } from "./ui/experience-timeline.ts";
 
 const elements = {
   body: document.body,
@@ -27,6 +28,10 @@ const elements = {
   volumeValue: document.querySelector("#volume-value"),
   configFile: document.querySelector("#config-file"),
   configStatus: document.querySelector("#config-status"),
+  experiencePanel: document.querySelector("#experience-panel"),
+  experienceList: document.querySelector("#experience-list"),
+  experienceStatus: document.querySelector("#experience-status"),
+  experienceMeta: document.querySelector("#experience-meta"),
 };
 
 const MAX_TERMINAL_LINES = 600;
@@ -37,6 +42,14 @@ let ready = false;
 let busy = false;
 let generation = 0;
 let refocusAfterRun = false;
+const experienceTimeline = mountExperienceTimeline({
+  details: elements.experiencePanel,
+  list: elements.experienceList,
+  status: elements.experienceStatus,
+  meta: elements.experienceMeta,
+}, (open) => {
+  if (worker !== null) worker.postMessage({ type: "experience-snapshot", open });
+});
 
 const INPUT_MAX_HEIGHT = 176;
 
@@ -141,6 +154,7 @@ function stopWorker(reason = "session reset") {
   ready = false;
   busy = false;
   elements.body.classList.remove("ready", "busy", "failed");
+  experienceTimeline.reset();
   updateControls();
   if (reason !== "initial boot") appendLine(`[session] ${reason}`, "system");
 }
@@ -160,8 +174,23 @@ function startWorker(reason = "initial boot") {
       applyBuildMetadata(data.build);
       setClock(data.time);
       setVolumeDisplay(data.volume);
+      experienceTimeline.reset();
       updateControls();
       elements.input.focus({ preventScroll: true });
+      return;
+    }
+    if (data.type === "experience-reset") {
+      experienceTimeline.reset();
+      return;
+    }
+    if (data.type === "experience") {
+      if (data.event) experienceTimeline.add(data.event);
+      return;
+    }
+    if (data.type === "experience-snapshot") {
+      for (const event of data.events ?? []) experienceTimeline.add(event);
+      const stats = data.stats;
+      if (stats) elements.experienceMeta.textContent = `窗口 ${stats.retained + stats.dropped} · 保留 ${stats.retained} · 丢弃 ${stats.dropped} · 仅收集真实事件`;
       return;
     }
     if (data.type === "output") {
@@ -312,3 +341,4 @@ updateControls();
 resizeInput();
 await loadBuildMetadata();
 startWorker();
+window.addEventListener("pagehide", () => experienceTimeline.dispose(), { once: true });

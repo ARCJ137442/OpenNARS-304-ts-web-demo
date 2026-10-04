@@ -62,12 +62,14 @@ const browserAdapterPlugin = {
 const browserHostBanner = `globalThis.__OPENNARS_DEFAULT_CONFIG__ = ${JSON.stringify(defaultConfigXml)};`;
 
 const modulePath = (relativePath) => JSON.stringify(resolve(openNarsRoot, relativePath).replaceAll("\\", "/"));
+const experienceRecorderPath = JSON.stringify(resolve(projectRoot, "src", "experience", "worker-recorder.ts").replaceAll("\\", "/"));
 const workerSource = `
   import { Nar } from ${modulePath("src/main/Nar.ts")};
   import { Debug } from ${modulePath("src/main/Debug.ts")};
   import { Events } from ${modulePath("src/io/events/Events.ts")};
   import { OutputHandler } from ${modulePath("src/io/events/OutputHandler.ts")};
   import { TextOutputHandler } from ${modulePath("src/io/events/TextOutputHandler.ts")};
+  import { ExperienceRecorder } from ${experienceRecorderPath};
 
   const BUILD = Object.freeze({
     packageVersion: ${JSON.stringify(openNarsPackage.version)},
@@ -94,6 +96,7 @@ const workerSource = `
 
   const send = (type, payload = {}) => self.postMessage({ type, ...payload });
   const errorText = (error) => error instanceof Error ? (error.stack ?? error.message) : String(error);
+  const experienceRecorder = new ExperienceRecorder((event) => send("experience", { event }));
 
   function output(text, channel = "shell") {
     send("output", { text: String(text), channel, time: nar === null ? "0" : String(nar.time()) });
@@ -126,7 +129,11 @@ const workerSource = `
 
   function createReasoner(configText = null) {
     Debug.TEST = true;
+    experienceRecorder.reset();
     nar = configText === null ? new Nar() : new Nar({ configText });
+    experienceRecorder.attach(nar);
+    experienceRecorder.setContext("input", String(nar.time()), 0);
+    send("experience-reset");
     attachOutput(nar);
   }
 
@@ -139,6 +146,9 @@ const workerSource = `
     }
     if (line === ":reset" || line === "*reset") {
       nar.reset();
+      experienceRecorder.reset();
+      experienceRecorder.setContext("input", String(nar.time()), 0);
+      send("experience-reset");
       output("[shell] reset");
       return;
     }
@@ -156,7 +166,9 @@ const workerSource = `
       if (!Number.isSafeInteger(count) || count < 1 || count > MAX_CYCLES_PER_COMMAND) {
         throw new Error(\`:cycles must be an integer from 1 to \${MAX_CYCLES_PER_COMMAND}\`);
       }
-      nar.cycles(count);
+      experienceRecorder.setContext("nars", String(nar.time()), Number(nar.time()));
+      experienceRecorder.withPhase("nars", () => nar.cycles(count));
+      experienceRecorder.setNarTime(String(nar.time()));
       output(\`[shell] cycles=\${count} time=\${String(nar.time())}\`);
       return;
     }
@@ -166,7 +178,8 @@ const workerSource = `
       if (!Number.isInteger(volume) || volume < 0 || volume > 100) {
         throw new Error(":volume must be an integer from 0 to 100");
       }
-      nar.addInput(\`*volume=\${volume}\`);
+      experienceRecorder.setContext("input", String(nar.time()), Number(nar.time()));
+      experienceRecorder.withPhase("input", () => nar.addInput(\`*volume=\${volume}\`));
       output(\`[shell] volume=\${volume}\`);
       return;
     }
@@ -174,7 +187,8 @@ const workerSource = `
       output("[shell] browser session remains open; use RESET SESSION to restart it.");
       return;
     }
-    nar.addInput(line);
+    experienceRecorder.setContext("input", String(nar.time()), Number(nar.time()));
+    experienceRecorder.withPhase("input", () => nar.addInput(line));
   }
 
   try {
@@ -196,6 +210,10 @@ const workerSource = `
       } finally {
         send("busy", { busy: false });
       }
+      return;
+    }
+    if (data?.type === "experience-snapshot") {
+      send("experience-snapshot", { events: experienceRecorder.snapshot(), stats: experienceRecorder.stats() });
       return;
     }
     if (data?.type !== "command" || nar === null) return;
