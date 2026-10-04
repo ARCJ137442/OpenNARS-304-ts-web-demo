@@ -10,7 +10,7 @@
 
 入口页面索引浏览器 NARS 终端、Microworld、Pong、Alien、BandRobot、CartPole、Hunt、TicTacToe、Shot、Grid2D TestChamber、FighterPlane 与 Echo Relay。普通游戏共用 NARS Worker 控制与日志界面，Microworld 使用独立的原版场景适配。项目使用 Astro 生成静态 HTML/CSS/JS，浏览器不加载 Astro runtime，也不需要后端。BandRobot 仍是多步任务实验，固定场景尚未证明自主完成整段交付。
 
-Microworld 导航入口使用可复现的 `microworld.html?seed=19&knowledge=starter` 场景。页面的灯泡按钮可切换“示例知识”和“空白探索”；示例模式预置一条前方好食物与前进操作的因果假设，**不代表 NARS 从零学出该规则**。目前示例模式已在真实浏览器发出非 babble 操作，但持续 20 TPS 尚未达成，详见 [适配说明](docs/demo-adaptation-guide.md)。
+Microworld 普通入口默认使用随机 seed 和“空白探索”，每次打开都会生成新的实验起点。需要复现实验或观察示例知识时，使用 `microworld.html?seed=19&knowledge=starter`；其中 `seed` 固定世界与 NARS 初始化，`knowledge=starter` 才会启用示例先验。页面的灯泡按钮可切换“示例知识”和“空白探索”；示例模式预置一条前方好食物与前进操作的因果假设，**不代表 NARS 从零学出该规则**。目前示例模式已在真实浏览器发出非 babble 操作，但持续 20 TPS 尚未达成，详见 [适配说明](docs/demo-adaptation-guide.md)。
 
 克隆后先运行：
 

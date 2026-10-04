@@ -12,6 +12,12 @@ test("invalid and out-of-range URL seeds fall back to a fresh seed", () => {
   }
 });
 
+test("an unseeded URL delegates seed generation to the random source", () => {
+  let calls = 0;
+  assert.equal(initialDemoSeed("?game=microworld", () => { calls += 1; return 0x1234; }), 0x1234);
+  assert.equal(calls, 1);
+});
+
 test("Microworld opens in blank exploration unless starter knowledge is explicit", () => {
   assert.equal(startsWithStarterKnowledge(""), false);
   assert.equal(startsWithStarterKnowledge("?seed=19"), false);

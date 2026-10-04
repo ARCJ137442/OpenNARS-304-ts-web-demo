@@ -312,6 +312,12 @@ try {
 
   await page.goto(new URL("microworld.html", baseUrl).href);
   await page.locator(".runtime-pill.ready").waitFor({ timeout: 30000 });
+  assert.equal(await page.locator("#knowledge-toggle").getAttribute("aria-pressed"), "false", "plain Microworld entry must start in blank exploration");
+  const microworldBlankReset = await page.evaluate(() => [...(window.__demoWorkerEvents ?? [])].find(({ direction, message }) =>
+    direction === "out" && message?.type === "reset"));
+  assert.ok(microworldBlankReset, "Microworld must send an initial reset to the worker");
+  assert.equal(microworldBlankReset.message.priorRules.length, 0, "blank exploration must not preload starter rules");
+  assert.ok(Number.isInteger(microworldBlankReset.message.seed) && microworldBlankReset.message.seed > 0, "plain Microworld entry must use a valid seed");
   assert.equal(await page.locator("#experience-panel").getAttribute("open"), null, "Microworld experience observatory stays collapsed initially");
   await page.locator("#experience-panel > summary").scrollIntoViewIfNeeded();
   await page.locator("#experience-panel > summary").evaluate((summary) => summary.click());
