@@ -2,6 +2,15 @@
   "name": "opennars-304-ts-web-demo",
   "version": "0.1.0",
   "private": true,
+  "description": "OpenNARS 3.0.4 browser Demo Lab with Microworld, Grid, 2048, Pong, Shot, and NARS Terminal.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ARCJ137442/OpenNARS-304-ts-web-demo.git"
+  },
+  "homepage": "https://arcj137442.github.io/opennars-304-ts-lab/",
+  "bugs": {
+    "url": "https://github.com/ARCJ137442/OpenNARS-304-ts-web-demo/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.19.0"

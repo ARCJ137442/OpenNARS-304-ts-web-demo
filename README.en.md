@@ -1,6 +1,6 @@
 # OpenNARS 3.0.4 TypeScript Demo Lab
 
-<img src="public/assets/opennars-ts-logo.svg" width="260" alt="OpenNARS TypeScript logo" />
+<img src="https://raw.githubusercontent.com/ARCJ137442/OpenNARS-304-ts/main/brand/opennars-ts-logo.svg" width="260" alt="OpenNARS TypeScript logo" />
 
 [简体中文](README.md)
 
