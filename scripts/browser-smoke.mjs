@@ -60,7 +60,7 @@ try {
   assert.ok(logoGeometry.width > 0 && logoGeometry.height > 0, "the TS wordmark SVG must have intrinsic dimensions");
   assert.ok(Math.abs(logoGeometry.width / logoGeometry.height - 720.79 / 608.59) < 0.02, "the TS wordmark must preserve the reference aspect ratio");
   await entryPage.getByRole("link", { name: "NARS 终端", exact: true }).click();
-  assert.match(entryPage.url(), /\/opennars-304-ts-lab\/terminal\.html$/);
+  assert.equal(new URL(entryPage.url()).pathname, new URL("terminal.html", baseUrl).pathname);
   await entryPage.waitForFunction(() => document.querySelector("#runtime-state")?.textContent?.includes("WORKER ONLINE"), undefined, { timeout: 30000 });
   assert.equal(await entryPage.locator(".send-button svg").count(), 1, "terminal action icons must render");
   assert.equal(await entryPage.locator("#experience-panel").getAttribute("open"), null, "experience observatory stays collapsed initially");
@@ -149,7 +149,7 @@ try {
   for (const topology of ["square", "triangle", "hexagon"]) {
     await page.locator("#grid-topology").selectOption(topology);
     await page.locator('#grid-runtime[data-state="ready"]').waitFor({ timeout: 30000 });
-    await page.waitForFunction(() => Number(document.querySelector("#grid-step-count")?.textContent) > 0, undefined, { timeout: 30000 });
+    await page.waitForFunction(() => Number(document.querySelector("#step-count")?.textContent) > 0, undefined, { timeout: 30000 });
     const gridCanvasHasPixels = await page.locator("#grid-canvas").evaluate((canvas) => {
       const context = canvas.getContext("2d");
       if (!context) return false;
@@ -158,8 +158,17 @@ try {
     });
     assert.equal(gridCanvasHasPixels, true, `${topology} Grid Microworld canvas should contain the running scene`);
   }
-  await page.locator("#grid-experience-panel > summary").evaluate((summary) => summary.click());
-  await assertBeliefObservatory(page, "#grid-experience-list");
+  assert.equal(await page.locator(".instrument-rail").count(), 1, "Grid must use the shared reasoner rail");
+  for (const className of ["decision-panel", "perception-panel", "reward-panel", "log-panel", "experience-panel", "diagnostics-panel"]) {
+    assert.equal(await page.locator(`.instrument-rail .${className}`).count(), 1, `Grid must use the shared ${className}`);
+  }
+  const snapshotsBefore = await page.evaluate(() => (window.__demoWorkerEvents ?? []).filter(({ direction, message }) =>
+    direction === "out" && message?.type === "experience-snapshot").length);
+  await page.locator("#experience-panel > summary").evaluate((summary) => summary.click());
+  await assertBeliefObservatory(page, "#experience-list");
+  await page.waitForFunction((count) => (window.__demoWorkerEvents ?? []).filter(({ direction, message }) =>
+    direction === "out" && message?.type === "experience-snapshot").length >= count + 2, snapshotsBefore, { timeout: 5000 });
+  assert.ok(await page.locator("#experience-list .experience-belief-bar").count() > 0, "Grid beliefs must expose visual expectation bars");
   await page.waitForFunction(() => (window.__demoWorkerEvents ?? []).some(({ direction, message }) =>
     direction === "in" && message?.type === "step-complete" && (message.actionSource === "NARS" || message.actionSource === "babble")), undefined, { timeout: 30000 });
   await page.screenshot({ path: "test-results/gridworld-topologies.png", fullPage: true });

@@ -43,17 +43,6 @@ export function applyReasonerOperation(state: ReasonerOperationState, event: Rea
 const SENSOR_LABELS = ["G1", "G2", "G3", "B1", "B2", "B3"];
 const rememberedOperations = new WeakMap<HTMLElement, { operation: string; source: string }>();
 
-export function ensureReasonerObservatoryElements(root: ParentNode = document): void {
-  const operation = root.querySelector<HTMLElement>("#grid-operation");
-  if (operation && !root.querySelector("#grid-operation-detail")) { const detail = document.createElement("small"); detail.id = "grid-operation-detail"; detail.className = "nars-panel-detail"; detail.textContent = "每个环境步运行 10 个推理周期"; operation.after(detail); }
-  const rewardCard = root.querySelector<HTMLElement>(".reward-panel");
-  if (rewardCard && !root.querySelector("#grid-reward-state")) { const output = document.createElement("output"); output.id = "grid-reward-state"; output.textContent = "尚无反馈"; rewardCard.querySelector(".nars-panel-head")?.append(output); }
-  const perceptionCard = root.querySelector<HTMLElement>(".perception-panel");
-  if (perceptionCard && !root.querySelector("#grid-sensor-focus")) { const output = document.createElement("output"); output.id = "grid-sensor-focus"; output.textContent = "暂无目标"; perceptionCard.querySelector(".nars-panel-head")?.append(output); }
-  const worldMetrics = root.querySelector<HTMLElement>(".reward-panel .grid-world-metrics");
-  if (worldMetrics && !root.querySelector("#grid-food-ratio")) { const span = document.createElement("span"); span.textContent = "好 / 坏比 "; const strong = document.createElement("strong"); strong.id = "grid-food-ratio"; strong.textContent = "1.00"; span.append(strong); worldMetrics.append(span); const track = document.createElement("div"); track.className = "ratio-track"; const fill = document.createElement("span"); fill.id = "grid-ratio-fill"; track.append(fill); worldMetrics.after(track); }
-}
-
 export function renderReasonerObservatory(elements: ReasonerObservatoryElements, state: ReasonerObservatoryState): void {
   const existingSource = ("value" in elements.source ? (elements.source as HTMLOutputElement).value : elements.source.textContent) || "";
   const existingOperation = elements.operation.textContent?.trim() || "";

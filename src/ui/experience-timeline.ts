@@ -27,6 +27,7 @@ export function mountExperienceTimeline(
 ): ExperienceTimeline {
   const retained = new Map<number, ExperienceEvent>();
   let beliefs: readonly BeliefSnapshot[] = [];
+  let refreshTimer: number | null = null;
   const summary = elements.details.querySelector("summary");
   const render = (): void => {
     elements.list.replaceChildren();
@@ -37,9 +38,19 @@ export function mountExperienceTimeline(
       const marker = document.createElement("span");
       marker.className = "experience-marker";
       marker.setAttribute("aria-hidden", "true");
-      const text = document.createElement("span");
+      const text = document.createElement("div");
       text.className = "experience-text";
-      text.textContent = belief.text;
+      const beliefSummary = document.createElement("div");
+      beliefSummary.className = "experience-belief-summary";
+      beliefSummary.textContent = belief.text;
+      const beliefStats = document.createElement("div");
+      beliefStats.className = "experience-belief-stats";
+      beliefStats.textContent = `期望 ${(belief.expectation * 100).toFixed(1)}%`;
+      const beliefBar = document.createElement("span");
+      beliefBar.className = "experience-belief-bar";
+      beliefBar.setAttribute("aria-hidden", "true");
+      beliefBar.style.setProperty("--belief-level", String(Math.max(0, Math.min(1, belief.expectation))));
+      text.append(beliefSummary, beliefStats, beliefBar);
       const meta = document.createElement("span");
       meta.className = "experience-meta";
       meta.textContent = `信念 · 期望 ${(belief.expectation * 100).toFixed(1)}% · 频率 ${(belief.frequency * 100).toFixed(1)}% · 信度 ${(belief.confidence * 100).toFixed(1)}% · NAR ${belief.narTime}`;
@@ -96,6 +107,10 @@ export function mountExperienceTimeline(
     event.preventDefault();
     elements.details.open = !elements.details.open;
     requestSnapshot(elements.details.open);
+    if (refreshTimer !== null) window.clearInterval(refreshTimer);
+    refreshTimer = elements.details.open
+      ? window.setInterval(() => requestSnapshot(true), 750)
+      : null;
   };
   summary?.addEventListener("click", onSummaryClick);
   render();
@@ -116,6 +131,7 @@ export function mountExperienceTimeline(
     },
     dispose() {
       summary?.removeEventListener("click", onSummaryClick);
+      if (refreshTimer !== null) window.clearInterval(refreshTimer);
     },
   };
 }
